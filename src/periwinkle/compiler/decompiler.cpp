@@ -22,6 +22,8 @@ int compiler::Decompiler::opCodeLenArguments(OpCode code)
     switch (code)
     {
     case JMP:
+    case JMP_IF_FALSE:
+    case JMP_IF_TRUE:
     case LOAD_CONST:
     case LOAD_GLOBAL:
     case STORE_GLOBAL:

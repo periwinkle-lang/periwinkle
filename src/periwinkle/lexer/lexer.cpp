@@ -45,6 +45,9 @@ const static std::vector<std::pair<TokenType, regex>> tokenTypesRegexList
     {TokenType::PERCENT,       uregex("^%")},
     {TokenType::EQUAL,         uregex("^=")},
 
+    {TokenType::END,           uregex("^кінець")},
+    {TokenType::WHILE,         uregex("^поки")},
+
     {TokenType::ID,            uregex("^[а-яА-ЯїієґЇІЄҐ_][а-яА-ЯїієґЇІЄҐ0-9_]*")},
     {TokenType::LPAR,          uregex("^\\(")},
     {TokenType::RPAR,          uregex("^\\)")},
@@ -201,11 +204,11 @@ void Lexer::readSingleLineComment()
     for (;;)
     {
         auto current = peek(0);
-        pos++;
         if (current == "\0" || current == "\n" || current == "\r")
         {
             break;
         }
+        pos++;
     }
 }
 

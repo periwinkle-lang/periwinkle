@@ -9,7 +9,7 @@
 
 namespace vm
 {
-    Object* objectCall(Object* callable, Object** stack, WORD argc);
+    Object* objectCall(Object* callable, Object**& stack, WORD argc);
     Object* nativeFunctionCall(Object* callable, Object* args[]);
 }
 

@@ -3,6 +3,7 @@
 #include "int_object.h"
 #include "native_function_object.h"
 #include "string_object.h"
+#include "bool_object.h"
 
 using namespace vm;
 extern ObjectType objectObjectType;
@@ -21,6 +22,12 @@ Object* intToString(Object* args[])
     auto integer = (IntObject*)args[0];
     auto str = std::to_string(integer->value);
     return StringObject::create(str);
+}
+
+Object* intToBool(Object* args[])
+{
+    auto integer = (IntObject*)args[0];
+    return BoolObject::create((bool)integer->value);
 }
 
 BINARY_OP(intAdd, +)
@@ -60,6 +67,7 @@ namespace vm
         .operators = new ObjectOperators
         {
             .toString = NativeFunctionObject::create(1, "toString", intToString),
+            .toBool = NativeFunctionObject::create(1, "toBool", intToBool),
             .add = NativeFunctionObject::create(2, "add", intAdd),
             .sub = NativeFunctionObject::create(2, "sub", intSub),
             .mul = NativeFunctionObject::create(2, "mul", intMul),

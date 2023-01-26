@@ -23,9 +23,11 @@ namespace parser
 
         BlockStatement* parseBlock();
         Statement* parseStatement();
+        Statement* parseExpressionStatement();
+        Statement* parseWhileStatement();
 
         Expression* parseExpression();
-        Expression* parseAssignmentOrCallExpression();
+        Expression* parseAssignmentOrCallOrLiteralExpression();
         Expression* parseAssignmentExpression();
         Expression* parseBinaryExpression(int parentPrecedence = INT_MAX);
         Expression* parsePrimaryExpression();

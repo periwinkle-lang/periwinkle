@@ -16,6 +16,9 @@ namespace compiler
 
         void compileBlock(parser::BlockStatement* block);
         void compileStatement(parser::Statement* statement);
+        void compileExpressionStatement(parser::ExpressionStatement* statement);
+        void compileWhileStatement(parser::WhileStatement* statement);
+
         void compileExpression(parser::Expression* expression);
         void compileAssignmentExpression(parser::AssignmentExpression* expression);
         void compileLiteralExpression(parser::LiteralExpression* expression);
@@ -29,8 +32,8 @@ namespace compiler
         vm::WORD stringConstIdx(const std::string& value);
         vm::WORD nullConstIdx();
         vm::WORD nameIdx(const std::string& name); // Повертає індекс з CodeObject->names
-        inline void emitOpCode(vm::OpCode op);
-        inline void emitOperand(vm::WORD operand);
+        inline vm::WORD emitOpCode(vm::OpCode op);
+        inline vm::WORD emitOperand(vm::WORD operand);
         inline int getOffset();
         inline void patchJumpAddress(int offset, vm::WORD newAddress);
     public:

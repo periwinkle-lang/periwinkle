@@ -1,6 +1,7 @@
 ﻿#include "vm.h"
 #include "int_object.h"
 #include "code_object.h"
+#include "bool_object.h"
 #include "call.h"
 #include "builtins.h"
 #include "plogger.h"
@@ -13,6 +14,7 @@ using namespace vm;
 #define PUSH(object) *(++sp) = object
 #define PEEK() *sp
 #define POP() *sp--
+#define JUMP() ip = &code->code[*ip]
 
 #define BINARY_OP(name, op_name)                        \
 case OpCode::name:                                      \
@@ -67,28 +69,37 @@ void VirtualMachine::execute(Frame* frame)
         BINARY_OP(MOD, mod)
         case JMP:
         {
-            ip += *ip;
+            JUMP();
             break;
         }
-        // TODO: доробити JMP_IF інструкції, щоб вони кастували будь який тип до bool
-        //case JMP_IF_TRUE:
-        //{
-        //    auto condition = POP();
-        //    if (((BoolObject*)condition)->value)
-        //    {
-        //        ip += *ip;
-        //    }
-        //    break;
-        //}
-        //case JMP_IF_FALSE:
-        //{
-        //    auto condition = POP();
-        //    if (((BoolObject*)condition)->value == false)
-        //    {
-        //        ip += *ip;
-        //    }
-        //    break;
-        //}
+        case JMP_IF_TRUE:
+        {
+            auto op = GET_OPERATOR(PEEK(), toBool);
+            auto condition = (BoolObject*)objectCall(op, sp, 1);
+            if ((condition)->value)
+            {
+                JUMP();
+            }
+            else
+            {
+                ip++;
+            }
+            break;
+        }
+        case JMP_IF_FALSE:
+        {
+            auto op = GET_OPERATOR(PEEK(), toBool);
+            auto condition = (BoolObject*)objectCall(op, sp, 1);
+            if (((BoolObject*)condition)->value == false)
+            {
+                JUMP();
+            }
+            else
+            {
+                ip++;
+            }
+            break;
+        }
         case LOAD_CONST:
         {
             PUSH(GET_CONST());
@@ -97,7 +108,15 @@ void VirtualMachine::execute(Frame* frame)
         case LOAD_GLOBAL:
         {
             auto& name = names[READ()];
-            PUSH(frame->globals[name]);
+            if (frame->globals.contains(name))
+            {
+                PUSH(frame->globals[name]);
+            }
+            else
+            {
+                // TODO: викинути нормальну помилку
+                plog::fatal << "Такого імені не існує: \"" << name << "\"";
+            }
             break;
         }
         case STORE_GLOBAL:

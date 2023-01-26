@@ -4,7 +4,7 @@
 
 using namespace vm;
 
-Object* vm::objectCall(Object* callable, Object** stack, WORD argc)
+Object* vm::objectCall(Object* callable, Object**& stack, WORD argc)
 {
     if (callable->objectType->type == ObjectTypes::FUNCTION)
     {
@@ -14,13 +14,13 @@ Object* vm::objectCall(Object* callable, Object** stack, WORD argc)
     else if (callable->objectType->type == ObjectTypes::NATIVE_FUNCTION)
     {
         auto nativeFunction = (NativeFunctionObject*)callable;
-        
+
         if ((int)argc != nativeFunction->arity)
         {
             // TODO: викинути нормальну помилку для користувача
             plog::fatal << "Передана неправильна кількість аргументів";
         }
-        
+
         Object** args = new Object*[nativeFunction->arity];
         for (int i = 0; i < nativeFunction->arity; ++i)
         {

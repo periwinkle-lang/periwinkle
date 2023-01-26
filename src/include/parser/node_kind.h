@@ -9,6 +9,8 @@ namespace parser
         NodeKind,
         // Statement
         BLOCK_STATEMENT,
+        EXPRESSION_STATEMENT,
+        WHILE_STATEMENT,
 
         // Expression
         ASSIGNMENT_EXPRESSION,

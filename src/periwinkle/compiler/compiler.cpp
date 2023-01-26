@@ -40,16 +40,16 @@ using enum parser::NodeKind;
 vm::Frame* compiler::Compiler::compile()
 {
     compileBlock(root);
+    emitOpCode(HALT);
     return frame;
 }
 
 void compiler::Compiler::compileBlock(BlockStatement* block)
 {
-    for (auto expression : block->expressions)
+    for (auto statement : block->statements)
     {
-        compileExpression(expression);
+        compileStatement(statement);
     }
-    emitOpCode(HALT);
 }
 
 void compiler::Compiler::compileStatement(Statement* statement)
@@ -59,10 +59,33 @@ void compiler::Compiler::compileStatement(Statement* statement)
     case BLOCK_STATEMENT:
         compileBlock((BlockStatement*)statement);
         break;
+    case EXPRESSION_STATEMENT:
+        compileExpressionStatement((ExpressionStatement*)statement);
+        break;
+    case WHILE_STATEMENT:
+        compileWhileStatement((WhileStatement*)statement);
+        break;
     default:
         plog::fatal << "Неможливо обробити вузол \"" << parser::stringEnum::enumToString(statement->kind())
             << "\"" << std::endl;
     }
+}
+
+void compiler::Compiler::compileExpressionStatement(ExpressionStatement* statement)
+{
+    compileExpression(statement->expression);
+}
+
+void compiler::Compiler::compileWhileStatement(WhileStatement* statement)
+{
+    auto startWhileAddress = getOffset();
+    compileExpression(statement->condition);
+    emitOpCode(JMP_IF_FALSE);
+    auto endWhileBlock = emitOperand(0);
+    compileBlock(statement->block);
+    emitOpCode(JMP);
+    emitOperand(startWhileAddress);
+    patchJumpAddress(endWhileBlock, getOffset());
 }
 
 void compiler::Compiler::compileExpression(Expression* expression)
@@ -286,14 +309,16 @@ vm::WORD compiler::Compiler::nameIdx(const std::string& name)
     }
 }
 
-void compiler::Compiler::emitOpCode(vm::OpCode op)
+vm::WORD compiler::Compiler::emitOpCode(vm::OpCode op)
 {
     frame->codeObject->code.push_back((vm::WORD)op);
+    return vm::WORD(frame->codeObject->code.size() - 1);
 }
 
-void compiler::Compiler::emitOperand(vm::WORD operand)
+vm::WORD compiler::Compiler::emitOperand(vm::WORD operand)
 {
     frame->codeObject->code.push_back(operand);
+    return vm::WORD(frame->codeObject->code.size() - 1);
 }
 
 int compiler::Compiler::getOffset()

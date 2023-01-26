@@ -50,57 +50,64 @@ int parser::getBinaryOperatorPrecedence(TokenType type)
 
 BlockStatement* parser::Parser::parseBlock()
 {
-    std::vector<Expression*> expressions;
+    std::vector<Statement*> statements;
 
-    while (CURRENT.tokenType != TokenType::EOF_)
+    while (CURRENT.tokenType != EOF_ && CURRENT.tokenType != END)
     {
-        expressions.push_back((Expression*)parseExpression());
+        statements.push_back((Statement*)parseStatement());
     }
 
-    return new BlockStatement(expressions);
+    return new BlockStatement(statements);
 }
 
 Statement* parser::Parser::parseStatement()
 {
     switch (CURRENT.tokenType)
     {
+    case WHILE:
+        return parseWhileStatement();
     default:
-        plog::fatal << "Неможливо обробити токен \""
-            << lexer::stringEnum::enumToString(CURRENT.tokenType) << "\"";
+        return parseExpressionStatement();
     }
+}
+
+Statement* parser::Parser::parseExpressionStatement()
+{
+    Expression* expression = parseExpression();
+    return new ExpressionStatement(expression);
+}
+
+Statement* parser::Parser::parseWhileStatement()
+{
+    Token keyword = matchToken(WHILE);
+    Expression* condition = parseExpression();
+    BlockStatement* block = parseBlock();
+
+    return new WhileStatement(keyword, condition, block);
 }
 
 Expression* parser::Parser::parseAssignmentExpression()
 {
     Token variable = matchToken(ID);
-    Token assigment = nextToken();
-    Expression* expression = parseBinaryExpression();
+    Token assignment = nextToken();
+    Expression* expression = parseExpression();
 
-    return new AssignmentExpression(variable, assigment, expression);
+    return new AssignmentExpression(variable, assignment, expression);
 }
 
 Expression* parser::Parser::parseExpression()
 {
-    switch (CURRENT.tokenType)
+    switch (AHEAD.tokenType)
     {
-    case ID:
-        return parseAssignmentOrCallExpression();
-    default:
-        vm::SyntaxException exception("Неправильний синтаксис", CURRENT.lineno);
-        vm::throwSyntaxException(exception, code, CURRENT.position);
-        exit(1);
-    }
-}
-
-Expression* parser::Parser::parseAssignmentOrCallExpression()
-{
-    if (AHEAD.tokenType == LPAR)
-    {
-        return parseCallExpression();
-    }
-    else
-    {
+    case EQUAL:
+    case PLUS_EQUAL:
+    case MINUS_EQUAL:
+    case STAR_EQUAL:
+    case SLASH_EQUAL:
+    case PERCENT_EQUAL:
         return parseAssignmentExpression();
+    default:
+        return parseBinaryExpression();
     }
 }
 
@@ -205,7 +212,7 @@ std::vector<Expression*> parser::Parser::parseArguments()
     while (CURRENT.tokenType != RPAR
         && CURRENT.tokenType != EOF_)
     {
-        auto expression = parseBinaryExpression();
+        auto expression = parseExpression();
         arguments.push_back(expression);
 
         if (CURRENT.tokenType == COMMA)
