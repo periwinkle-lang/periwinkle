@@ -72,6 +72,14 @@ bool Lexer::nextToken()
         tokenizeString();
         return true;
     }
+    case ' ':
+    case '\n':
+    case '\r':
+    case '\t':
+    {
+        pos++;
+        return true;
+    }
     case '/':
     {
         if (ahead == "/")
@@ -84,14 +92,9 @@ bool Lexer::nextToken()
             readMultiLineComment();
             return true;
         }
-    }
-    case ' ':
-    case '\n':
-    case '\r':
-    case '\t':
-    {
-        pos++;
-        return true;
+        // Так як коментарі та оператор ділення визначені за допомогою одного символу,
+        // блок "case '/':" має бути останнім та без "break",
+        // щоб управління могло перейти до частини default
     }
     default:
     {
@@ -107,16 +110,6 @@ bool Lexer::nextToken()
             if (count)
             {
                 std::string str = result[0][0];
-                /*if (kv.first == TokenType::REAL)
-                {
-                    for (auto& item : result)
-                    {
-                        for (auto& itemItem : item)
-                        {
-                            std::cout << itemItem << std::endl;
-                        }
-                    }
-                }*/
                 pos += str.size();
                 addToken(kv.first, str);
                 return true;
