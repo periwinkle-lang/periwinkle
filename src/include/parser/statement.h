@@ -47,6 +47,24 @@ namespace parser
 
         NODE_KIND(EXPRESSION_STATEMENT);
     };
+
+    struct BreakStatement : Statement
+    {
+        lexer::Token break_;
+
+        BreakStatement(lexer::Token break_) : break_(break_) {};
+
+        NODE_KIND(BREAK_STATEMENT);
+    };
+
+    struct ContinueStatement : Statement
+    {
+        lexer::Token continue_;
+
+        ContinueStatement(lexer::Token continue_) : continue_(continue_) {};
+
+        NODE_KIND(CONTINUE_STATEMENT);
+    };
 }
 
 #endif

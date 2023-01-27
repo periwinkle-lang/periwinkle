@@ -1,6 +1,4 @@
-﻿
-
-#include <map>
+﻿#include <map>
 #include <algorithm>
 #define PCRE2_STATIC
 #include <jpcre2.hpp>
@@ -47,6 +45,8 @@ const static std::vector<std::pair<TokenType, regex>> tokenTypesRegexList
 
     {TokenType::END,           uregex("^кінець")},
     {TokenType::WHILE,         uregex("^поки")},
+    {TokenType::BREAK,         uregex("^завершити")},
+    {TokenType::CONTINUE,      uregex("^продовжити")},
 
     {TokenType::ID,            uregex("^[а-яА-ЯїієґЇІЄҐ_][а-яА-ЯїієґЇІЄҐ0-9_]*")},
     {TokenType::LPAR,          uregex("^\\(")},

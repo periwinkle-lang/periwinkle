@@ -13,6 +13,7 @@
 #include "types.h"
 #include "builtins.h"
 #include "plogger.h"
+#include "exception.h"
 
 using namespace compiler;
 using namespace parser;
@@ -35,6 +36,19 @@ using enum parser::NodeKind;
     }                                                                     \
     codeObject->constants.push_back(vm::OBJECT::create(value));           \
     return vm::WORD(codeObject->constants.size() - 1);
+
+#define STATE_POP() stateStack.pop_back()
+#define STATE_BACK(stateType) ((stateType*)stateStack.back())
+
+struct WhileState : CompilerState
+{
+    vm::WORD startIp; // Початок циклу
+    // Адреси, що будуть будуть змінені на адресу кінці циклу
+    std::vector<vm::WORD> addressesForPatchWithEndBlock;
+};
+
+#define PUSH_WHILE_STATE(startIp) \
+    stateStack.push_back(new WhileState{{CompilerStateType::WHILE}, startIp})
 
 
 vm::Frame* compiler::Compiler::compile()
@@ -65,6 +79,12 @@ void compiler::Compiler::compileStatement(Statement* statement)
     case WHILE_STATEMENT:
         compileWhileStatement((WhileStatement*)statement);
         break;
+    case BREAK_STATEMENT:
+        compileBreakStatement((BreakStatement*)statement);
+        break;
+    case CONTINUE_STATEMENT:
+        compileContinueStatement((ContinueStatement*)statement);
+        break;
     default:
         plog::fatal << "Неможливо обробити вузол \"" << parser::stringEnum::enumToString(statement->kind())
             << "\"" << std::endl;
@@ -82,10 +102,45 @@ void compiler::Compiler::compileWhileStatement(WhileStatement* statement)
     compileExpression(statement->condition);
     emitOpCode(JMP_IF_FALSE);
     auto endWhileBlock = emitOperand(0);
+    PUSH_WHILE_STATE(startWhileAddress);
     compileBlock(statement->block);
     emitOpCode(JMP);
     emitOperand(startWhileAddress);
     patchJumpAddress(endWhileBlock, getOffset());
+    for (auto address : STATE_BACK(WhileState)->addressesForPatchWithEndBlock)
+    {
+        patchJumpAddress(address, getOffset());
+    }
+    STATE_POP();
+}
+
+void compiler::Compiler::compileBreakStatement(BreakStatement* statement)
+{
+    auto state = (WhileState*)unwindStateStack(CompilerStateType::WHILE);
+    if (state)
+    {
+        emitOpCode(JMP);
+        auto endBlock = emitOperand(0);
+        state->addressesForPatchWithEndBlock.push_back(endBlock);
+    }
+    else
+    {
+        throwCompileError("Оператор \"завершити\" знаходиться поза циклом!", statement->break_);
+    }
+}
+
+void compiler::Compiler::compileContinueStatement(ContinueStatement* statement)
+{
+    auto state = (WhileState*)unwindStateStack(CompilerStateType::WHILE);
+    if (state)
+    {
+        emitOpCode(JMP);
+        emitOperand(state->startIp);
+    }
+    else
+    {
+        throwCompileError("Оператор \"продовжити\" знаходиться поза циклом!", statement->continue_);
+    }
 }
 
 void compiler::Compiler::compileExpression(Expression* expression)
@@ -273,6 +328,18 @@ void compiler::Compiler::compileBinaryExpression(BinaryExpression* expression)
 //    }
 //}
 
+CompilerState* compiler::Compiler::unwindStateStack(CompilerStateType type)
+{
+    for (auto item : stateStack)
+    {
+        if (item->type == type)
+        {
+            return item;
+        }
+    }
+    return nullptr;
+}
+
 vm::WORD compiler::Compiler::booleanConstIdx(bool value)
 {
     FIND_CONST_IDX(BoolObject, BOOL)
@@ -322,6 +389,13 @@ vm::WORD compiler::Compiler::nameIdx(const std::string& name)
     }
 }
 
+void compiler::Compiler::throwCompileError(std::string message, lexer::Token token)
+{
+    vm::SyntaxException error(message, token.lineno);
+    vm::throwSyntaxException(error, code, token.position);
+    exit(1);
+}
+
 vm::WORD compiler::Compiler::emitOpCode(vm::OpCode op)
 {
     frame->codeObject->code.push_back((vm::WORD)op);
@@ -334,9 +408,9 @@ vm::WORD compiler::Compiler::emitOperand(vm::WORD operand)
     return vm::WORD(frame->codeObject->code.size() - 1);
 }
 
-int compiler::Compiler::getOffset()
+vm::WORD compiler::Compiler::getOffset()
 {
-    return frame->codeObject->code.size();
+    return (vm::WORD)frame->codeObject->code.size();
 }
 
 void compiler::Compiler::patchJumpAddress(int offset, vm::WORD newAddress)

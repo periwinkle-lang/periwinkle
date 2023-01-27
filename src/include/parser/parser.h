@@ -25,6 +25,8 @@ namespace parser
         Statement* parseStatement();
         Statement* parseExpressionStatement();
         Statement* parseWhileStatement();
+        Statement* parseBreakStatement();
+        Statement* parseContinueStatement();
 
         Expression* parseExpression();
         Expression* parseAssignmentOrCallOrLiteralExpression();

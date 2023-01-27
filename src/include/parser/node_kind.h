@@ -11,6 +11,8 @@ namespace parser
         BLOCK_STATEMENT,
         EXPRESSION_STATEMENT,
         WHILE_STATEMENT,
+        BREAK_STATEMENT,
+        CONTINUE_STATEMENT,
 
         // Expression
         ASSIGNMENT_EXPRESSION,

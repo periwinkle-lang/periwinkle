@@ -57,6 +57,10 @@ BlockStatement* parser::Parser::parseBlock()
         statements.push_back((Statement*)parseStatement());
     }
 
+    if (CURRENT.tokenType == END)
+    {
+        nextToken();
+    }
     return new BlockStatement(statements);
 }
 
@@ -66,6 +70,10 @@ Statement* parser::Parser::parseStatement()
     {
     case WHILE:
         return parseWhileStatement();
+    case BREAK:
+        return parseBreakStatement();
+    case CONTINUE:
+        return parseContinueStatement();
     default:
         return parseExpressionStatement();
     }
@@ -84,6 +92,18 @@ Statement* parser::Parser::parseWhileStatement()
     BlockStatement* block = parseBlock();
 
     return new WhileStatement(keyword, condition, block);
+}
+
+Statement* parser::Parser::parseBreakStatement()
+{
+    Token break_ = matchToken(BREAK);
+    return new BreakStatement(break_);
+}
+
+Statement* parser::Parser::parseContinueStatement()
+{
+    Token continue_ = matchToken(CONTINUE);
+    return new ContinueStatement(continue_);
 }
 
 Expression* parser::Parser::parseAssignmentExpression()
