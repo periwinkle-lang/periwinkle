@@ -85,6 +85,9 @@ void compiler::Compiler::compileStatement(Statement* statement)
     case CONTINUE_STATEMENT:
         compileContinueStatement((ContinueStatement*)statement);
         break;
+    case IF_STATEMENT:
+        compileIfStatement((IfStatement*)statement);
+        break;
     default:
         plog::fatal << "Неможливо обробити вузол \"" << parser::stringEnum::enumToString(statement->kind())
             << "\"" << std::endl;
@@ -140,6 +143,37 @@ void compiler::Compiler::compileContinueStatement(ContinueStatement* statement)
     else
     {
         throwCompileError("Оператор \"продовжити\" знаходиться поза циклом!", statement->continue_);
+    }
+}
+
+void compiler::Compiler::compileIfStatement(IfStatement* statement)
+{
+    compileExpression(statement->condition);
+    emitOpCode(JMP_IF_FALSE);
+    auto endIfBlock = emitOperand(0);
+    compileBlock(statement->block);
+    if (statement->elseOrIf == nullptr)
+    {
+        patchJumpAddress(endIfBlock, getOffset());
+    }
+    else
+    {
+        emitOpCode(JMP);
+        auto endIfElseBlock = emitOperand(0);
+        patchJumpAddress(endIfBlock, getOffset());
+
+        if (statement->elseOrIf->kind() == ELSE_STATEMENT)
+        {
+            auto elseStatement = (ElseStatement*)statement->elseOrIf;
+            compileBlock(elseStatement->block);
+        }
+        else if (statement->elseOrIf->kind() == IF_STATEMENT)
+        {
+            auto ifStatement = (IfStatement*)statement->elseOrIf;
+            compileIfStatement(ifStatement);
+        }
+
+        patchJumpAddress(endIfElseBlock, getOffset());
     }
 }
 
@@ -296,37 +330,6 @@ void compiler::Compiler::compileBinaryExpression(BinaryExpression* expression)
             <<  lexer::stringEnum::enumToString(expression->operator_.tokenType) << "\"";
     }
 }
-
-//void compiler::Compiler::compileIfStatement(IfStatement* statement)
-//{
-//    compileExpression(statement->condition);
-//    emitOpCode(OpCode::JMP_IF_FALSE);
-//    auto elseJmpAddr = getOffset();
-//    emitOperand(0);
-//    compileBlock(statement->then);
-//    if (statement->else_ == nullptr)
-//    {
-//        patchJumpAddress(elseJmpAddr, getOffset());
-//    }
-//    else
-//    {
-//        auto end = getOffset();
-//        emitOpCode(OpCode::JMP);
-//
-//        if (statement->else_->statement->kind() == NodeKind::IF_STATEMENT)
-//        {
-//            auto elseIf = (IfStatement*)statement->else_->statement;
-//            compileIfStatement(elseIf);
-//        }
-//        else
-//        {
-//            auto else_ = (BlockStatement*)statement->else_->statement;
-//            compileBlock(else_);
-//        }
-//
-//        patchJumpAddress(end, getOffset());
-//    }
-//}
 
 CompilerState* compiler::Compiler::unwindStateStack(CompilerStateType type)
 {

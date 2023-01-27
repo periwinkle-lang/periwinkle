@@ -47,6 +47,9 @@ const static std::vector<std::pair<TokenType, regex>> tokenTypesRegexList
     {TokenType::WHILE,         uregex("^поки")},
     {TokenType::BREAK,         uregex("^завершити")},
     {TokenType::CONTINUE,      uregex("^продовжити")},
+    {TokenType::IF,            uregex("^якщо")},
+    {TokenType::ELSE_IF,       uregex("^або якщо")},
+    {TokenType::ELSE,          uregex("^інакше")},
 
     {TokenType::ID,            uregex("^[а-яА-ЯїієґЇІЄҐ_][а-яА-ЯїієґЇІЄҐ0-9_]*")},
     {TokenType::LPAR,          uregex("^\\(")},

@@ -32,6 +32,7 @@ namespace compiler
         void compileWhileStatement(parser::WhileStatement* statement);
         void compileBreakStatement(parser::BreakStatement* statement);
         void compileContinueStatement(parser::ContinueStatement* statement);
+        void compileIfStatement(parser::IfStatement* statement);
 
         void compileExpression(parser::Expression* expression);
         void compileAssignmentExpression(parser::AssignmentExpression* expression);

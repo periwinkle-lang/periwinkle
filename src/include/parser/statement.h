@@ -65,6 +65,29 @@ namespace parser
 
         NODE_KIND(CONTINUE_STATEMENT);
     };
+
+    struct IfStatement : Statement
+    {
+        lexer::Token if_;
+        Expression* condition;
+        BlockStatement* block;
+        Statement* elseOrIf;
+
+        IfStatement(lexer::Token if_, Expression* condition, BlockStatement* block, Statement* elseOrIf)
+            : if_(if_), condition(condition), block(block), elseOrIf(elseOrIf) {};
+
+        NODE_KIND(IF_STATEMENT);
+    };
+
+    struct ElseStatement : Statement
+    {
+        lexer::Token else_;
+        BlockStatement* block;
+
+        ElseStatement(lexer::Token else_, BlockStatement* block) : else_(else_), block(block) {};
+
+        NODE_KIND(ELSE_STATEMENT);
+    };
 }
 
 #endif

@@ -52,14 +52,9 @@ BlockStatement* parser::Parser::parseBlock()
 {
     std::vector<Statement*> statements;
 
-    while (CURRENT.tokenType != EOF_ && CURRENT.tokenType != END)
+    while (CURRENT.tokenType != EOF_)
     {
-        statements.push_back((Statement*)parseStatement());
-    }
-
-    if (CURRENT.tokenType == END)
-    {
-        nextToken();
+        statements.push_back(parseStatement());
     }
     return new BlockStatement(statements);
 }
@@ -74,6 +69,8 @@ Statement* parser::Parser::parseStatement()
         return parseBreakStatement();
     case CONTINUE:
         return parseContinueStatement();
+    case IF:
+        return parseIfStatement();
     default:
         return parseExpressionStatement();
     }
@@ -89,7 +86,13 @@ Statement* parser::Parser::parseWhileStatement()
 {
     Token keyword = matchToken(WHILE);
     Expression* condition = parseExpression();
-    BlockStatement* block = parseBlock();
+    std::vector<Statement*> statements;
+    while (CURRENT.tokenType != EOF_ && CURRENT.tokenType != END)
+    {
+        statements.push_back(parseStatement());
+    }
+    BlockStatement* block = new BlockStatement(statements);
+    matchToken(END);
 
     return new WhileStatement(keyword, condition, block);
 }
@@ -104,6 +107,49 @@ Statement* parser::Parser::parseContinueStatement()
 {
     Token continue_ = matchToken(CONTINUE);
     return new ContinueStatement(continue_);
+}
+
+Statement* parser::Parser::parseIfStatement(bool elseIf)
+{
+    Token keyword = matchToken(elseIf ? ELSE_IF : IF);
+    Expression* condition = parseExpression();
+    std::vector<Statement*> statements;
+    while (CURRENT.tokenType != EOF_ && CURRENT.tokenType != END
+        && CURRENT.tokenType != ELSE_IF && CURRENT.tokenType != ELSE)
+    {
+        statements.push_back(parseStatement());
+    }
+    BlockStatement* block = new BlockStatement(statements);
+    Statement* elseOrIf = parseElseOrIfStatement();
+
+    if (elseOrIf == nullptr)
+    {
+        matchToken(END);
+    }
+
+    return new IfStatement(keyword, condition, block, elseOrIf);
+}
+
+Statement* parser::Parser::parseElseOrIfStatement()
+{
+    if (CURRENT.tokenType == IF || CURRENT.tokenType == ELSE_IF)
+    {
+        return parseIfStatement(CURRENT.tokenType == ELSE_IF);
+    }
+    else if (CURRENT.tokenType == ELSE)
+    {
+        Token keyword = matchToken(ELSE);
+        std::vector<Statement*> statements;
+        while (CURRENT.tokenType != EOF_ && CURRENT.tokenType != END)
+        {
+            statements.push_back(parseStatement());
+        }
+        BlockStatement* block = new BlockStatement(statements);
+        matchToken(END);
+
+        return new ElseStatement(keyword, block);
+    }
+    return nullptr;
 }
 
 Expression* parser::Parser::parseAssignmentExpression()
@@ -258,7 +304,7 @@ lexer::Token parser::Parser::nextToken()
 lexer::Token parser::Parser::peek(int offset)
 {
     u64 index = position + offset;
-    return index > sizeOfTokensVector ?
+    return index >= sizeOfTokensVector ?
         lexer::Token{ TokenType::EOF_, "", 0, 0 } : tokens[index];
 }
 

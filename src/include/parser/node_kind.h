@@ -13,6 +13,8 @@ namespace parser
         WHILE_STATEMENT,
         BREAK_STATEMENT,
         CONTINUE_STATEMENT,
+        IF_STATEMENT,
+        ELSE_STATEMENT,
 
         // Expression
         ASSIGNMENT_EXPRESSION,
