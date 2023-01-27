@@ -119,19 +119,32 @@ void compiler::Compiler::compileAssignmentExpression(AssignmentExpression* expre
     std::string name = expression->id.text;
     auto nameIdx = this->nameIdx(name);
 
-    switch (expression->assignment.tokenType)
+    compileExpression(expression->expression);
+    auto assignmentType = expression->assignment.tokenType;
+    if (assignmentType == EQUAL)
     {
-    case EQUAL:
-    {
-        compileExpression(expression->expression);
         emitOpCode(STORE_GLOBAL);
         emitOperand(nameIdx);
-        break;
+        return;
     }
+
+    emitOpCode(LOAD_NAME);
+    emitOperand(nameIdx);
+
+    switch (assignmentType)
+    {
+    case PLUS_EQUAL: emitOpCode(ADD); break;
+    case MINUS_EQUAL: emitOpCode(SUB); break;
+    case STAR_EQUAL: emitOpCode(MUL); break;
+    case SLASH_EQUAL: emitOpCode(DIV); break;
+    case PERCENT_EQUAL: emitOpCode(MOD); break;
     default:
-        plog::fatal << "Оператор ще не реалізовано: \""
-            << lexer::stringEnum::enumToString(expression->assignment.tokenType) << "\"";
+        plog::fatal << "Неправильний оператор присвоєння: \""
+            << lexer::stringEnum::enumToString(assignmentType) << "\"";
     }
+
+    emitOpCode(STORE_GLOBAL);
+    emitOperand(nameIdx);
 }
 
 void compiler::Compiler::compileLiteralExpression(LiteralExpression* expression)
