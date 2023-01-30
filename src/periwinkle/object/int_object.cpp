@@ -4,53 +4,61 @@
 #include "native_function_object.h"
 #include "string_object.h"
 #include "bool_object.h"
+#include "real_object.h"
 
 using namespace vm;
 extern ObjectType objectObjectType;
 
 #define BINARY_OP(name, op)                  \
-Object* name(Object* args[])                 \
+static Object* name(Object* a, Object* b)    \
 {                                            \
-    auto arg1 = (IntObject*)args[0];         \
-    auto arg2 = (IntObject*)args[1];         \
+    auto arg1 = (IntObject*)a;               \
+    auto arg2 = (IntObject*)b;               \
     int result = arg1->value op arg2->value; \
     return IntObject::create(result);        \
 }
 
-Object* intToString(Object* args[])
+static Object* intToString(Object* a)
 {
-    auto integer = (IntObject*)args[0];
+    auto integer = (IntObject*)a;
     auto str = std::to_string(integer->value);
     return StringObject::create(str);
 }
 
-Object* intToBool(Object* args[])
+static Object* intToBool(Object* a)
 {
-    auto integer = (IntObject*)args[0];
+    auto integer = (IntObject*)a;
     return BoolObject::create((bool)integer->value);
 }
 
 BINARY_OP(intAdd, +)
 BINARY_OP(intSub, -)
 BINARY_OP(intMul, *)
-BINARY_OP(intDiv, /)
 BINARY_OP(intMod, %)
 
-Object* intInc(Object* args[])
+static Object* intDiv(Object* a, Object* b)
 {
-    auto arg = (IntObject*)args[0];
+    auto arg1 = (IntObject*)a;
+    auto arg2 = (IntObject*)b;
+    auto result = (double)arg1->value / (double)arg2->value;
+    return RealObject::create(result);
+}
+
+static Object* intInc(Object* a)
+{
+    auto arg = (IntObject*)a;
     return IntObject::create(arg->value + 1);
 }
 
-Object* intDec(Object* args[])
+static Object* intDec(Object* a)
 {
-    auto arg = (IntObject*)args[0];
+    auto arg = (IntObject*)a;
     return IntObject::create(arg->value - 1);
 }
 
-Object* intNeg(Object* args[])
+static Object* intNeg(Object* a)
 {
-    auto arg = (IntObject*)args[0];
+    auto arg = (IntObject*)a;
     return IntObject::create(-arg->value);
 }
 
@@ -66,16 +74,16 @@ namespace vm
         .alloc = &allocIntObject,
         .operators = new ObjectOperators
         {
-            .toString = NativeFunctionObject::create(1, "toString", intToString),
-            .toBool = NativeFunctionObject::create(1, "toBool", intToBool),
-            .add = NativeFunctionObject::create(2, "add", intAdd),
-            .sub = NativeFunctionObject::create(2, "sub", intSub),
-            .mul = NativeFunctionObject::create(2, "mul", intMul),
-            .div = NativeFunctionObject::create(2, "div", intDiv),
-            .mod = NativeFunctionObject::create(2, "mod", intMod),
-            .inc = NativeFunctionObject::create(1, "inc", intInc),
-            .dec = NativeFunctionObject::create(1, "dec", intDec),
-            .neg = NativeFunctionObject::create(1, "neg", intNeg),
+            .toString = intToString,
+            .toBool = intToBool,
+            .add = intAdd,
+            .sub = intSub,
+            .mul = intMul,
+            .div = intDiv,
+            .mod = intMod,
+            .inc = intInc,
+            .dec = intDec,
+            .neg = intNeg,
         },
     };
 }

@@ -44,24 +44,26 @@ namespace vm
 
     struct NativeFunctionObject;
 
+    using unaryFunction   = vm::Object*(*)(Object*);
+    using binaryFunction  = vm::Object*(*)(Object*, Object*);
+    using ternaryFunction = vm::Object*(*)(Object*, Object*, Object*);
+    using callFunction    = vm::Object*(*)(Object*[]);
+
     struct ObjectOperators
     {
-        NativeFunctionObject* call; // Виклик об'єкта
-        NativeFunctionObject* toString;
-        NativeFunctionObject* toInteger;
-        NativeFunctionObject* toReal;
-        NativeFunctionObject* toBool;
-        NativeFunctionObject* add;
-        NativeFunctionObject* sub;
-        NativeFunctionObject* rSub; // Так як віднімання не є комутативним, потрібна "права" реалізація
-        NativeFunctionObject* mul;
-        NativeFunctionObject* div;
-        NativeFunctionObject* rDiv; // Ділення теж не є комутативним
-        NativeFunctionObject* mod;
-        NativeFunctionObject* rMod; // Ділення по модулю теж не є комутативним
-        NativeFunctionObject* inc; // Інкремент
-        NativeFunctionObject* dec; // Декремент
-        NativeFunctionObject* neg; // Заперечення
+         callFunction call; // Виклик об'єкта
+         unaryFunction toString;
+         unaryFunction toInteger;
+         unaryFunction toReal;
+         unaryFunction toBool;
+         binaryFunction add;
+         binaryFunction sub;
+         binaryFunction mul;
+         binaryFunction div;
+         binaryFunction mod;
+         unaryFunction inc; // Інкремент
+         unaryFunction dec; // Декремент
+         unaryFunction neg; // Заперечення
     };
 
     struct ObjectType

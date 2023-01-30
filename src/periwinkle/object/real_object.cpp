@@ -9,18 +9,18 @@ using namespace vm;
 extern ObjectType objectObjectType;
 
 #define BINARY_OP(name, op)                     \
-Object* name(Object* args[])                    \
+static Object* name(Object* a, Object* b)       \
 {                                               \
-    auto arg1 = (RealObject*)args[0];           \
-    auto arg2 = (RealObject*)args[1];           \
+    auto arg1 = (RealObject*)a;                 \
+    auto arg2 = (RealObject*)b;                 \
     double result = arg1->value op arg2->value; \
     return RealObject::create(result);          \
 }
 
-Object* realToString(Object* args[])
+static Object* realToString(Object* a)
 {
-    auto real = (RealObject*)args[0];
-    std::stringstream ss; 
+    auto real = (RealObject*)a;
+    std::stringstream ss;
     ss.precision(10);
     ss << real->value;
     return StringObject::create(ss.str());
@@ -31,21 +31,21 @@ BINARY_OP(realSub, -)
 BINARY_OP(realMul, *)
 BINARY_OP(realDiv, / )
 
-Object* realInc(Object* args[])
+static Object* realInc(Object* a)
 {
-    auto arg = (RealObject*)args[0];
+    auto arg = (RealObject*)a;
     return RealObject::create(arg->value + 1.);
 }
 
-Object* realDec(Object* args[])
+static Object* realDec(Object* a)
 {
-    auto arg = (RealObject*)args[0];
+    auto arg = (RealObject*)a;
     return RealObject::create(arg->value - 1.);
 }
 
-Object* realNeg(Object* args[])
+static Object* realNeg(Object* a)
 {
-    auto arg = (RealObject*)args[0];
+    auto arg = (RealObject*)a;
     return RealObject::create(-arg->value);
 }
 
@@ -61,14 +61,14 @@ namespace vm
         .alloc = &allocRealObject,
         .operators = new ObjectOperators
         {
-            .toString = NativeFunctionObject::create(1, "toString", realToString),
-            .add = NativeFunctionObject::create(2, "add", realAdd),
-            .sub = NativeFunctionObject::create(2, "sub", realSub),
-            .mul = NativeFunctionObject::create(2, "mul", realMul),
-            .div = NativeFunctionObject::create(2, "div", realDiv),
-            .inc = NativeFunctionObject::create(1, "inc", realInc),
-            .dec = NativeFunctionObject::create(1, "dec", realDec),
-            .neg = NativeFunctionObject::create(1, "neg", realNeg),
+            .toString = realToString,
+            .add = realAdd,
+            .sub = realSub,
+            .mul = realMul,
+            .div = realDiv,
+            .inc = realInc,
+            .dec = realDec,
+            .neg = realNeg,
         },
     };
 }

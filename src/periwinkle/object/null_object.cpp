@@ -5,7 +5,7 @@
 using namespace vm;
 extern ObjectType objectObjectType;
 
-Object* nullToString(Object* args[])
+static Object* nullToString(Object* a)
 {
     return StringObject::create("нич");
 }
@@ -22,7 +22,7 @@ namespace vm
         .alloc = &allocNullObject,
         .operators = new ObjectOperators
         {
-            .toString = NativeFunctionObject::create(1, "toString", nullToString),
+            .toString = nullToString,
         },
     };
 

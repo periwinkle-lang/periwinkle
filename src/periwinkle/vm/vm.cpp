@@ -20,7 +20,9 @@ using namespace vm;
 case OpCode::name:                                      \
 {                                                       \
     auto op = GET_OPERATOR(PEEK(), op_name);            \
-    auto result = objectCall(op, sp, 2);                \
+    auto arg1 = POP();                                  \
+    auto arg2 = POP();                                  \
+    auto result = op(arg1, arg2);                       \
     PUSH(result);                                       \
     break;                                              \
 }
@@ -29,7 +31,7 @@ case OpCode::name:                                      \
 case OpCode::name:                                      \
 {                                                       \
     auto op = GET_OPERATOR(PEEK(), op_name);            \
-    auto result = objectCall(op, sp, 2);                \
+    auto result = op(POP());                            \
     PUSH(result);                                       \
     break;                                              \
 }
@@ -75,7 +77,7 @@ void VirtualMachine::execute(Frame* frame)
         case JMP_IF_TRUE:
         {
             auto op = GET_OPERATOR(PEEK(), toBool);
-            auto condition = (BoolObject*)objectCall(op, sp, 1);
+            auto condition = (BoolObject*)op(POP());
             if ((condition)->value)
             {
                 JUMP();
@@ -89,7 +91,7 @@ void VirtualMachine::execute(Frame* frame)
         case JMP_IF_FALSE:
         {
             auto op = GET_OPERATOR(PEEK(), toBool);
-            auto condition = (BoolObject*)objectCall(op, sp, 1);
+            auto condition = (BoolObject*)op(POP());
             if (((BoolObject*)condition)->value == false)
             {
                 JUMP();

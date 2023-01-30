@@ -25,14 +25,7 @@ Object* allocNativeFunction()
 
 NativeFunctionObject* vm::NativeFunctionObject::create(int arity, std::string name, nativeFunction function)
 {
-    ObjectType nativeFunctionObjectTypetest =
-    {
-        .base = &objectObjectType,
-        .name = "NativeFunction",
-        .type = ObjectTypes::NATIVE_FUNCTION,
-        .alloc = &allocNativeFunction,
-    };
-    auto nativeFunction = (NativeFunctionObject*)allocObject(&nativeFunctionObjectTypetest);
+    auto nativeFunction = (NativeFunctionObject*)allocObject(&nativeFunctionObjectType);
     nativeFunction->arity = arity;
     nativeFunction->name = name;
     nativeFunction->function = function;

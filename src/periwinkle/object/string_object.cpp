@@ -3,10 +3,10 @@
 
 using namespace vm;
 
-Object* strAdd(Object* args[])
+static Object* strAdd(Object* a, Object* b)
 {
-    auto str1 = (StringObject*)args[0];
-    auto str2 = (StringObject*)args[1];
+    auto str1 = (StringObject*)a;
+    auto str2 = (StringObject*)b;
     return StringObject::create(str1->value + str2->value);
 }
 
@@ -22,7 +22,7 @@ namespace vm
         .alloc = &allocStringObject,
         .operators = new ObjectOperators
         {
-            .add = NativeFunctionObject::create(2, "add", strAdd),
+            .add = strAdd,
         },
     };
 }

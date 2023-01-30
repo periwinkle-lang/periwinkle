@@ -13,4 +13,4 @@ namespace vm
     extern NullObject nullObject;
 }
 
-#endif 
+#endif
