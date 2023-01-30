@@ -152,7 +152,7 @@ void compiler::Compiler::compileIfStatement(IfStatement* statement)
     emitOpCode(JMP_IF_FALSE);
     auto endIfBlock = emitOperand(0);
     compileBlock(statement->block);
-    if (statement->elseOrIf == nullptr)
+    if (!statement->elseOrIf)
     {
         patchJumpAddress(endIfBlock, getOffset());
     }
@@ -162,14 +162,15 @@ void compiler::Compiler::compileIfStatement(IfStatement* statement)
         auto endIfElseBlock = emitOperand(0);
         patchJumpAddress(endIfBlock, getOffset());
 
-        if (statement->elseOrIf->kind() == ELSE_STATEMENT)
+        auto elseOrIf = statement->elseOrIf.value();
+        if (elseOrIf->kind() == ELSE_STATEMENT)
         {
-            auto elseStatement = (ElseStatement*)statement->elseOrIf;
+            auto elseStatement = (ElseStatement*)elseOrIf;
             compileBlock(elseStatement->block);
         }
-        else if (statement->elseOrIf->kind() == IF_STATEMENT)
+        else if (elseOrIf->kind() == IF_STATEMENT)
         {
-            auto ifStatement = (IfStatement*)statement->elseOrIf;
+            auto ifStatement = (IfStatement*)elseOrIf;
             compileIfStatement(ifStatement);
         }
 

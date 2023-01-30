@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <optional>
 #include "node.h"
 #include "expression.h"
 #include "node_kind.h"
@@ -71,9 +72,10 @@ namespace parser
         lexer::Token if_;
         Expression* condition;
         BlockStatement* block;
-        Statement* elseOrIf;
+        std::optional<Statement*> elseOrIf;
 
-        IfStatement(lexer::Token if_, Expression* condition, BlockStatement* block, Statement* elseOrIf)
+        IfStatement(lexer::Token if_, Expression* condition, BlockStatement* block,
+                    std::optional<Statement*> elseOrIf)
             : if_(if_), condition(condition), block(block), elseOrIf(elseOrIf) {};
 
         NODE_KIND(IF_STATEMENT);

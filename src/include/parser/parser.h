@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <optional>
 #include "types.h"
 #include "lexer.h"
 #include "statement.h"
@@ -28,7 +29,7 @@ namespace parser
         Statement* parseBreakStatement();
         Statement* parseContinueStatement();
         Statement* parseIfStatement(bool elseIf = false);
-        Statement* parseElseOrIfStatement();
+        std::optional<Statement*> parseElseOrIfStatement();
 
         Expression* parseExpression();
         Expression* parseAssignmentOrCallOrLiteralExpression();

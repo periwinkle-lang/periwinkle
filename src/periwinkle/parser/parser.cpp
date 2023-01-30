@@ -120,9 +120,9 @@ Statement* parser::Parser::parseIfStatement(bool elseIf)
         statements.push_back(parseStatement());
     }
     BlockStatement* block = new BlockStatement(statements);
-    Statement* elseOrIf = parseElseOrIfStatement();
+    auto elseOrIf = parseElseOrIfStatement();
 
-    if (elseOrIf == nullptr)
+    if (!elseOrIf)
     {
         matchToken(END);
     }
@@ -130,7 +130,7 @@ Statement* parser::Parser::parseIfStatement(bool elseIf)
     return new IfStatement(keyword, condition, block, elseOrIf);
 }
 
-Statement* parser::Parser::parseElseOrIfStatement()
+std::optional<Statement*> parser::Parser::parseElseOrIfStatement()
 {
     if (CURRENT.tokenType == IF || CURRENT.tokenType == ELSE_IF)
     {
@@ -149,7 +149,7 @@ Statement* parser::Parser::parseElseOrIfStatement()
 
         return new ElseStatement(keyword, block);
     }
-    return nullptr;
+    return std::nullopt;
 }
 
 Expression* parser::Parser::parseAssignmentExpression()
