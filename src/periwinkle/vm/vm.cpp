@@ -131,13 +131,14 @@ void VirtualMachine::execute(Frame* frame)
         case LOAD_NAME:
         {
             auto& name = names[READ()];
-            if (builtin.contains(name))
-            {
-                PUSH(builtin[name]);
-            }
-            else if (frame->globals.contains(name))
+            if (frame->globals.contains(name))
             {
                 PUSH(frame->globals[name]);
+            }
+            // TODO: Локальні змінні мають перевірятись після глобальних та перед builtin
+            else if (builtin.contains(name))
+            {
+                PUSH(builtin[name]);
             }
             else
             {
