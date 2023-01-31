@@ -25,7 +25,7 @@ namespace plog
             return file;
         }
     public:
-        Plogger(std::ostream& dest, const std::source_location& location, std::string prefix) 
+        Plogger(std::ostream& dest, const std::source_location& location, std::string prefix)
             : dest(dest), location(location), prefix(prefix) {}
 
         virtual void preMessage()
@@ -92,8 +92,8 @@ namespace plog
         }
 
         // Спрацьовує, коли повідомлення повністю вивелось
-        ~PloggerDebug() 
-        { 
+        ~PloggerDebug()
+        {
 #ifdef DEBUG
             dest << std::endl;
 #endif
@@ -141,7 +141,7 @@ namespace plog
     // !!!Використовувати лише для помилок, які можуть виникати при неправильній розробці,
     // кінцевий користувач програми не повинен бачити цих повідомлень!!!
     [[maybe_unused]] static Starter<PloggerFatal> fatal;
-    
+
     // Виводить повідомлення в консоль, але лише в debug збірці
     [[maybe_unused]] static Starter<PloggerDebug> debug;
 }

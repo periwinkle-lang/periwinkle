@@ -36,9 +36,9 @@ std::string utils::getLineFromString(const std::string& str, int line)
     return result;
 }
 
-int utils::linenoFromPosition(const std::string& str, size_t position)
+size_t utils::linenoFromPosition(const std::string& str, size_t position)
 {
-    return (int)std::count(str.begin(), str.begin() + position, '\n') + 1;
+    return std::count(str.begin(), str.begin() + position, '\n') + 1;
 }
 
 size_t utils::positionInLineFromPosition(const std::string& str, size_t position)
@@ -50,11 +50,11 @@ size_t utils::positionInLineFromPosition(const std::string& str, size_t position
     }
 
     size_t newLinePosition = -1;
-    for (int i = 0; i < lineno - 1; ++i)
+    for (size_t i = 0; i < lineno - 1; ++i)
     {
         newLinePosition = str.find('\n', newLinePosition + 1);
     }
-    return position - newLinePosition;
+    return position - newLinePosition - 1;
 }
 
 void utils::replaceTabToSpace(std::string& str)

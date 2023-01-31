@@ -118,10 +118,10 @@ bool Lexer::nextToken()
                 return true;
             }
         }
-        vm::SyntaxException exception("Знайдено невідомий символ", utils::linenoFromPosition(code, pos));
-        vm::throwSyntaxException(
-            exception, code, utils::positionInLineFromPosition(code, pos));
-        exit(1);
+        throwLexerError(
+            "Знайдено невідомий символ",
+            utils::linenoFromPosition(code, pos),
+            utils::positionInLineFromPosition(code, pos));
     }
     }
 }
@@ -168,23 +168,21 @@ void Lexer::tokenizeString()
                     goto continue_1; // Вихід з вкладеного циклу
                 }
             }
-            vm::SyntaxException exception("Невідомий керуючий символ", utils::linenoFromPosition(code, pos));
-            vm::throwSyntaxException(
-                exception, code, utils::positionInLineFromPosition(code, pos+1));
-            exit(1);
+            throwLexerError("Невідомий керуючий символ",
+                utils::linenoFromPosition(code, pos),
+                utils::positionInLineFromPosition(code, pos + 1));
         }
         else if (current == "\"")
         {
             pos++;
-            addToken(TokenType::STRING, buffer.str());
+            addToken(TokenType::STRING, buffer.str(), startStringLiteral);
             break;
         }
         else if (current == "\0" || current == "\n")
         {
-            vm::SyntaxException exception("Відсутні закриваючі лапки", utils::linenoFromPosition(code, pos));
-            vm::throwSyntaxException(
-                exception, code, utils::positionInLineFromPosition(code, startStringLiteral));
-            exit(1);
+            throwLexerError("Відсутні закриваючі лапки",
+                utils::linenoFromPosition(code, pos),
+                utils::positionInLineFromPosition(code, startStringLiteral));
         }
         else
         {
@@ -231,8 +229,24 @@ void Lexer::addToken(TokenType type)
 
 void Lexer::addToken(TokenType type, std::string text)
 {
+    // Поточна позиція вказує на кінець токена, тому потрібно відняти довжину токену
+    auto startPosition = pos - text.size();
+    addToken(type, text, startPosition);
+}
+
+void Lexer::addToken(TokenType type, std::string text, size_t startPosition)
+{
+    auto positionInLine = utils::positionInLineFromPosition(code, startPosition);
+    auto lineno = utils::linenoFromPosition(code, startPosition);
     tokenList.push_back(Token{
-        type, text, pos - text.size() + 1, utils::linenoFromPosition(code, pos) });
+        type, text, positionInLine, lineno });
+}
+
+void Lexer::throwLexerError(std::string message, size_t lineno, size_t position)
+{
+    vm::SyntaxException exception(message, lineno, position);
+    vm::throwSyntaxException(exception, code);
+    exit(1);
 }
 
 std::vector<Token> Lexer::tokenize()

@@ -223,8 +223,8 @@ Expression* parser::Parser::parsePrimaryExpression()
     case NULL_:
         return parseLiteralExpression();
     default:
-        vm::SyntaxException exception("Неправильний синтаксис", CURRENT.lineno);
-        vm::throwSyntaxException(exception, code, CURRENT.position);
+        vm::SyntaxException exception("Неправильний синтаксис", CURRENT.lineno, CURRENT.positionInLine);
+        vm::throwSyntaxException(exception, code);
         exit(1);
     }
 }

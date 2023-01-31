@@ -395,8 +395,8 @@ vm::WORD compiler::Compiler::nameIdx(const std::string& name)
 
 void compiler::Compiler::throwCompileError(std::string message, lexer::Token token)
 {
-    vm::SyntaxException error(message, token.lineno);
-    vm::throwSyntaxException(error, code, token.position);
+    vm::SyntaxException error(message, token.lineno, token.positionInLine);
+    vm::throwSyntaxException(error, code);
     exit(1);
 }
 

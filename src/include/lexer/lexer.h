@@ -19,8 +19,8 @@ namespace lexer
     {
         TokenType tokenType;
         std::string text;
-        size_t position;
-        int lineno;
+        size_t positionInLine;
+        size_t lineno;
     };
 
     enum class EscapeSequencesType: char
@@ -52,6 +52,10 @@ namespace lexer
         void readMultiLineComment();
         void addToken(TokenType type);
         void addToken(TokenType type, std::string text);
+        // Якщо текст токена було змінено в ході токенізації,
+        //  потрібно зберегти початкову позицію токена та передати її.
+        void addToken(TokenType type, std::string text, size_t startPosition);
+        [[noreturn]] void throwLexerError(std::string message, size_t lineno, size_t position);
     public:
         std::vector<Token> tokenize();
         Lexer(std::string code);

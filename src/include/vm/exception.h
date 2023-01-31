@@ -12,21 +12,26 @@ namespace vm
     {
     protected:
         std::string message;
-        int lineno;
+        size_t lineno;
     public:
-        int getLineno() const { return lineno; };
-        virtual std::string toString() = 0;
-        Exception(std::string message, int lineno) : message(message), lineno(lineno) {};
+        size_t getLineno() const { return lineno; };
+        virtual std::string toString() const = 0;
+        Exception(std::string message, size_t lineno) : message(message), lineno(lineno) {};
     };
 
     class SyntaxException : public Exception
     {
+    private:
+        size_t position;
     public:
-        virtual std::string toString() final;
-        SyntaxException(std::string message, int lineno) : Exception(message, lineno) {};
+        virtual std::string toString() const final;
+        size_t getPosition() const { return position; }
+        SyntaxException(std::string message, size_t lineno, size_t position)
+            : Exception(message, lineno), position(position) {};
+
     };
 
-    void throwSyntaxException(SyntaxException exception, const std::string& code, size_t position = 0);
+    void throwSyntaxException(const SyntaxException& exception, const std::string& code);
 }
 
 #endif
