@@ -60,6 +60,7 @@ namespace vm
          binaryFunction sub;
          binaryFunction mul;
          binaryFunction div;
+         binaryFunction floorDiv; // Ділення з округленням
          binaryFunction mod;
          unaryFunction inc; // Інкремент
          unaryFunction dec; // Декремент

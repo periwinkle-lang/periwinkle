@@ -1,5 +1,6 @@
 ﻿#include <string>
 #include <sstream>
+#include <cmath>
 
 #include "real_object.h"
 #include "native_function_object.h"
@@ -30,6 +31,14 @@ BINARY_OP(realAdd, +)
 BINARY_OP(realSub, -)
 BINARY_OP(realMul, *)
 BINARY_OP(realDiv, / )
+
+static Object* realFloorDiv(Object* a, Object* b)
+{
+    auto arg1 = (RealObject*)a;
+    auto arg2 = (RealObject*)b;
+    auto result = std::floor(arg1->value / arg2->value);
+    return RealObject::create(result);
+}
 
 static Object* realInc(Object* a)
 {
@@ -66,6 +75,7 @@ namespace vm
             .sub = realSub,
             .mul = realMul,
             .div = realDiv,
+            .floorDiv = realFloorDiv,
             .inc = realInc,
             .dec = realDec,
             .neg = realNeg,

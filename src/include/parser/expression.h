@@ -35,6 +35,7 @@ namespace parser
             case STAR_EQUAL:
             case SLASH_EQUAL:
             case PERCENT_EQUAL:
+            case BACKSLASH_EQUAL:
                 break;
             default:
                 plog::fatal << "Неправильний оператор призначення: \""

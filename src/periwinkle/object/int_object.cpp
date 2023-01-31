@@ -9,13 +9,13 @@
 using namespace vm;
 extern ObjectType objectObjectType;
 
-#define BINARY_OP(name, op)                  \
-static Object* name(Object* a, Object* b)    \
-{                                            \
-    auto arg1 = (IntObject*)a;               \
-    auto arg2 = (IntObject*)b;               \
-    int result = arg1->value op arg2->value; \
-    return IntObject::create(result);        \
+#define BINARY_OP(name, op)                   \
+static Object* name(Object* a, Object* b)     \
+{                                             \
+    auto arg1 = (IntObject*)a;                \
+    auto arg2 = (IntObject*)b;                \
+    auto result = arg1->value op arg2->value; \
+    return IntObject::create(result);         \
 }
 
 static Object* intToString(Object* a)
@@ -42,6 +42,14 @@ static Object* intDiv(Object* a, Object* b)
     auto arg2 = (IntObject*)b;
     auto result = (double)arg1->value / (double)arg2->value;
     return RealObject::create(result);
+}
+
+static Object* intFloorDiv(Object* a, Object* b)
+{
+    auto arg1 = (IntObject*)a;
+    auto arg2 = (IntObject*)b;
+    auto result = arg1->value / arg2->value;
+    return IntObject::create(result);
 }
 
 static Object* intInc(Object* a)
@@ -80,6 +88,7 @@ namespace vm
             .sub = intSub,
             .mul = intMul,
             .div = intDiv,
+            .floorDiv = intFloorDiv,
             .mod = intMod,
             .inc = intInc,
             .dec = intDec,

@@ -20,7 +20,7 @@ namespace vm
         POP, DUP,
 
         // Арифметичні операції
-        INC, DEC, NEG, ADD, SUB, MUL, DIV, MOD,
+        INC, DEC, NEG, ADD, SUB, MUL, DIV, MOD, FLOOR_DIV,
 
         // Бінарні операції
         BIN_AND, BIN_OR, BIN_NOT, XOR, SHL, SHR,

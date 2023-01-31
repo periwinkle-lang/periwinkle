@@ -30,6 +30,7 @@ int parser::getBinaryOperatorPrecedence(TokenType type)
     case TokenType::STAR:
     case TokenType::SLASH:
     case TokenType::PERCENT:
+    case TokenType::BACKSLASH:
         return 2;
     case TokenType::PLUS:
     case TokenType::MINUS:
@@ -171,6 +172,7 @@ Expression* parser::Parser::parseExpression()
     case STAR_EQUAL:
     case SLASH_EQUAL:
     case PERCENT_EQUAL:
+    case BACKSLASH_EQUAL:
         return parseAssignmentExpression();
     default:
         return parseBinaryExpression();

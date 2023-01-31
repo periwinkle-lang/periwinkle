@@ -228,6 +228,7 @@ void compiler::Compiler::compileAssignmentExpression(AssignmentExpression* expre
     case STAR_EQUAL: emitOpCode(MUL); break;
     case SLASH_EQUAL: emitOpCode(DIV); break;
     case PERCENT_EQUAL: emitOpCode(MOD); break;
+    case BACKSLASH_EQUAL: emitOpCode(FLOOR_DIV); break;
     default:
         plog::fatal << "Неправильний оператор присвоєння: \""
             << lexer::stringEnum::enumToString(assignmentType) << "\"";
@@ -325,6 +326,9 @@ void compiler::Compiler::compileBinaryExpression(BinaryExpression* expression)
         break;
     case lexer::TokenType::PERCENT:
         emitOpCode(MOD);
+        break;
+    case lexer::TokenType::BACKSLASH:
+        emitOpCode(FLOOR_DIV);
         break;
     default:
         plog::fatal << "Неправильний токен оператора: \""

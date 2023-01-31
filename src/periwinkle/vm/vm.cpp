@@ -69,6 +69,7 @@ void VirtualMachine::execute(Frame* frame)
         BINARY_OP(MUL, mul)
         BINARY_OP(DIV, div)
         BINARY_OP(MOD, mod)
+        BINARY_OP(FLOOR_DIV, floorDiv)
         case JMP:
         {
             JUMP();
