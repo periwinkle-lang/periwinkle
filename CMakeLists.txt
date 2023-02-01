@@ -54,15 +54,16 @@ add_library(periwinkle STATIC
     "src/periwinkle/compiler/compiler.cpp" "src/include/compiler/compiler.h"
     "src/periwinkle/compiler/decompiler.cpp" "src/include/compiler/decompiler.h"
     "src/periwinkle/parser/parser.cpp" "src/include/parser/parser.h"
-    "src/include/parser/expression.h" 
-    "src/include/parser/node.h" 
-    "src/include/parser/node_kind.h" 
-    "src/include/parser/statement.h" 
+    "src/include/parser/expression.h"
+    "src/include/parser/node.h"
+    "src/include/parser/node_kind.h"
+    "src/include/parser/statement.h"
     "src/include/plogger.h"
     "src/periwinkle/vm/builtins.cpp" "src/include/vm/builtins.h"
     "src/periwinkle/object/call.cpp" "src/include/object/call.h"
-    "src/periwinkle/periwinkle.cpp" "src/include/periwinkle.h" 
- "src/include/object/real_object.h" "src/periwinkle/object/real_object.cpp")
+    "src/periwinkle/periwinkle.cpp" "src/include/periwinkle.h"
+    "src/include/object/real_object.h" "src/periwinkle/object/real_object.cpp"
+    "src/include/object/exception_object.h" "src/periwinkle/object/exception_object.cpp")
 target_compile_features(periwinkle PUBLIC cxx_std_20)
 
 

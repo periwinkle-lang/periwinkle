@@ -2,6 +2,8 @@
 #include "int_object.h"
 #include "code_object.h"
 #include "bool_object.h"
+#include "string_object.h"
+#include "exception_object.h"
 #include "call.h"
 #include "builtins.h"
 #include "plogger.h"
@@ -34,6 +36,12 @@ case OpCode::name:                                      \
     auto result = op(POP());                            \
     PUSH(result);                                       \
     break;                                              \
+}
+void VirtualMachine::throwException(ExceptionObject* exception)
+{
+    auto message = (StringObject*)GET_OPERATOR(exception, toString)(exception);
+    std::cerr << exception->objectType->name << ": " << message->value << std::endl;
+    exit(1);
 }
 
 void VirtualMachine::execute(Frame* frame)
@@ -117,8 +125,7 @@ void VirtualMachine::execute(Frame* frame)
             }
             else
             {
-                // TODO: викинути нормальну помилку
-                plog::fatal << "Такого імені не існує: \"" << name << "\"";
+                throwException(NameErrorObject::create("Імені \"%s\" не існує", name));
             }
             break;
         }
@@ -157,8 +164,9 @@ void VirtualMachine::execute(Frame* frame)
             }
             else
             {
-                // TODO: викинути нормальну помилку для користувача
-                plog::fatal << "Неможливо викликати об'єкт: " << functionObject;
+                throwException(TypeErrorObject::create(
+                    "Об'єкт типу \"%s\" не може бути викликаний",
+                    functionObject->objectType->name));
             }
             break;
         }

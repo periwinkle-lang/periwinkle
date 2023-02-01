@@ -10,6 +10,7 @@
 #include "object.h"
 #include "types.h"
 #include "string_enum.h"
+#include "exception_object.h"
 
 namespace vm
 {
@@ -55,6 +56,7 @@ namespace vm
         std::array<Object*, 512> stack;
 
     public:
+        void throwException(ExceptionObject* exception);
         void execute(Frame* frame);
     };
 }

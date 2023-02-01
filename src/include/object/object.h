@@ -25,6 +25,7 @@ namespace vm
         STRING,
         REAL,
         NULL_,
+        EXCEPTION,
     };
 
     struct ComparisonOperators
