@@ -19,8 +19,8 @@ namespace lexer
     {
         TokenType tokenType;
         std::string text;
-        size_t positionInLine;
-        size_t lineno;
+        size_t positionInLine; // Вказує на позицію символа в рядку, нумерація починається з одиниці
+        size_t lineno; // Вказує на номер рядка, нумерація починається з одиниці
     };
 
     enum class EscapeSequencesType: char

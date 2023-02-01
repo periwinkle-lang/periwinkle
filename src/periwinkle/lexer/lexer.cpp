@@ -123,7 +123,7 @@ bool Lexer::nextToken()
         throwLexerError(
             "Знайдено невідомий символ",
             utils::linenoFromPosition(code, pos),
-            utils::positionInLineFromPosition(code, pos));
+            utils::positionInLineFromPosition(code, pos) + 1);
     }
     }
 }
@@ -172,7 +172,7 @@ void Lexer::tokenizeString()
             }
             throwLexerError("Невідомий керуючий символ",
                 utils::linenoFromPosition(code, pos),
-                utils::positionInLineFromPosition(code, pos + 1));
+                utils::positionInLineFromPosition(code, pos + 1) + 1);
         }
         else if (current == "\"")
         {
@@ -184,7 +184,7 @@ void Lexer::tokenizeString()
         {
             throwLexerError("Відсутні закриваючі лапки",
                 utils::linenoFromPosition(code, pos),
-                utils::positionInLineFromPosition(code, startStringLiteral));
+                utils::positionInLineFromPosition(code, startStringLiteral) + 1);
         }
         else
         {
@@ -241,7 +241,7 @@ void Lexer::addToken(TokenType type, std::string text, size_t startPosition)
     auto positionInLine = utils::positionInLineFromPosition(code, startPosition);
     auto lineno = utils::linenoFromPosition(code, startPosition);
     tokenList.push_back(Token{
-        type, text, positionInLine, lineno });
+        type, text, positionInLine + 1, lineno });
 }
 
 void Lexer::throwLexerError(std::string message, size_t lineno, size_t position)

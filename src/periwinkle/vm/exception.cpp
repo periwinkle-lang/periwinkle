@@ -13,6 +13,6 @@ void vm::throwSyntaxException(const SyntaxException& exception, const std::strin
     std::cerr << exception.toString() << std::endl;
     auto line = utils::getLineFromString(code, exception.getLineno());
     std::cerr << utils::indent(4) << line << std::endl;
-    auto offset = utils::utf8Size(line.substr(0, exception.getPosition()));
+    auto offset = utils::utf8Size(line.substr(0, exception.getPosition() - 1));
     std::cerr << utils::indent(4 + offset) << "^" << std::endl;
 }
