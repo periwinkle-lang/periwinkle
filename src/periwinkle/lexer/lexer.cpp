@@ -36,6 +36,10 @@ const static std::vector<std::pair<TokenType, regex>> tokenTypesRegexList
     {TokenType::SLASH_EQUAL,     uregex("^/=")},
     {TokenType::PERCENT_EQUAL,   uregex("^%=")},
     {TokenType::BACKSLASH_EQUAL, uregex("^\\\\=")},
+    {TokenType::GREATER_EQUAL,   uregex("^більше=")},
+    {TokenType::LESS_EQUAL,      uregex("^менше=")},
+    {TokenType::EQUAL_EQUAL,     uregex("^==")},
+    {TokenType::NOT_EQUAL,       uregex("^!=")},
 
     {TokenType::PLUS,            uregex("^\\+")},
     {TokenType::MINUS,           uregex("^\\-")},
@@ -43,6 +47,11 @@ const static std::vector<std::pair<TokenType, regex>> tokenTypesRegexList
     {TokenType::STAR,            uregex("^\\*")},
     {TokenType::PERCENT,         uregex("^%")},
     {TokenType::BACKSLASH,       uregex("^\\\\")},
+    {TokenType::GREATER,         uregex("^більше")},
+    {TokenType::LESS,            uregex("^менше")},
+    {TokenType::AND,             uregex("^та")},
+    {TokenType::OR,              uregex("^або")},
+    {TokenType::NOT,             uregex("^не")},
     {TokenType::EQUAL,           uregex("^=")},
 
     {TokenType::END,             uregex("^кінець")},

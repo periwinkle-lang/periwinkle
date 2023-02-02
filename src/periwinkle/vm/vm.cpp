@@ -37,6 +37,18 @@ case OpCode::name:                                      \
     PUSH(result);                                       \
     break;                                              \
 }
+
+#define BOOLEAN_OP(name, op)                               \
+case OpCode::name:                                         \
+{                                                          \
+    auto o1 = POP();                                       \
+    auto o2 = POP();                                       \
+    auto arg1 = (BoolObject*)GET_OPERATOR(o1, toBool)(o1); \
+    auto arg2 = (BoolObject*)GET_OPERATOR(o2, toBool)(o2); \
+    PUSH(BoolObject::create(arg1->value op arg2->value));  \
+    break;                                                 \
+}
+
 void VirtualMachine::throwException(ExceptionObject* exception)
 {
     auto message = (StringObject*)GET_OPERATOR(exception, toString)(exception);
@@ -71,6 +83,7 @@ void VirtualMachine::execute(Frame* frame)
         }
         UNARY_OP(INC, inc)
         UNARY_OP(DEC, dec)
+        UNARY_OP(POS, pos)
         UNARY_OP(NEG, neg)
         BINARY_OP(ADD, add)
         BINARY_OP(SUB, sub)
@@ -78,6 +91,23 @@ void VirtualMachine::execute(Frame* frame)
         BINARY_OP(DIV, div)
         BINARY_OP(MOD, mod)
         BINARY_OP(FLOOR_DIV, floorDiv)
+        case COMPARE:
+        {
+            auto arg1 = POP();
+            auto arg2 = POP();
+            auto op = arg1->objectType->comparisonOperators[READ()];
+            PUSH(op(arg1, arg2));
+            break;
+        }
+        BOOLEAN_OP(AND, &&)
+        BOOLEAN_OP(OR, ||)
+        case NOT:
+        {
+            auto o = POP();
+            auto arg = (BoolObject*)GET_OPERATOR(o, toBool)(o);
+            PUSH(BoolObject::create(!(arg->value)));
+            break;
+        }
         case JMP:
         {
             JUMP();

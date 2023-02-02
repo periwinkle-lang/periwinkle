@@ -18,6 +18,21 @@ static Object* name(Object* a, Object* b)     \
     return IntObject::create(result);         \
 }
 
+#define COMPARE_OP(name, op)                               \
+static Object* intCompare##name(Object* a, Object* b)    \
+{                                                          \
+    auto arg1 = (IntObject*)a;                             \
+    auto arg2 = (IntObject*)b;                             \
+    return BoolObject::create(arg1->value op arg2->value); \
+}
+
+COMPARE_OP(EQ, ==);
+COMPARE_OP(NE, !=);
+COMPARE_OP(GT, >);
+COMPARE_OP(GE, >=);
+COMPARE_OP(LT, <);
+COMPARE_OP(LE, <=);
+
 static Object* intToString(Object* a)
 {
     auto integer = (IntObject*)a;
@@ -70,6 +85,11 @@ static Object* intNeg(Object* a)
     return IntObject::create(-arg->value);
 }
 
+static Object* intPos(Object* a)
+{
+    return (IntObject*)a;
+}
+
 Object* allocIntObject();
 
 namespace vm
@@ -92,8 +112,18 @@ namespace vm
             .mod = intMod,
             .inc = intInc,
             .dec = intDec,
+            .pos = intPos,
             .neg = intNeg,
         },
+        .comparisonOperators
+        {
+            intCompareEQ,
+            intCompareNE,
+            intCompareGT,
+            intCompareGE,
+            intCompareLT,
+            intCompareLE
+        }
     };
 }
 

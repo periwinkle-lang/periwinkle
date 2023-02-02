@@ -21,13 +21,13 @@ namespace vm
         POP, DUP,
 
         // Арифметичні операції
-        INC, DEC, NEG, ADD, SUB, MUL, DIV, MOD, FLOOR_DIV,
+        INC, DEC, POS, NEG, ADD, SUB, MUL, DIV, MOD, FLOOR_DIV,
 
         // Бінарні операції
-        BIN_AND, BIN_OR, BIN_NOT, XOR, SHL, SHR,
+        BIN_AND, BIN_OR, BIN_NOT, XOR, SHL, SHR, COMPARE,
 
         // Логічні операції
-        AND, OR, NOT, EQUAL, NOT_EQUAL, GREATER, LESS, GREATER_EQUAL, LESS_EQUAL,
+        AND, OR, NOT,
 
         // Операції контролю потоку виконання
         JMP, JMP_IF_TRUE, JMP_IF_FALSE, CALL, RETURN,

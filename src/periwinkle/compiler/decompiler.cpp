@@ -29,6 +29,7 @@ int compiler::Decompiler::opCodeLenArguments(OpCode code)
     case STORE_GLOBAL:
     case LOAD_NAME:
     case CALL:
+    case COMPARE:
         return 1;
     default:
         return 0;
@@ -93,6 +94,20 @@ std::string compiler::Decompiler::decompile()
             {
                 auto& name = codeObject->names[argument];
                 out << "(" << name << ")";
+            }
+            else if (op == COMPARE)
+            {
+                out << "(";
+                switch (argument)
+                {
+                case 0: out << "=="; break;
+                case 1: out << "!="; break;
+                case 2: out << "більше"; break;
+                case 3: out << "більше="; break;
+                case 4: out << "менше"; break;
+                case 5: out << "менше="; break;
+                }
+                out << ")";
             }
         }
 

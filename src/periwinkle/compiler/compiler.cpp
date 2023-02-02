@@ -197,6 +197,12 @@ void compiler::Compiler::compileExpression(Expression* expression)
     case BINARY_EXPRESSION:
         compileBinaryExpression((BinaryExpression*)expression);
         break;
+    case UNARY_EXPRESSION:
+        compileUnaryExpression((UnaryExpression*)expression);
+        break;
+    case PARENTHESIZED_EXPRESSION:
+        compileParenthesizedExpression((ParenthesizedExpression*)expression);
+        break;
     default:
         plog::fatal << "Неможливо обробити вузол \""
             << parser::stringEnum::enumToString(expression->kind()) << "\"";
@@ -312,28 +318,44 @@ void compiler::Compiler::compileBinaryExpression(BinaryExpression* expression)
 
     switch (expression->operator_.tokenType)
     {
-    case lexer::TokenType::PLUS:
-        emitOpCode(ADD);
-        break;
-    case lexer::TokenType::MINUS:
-        emitOpCode(SUB);
-        break;
-    case lexer::TokenType::SLASH:
-        emitOpCode(DIV);
-        break;
-    case lexer::TokenType::STAR:
-        emitOpCode(MUL);
-        break;
-    case lexer::TokenType::PERCENT:
-        emitOpCode(MOD);
-        break;
-    case lexer::TokenType::BACKSLASH:
-        emitOpCode(FLOOR_DIV);
-        break;
+    case lexer::TokenType::PLUS: emitOpCode(ADD); break;
+    case lexer::TokenType::MINUS: emitOpCode(SUB); break;
+    case lexer::TokenType::SLASH: emitOpCode(DIV); break;
+    case lexer::TokenType::STAR: emitOpCode(MUL); break;
+    case lexer::TokenType::PERCENT: emitOpCode(MOD); break;
+    case lexer::TokenType::BACKSLASH: emitOpCode(FLOOR_DIV); break;
+    case lexer::TokenType::AND: emitOpCode(AND); break;
+    case lexer::TokenType::OR: emitOpCode(OR); break;
+    case lexer::TokenType::EQUAL_EQUAL: emitOpCode(COMPARE); emitOperand(0); break;
+    case lexer::TokenType::NOT_EQUAL: emitOpCode(COMPARE); emitOperand(1); break;
+    case lexer::TokenType::GREATER: emitOpCode(COMPARE); emitOperand(2); break;
+    case lexer::TokenType::GREATER_EQUAL: emitOpCode(COMPARE); emitOperand(3); break;
+    case lexer::TokenType::LESS: emitOpCode(COMPARE); emitOperand(4); break;
+    case lexer::TokenType::LESS_EQUAL: emitOpCode(COMPARE); emitOperand(5); break;
     default:
         plog::fatal << "Неправильний токен оператора: \""
             <<  lexer::stringEnum::enumToString(expression->operator_.tokenType) << "\"";
     }
+}
+
+void compiler::Compiler::compileUnaryExpression(UnaryExpression* expression)
+{
+    compileExpression(expression->operand);
+
+    switch (expression->operator_.tokenType)
+    {
+    case lexer::TokenType::PLUS: emitOpCode(POS); break;
+    case lexer::TokenType::MINUS: emitOpCode(NEG); break;
+    case lexer::TokenType::NOT: emitOpCode(NOT); break;
+    default:
+        plog::fatal << "Неправильний токен унарного оператора: \""
+            << lexer::stringEnum::enumToString(expression->operator_.tokenType) << "\"";
+    }
+}
+
+void compiler::Compiler::compileParenthesizedExpression(ParenthesizedExpression* expression)
+{
+    compileExpression(expression->expression);
 }
 
 CompilerState* compiler::Compiler::unwindStateStack(CompilerStateType type)

@@ -3,18 +3,6 @@
 
 using namespace vm;
 
-Object* eq(Object *self, Object *other)
-{
-    bool result = self == other;
-    return BoolObject::create(result);
-}
-
-Object* ne(Object *self, Object *other)
-{
-    bool result = self != other;
-    return BoolObject::create(result);
-}
-
 namespace vm
 {
     ObjectType objectObjectType =
@@ -22,11 +10,6 @@ namespace vm
         .base = nullptr, // Object - базовий тип для всіх типів, і тому ні від кого не наслідується
         .name = "Object",
         .type = ObjectTypes::OBJECT,
-        .comparsionOperators = new ComparisonOperators
-        {
-            .eq = &eq,
-            .ne = &ne,
-        },
     };
 }
 

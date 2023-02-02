@@ -16,7 +16,7 @@ int parser::getUnaryOperatorPrecedence(TokenType type)
     {
     case TokenType::PLUS:
     case TokenType::MINUS:
-    //case TokenType::NOT:
+    case TokenType::NOT:
         return 1;
     default:
         return INT_MAX;
@@ -35,15 +35,17 @@ int parser::getBinaryOperatorPrecedence(TokenType type)
     case TokenType::PLUS:
     case TokenType::MINUS:
         return 3;
-    case TokenType::EQUAL:
-    //case TokenType::NOT_EQUAL:
-    //case TokenType::LESS:
-    /*case TokenType::GREATER:
+    case TokenType::EQUAL_EQUAL:
+    case TokenType::NOT_EQUAL:
+    case TokenType::LESS:
+    case TokenType::GREATER:
+    case TokenType::LESS_EQUAL:
+    case TokenType::GREATER_EQUAL:
         return 4;
     case TokenType::AND:
         return 5;
     case TokenType::OR:
-        return 6;*/
+        return 6;
     default:
         return INT_MAX;
     }

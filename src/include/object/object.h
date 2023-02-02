@@ -3,7 +3,6 @@
 
 #include <string>
 #include <unordered_map>
-#include <cstddef>
 
 // object - вказівник на об'єкт
 // op - член перечислення Operator
@@ -28,23 +27,6 @@ namespace vm
         EXCEPTION,
     };
 
-    struct ComparisonOperators
-    {
-        comparisonFunction eq, ne, gt, ge, lt, le;
-    };
-
-    enum class ComparisonOperator : size_t
-    {
-        EQ = offsetof(ComparisonOperators, eq),
-        NE = offsetof(ComparisonOperators, ne),
-        GT = offsetof(ComparisonOperators, gt),
-        GE = offsetof(ComparisonOperators, ge),
-        LT = offsetof(ComparisonOperators, lt),
-        LE = offsetof(ComparisonOperators, le),
-    };
-
-    struct NativeFunctionObject;
-
     using unaryFunction   = vm::Object*(*)(Object*);
     using binaryFunction  = vm::Object*(*)(Object*, Object*);
     using ternaryFunction = vm::Object*(*)(Object*, Object*, Object*);
@@ -65,6 +47,7 @@ namespace vm
          binaryFunction mod;
          unaryFunction inc; // Інкремент
          unaryFunction dec; // Декремент
+         unaryFunction pos; // Унарний оператор +
          unaryFunction neg; // Заперечення
     };
 
@@ -77,7 +60,7 @@ namespace vm
         void (*constructor)(Object* object, Object* args[]); // Ініціалізація екземпляра
         void (*destructor)(Object* object);
         ObjectOperators* operators;
-        ComparisonOperators* comparsionOperators;
+        binaryFunction comparisonOperators[6]; // Порядок операторів: eq, ne, gt, ge, lt, le
         // Зберігає методи, константи та статичні поля
         std::unordered_map<std::string, Object*> *publicAttributes;
         std::unordered_map<std::string, Object*> *privateAttributes;

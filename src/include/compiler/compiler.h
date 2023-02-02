@@ -40,6 +40,8 @@ namespace compiler
         void compileVariableExpression(parser::VariableExpression* expression);
         void compileCallExpression(parser::CallExpression* expression);
         void compileBinaryExpression(parser::BinaryExpression* expression);
+        void compileUnaryExpression(parser::UnaryExpression* expression);
+        void compileParenthesizedExpression(parser::ParenthesizedExpression* expression);
 
         CompilerState* unwindStateStack(CompilerStateType type);
         vm::WORD booleanConstIdx(bool value);
