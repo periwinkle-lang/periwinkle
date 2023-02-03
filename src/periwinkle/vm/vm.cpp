@@ -7,7 +7,7 @@
 #include "call.h"
 #include "builtins.h"
 #include "plogger.h"
-
+#include "utils.h"
 
 using namespace vm;
 
@@ -17,6 +17,9 @@ using namespace vm;
 #define PEEK() *sp
 #define POP() *sp--
 #define JUMP() ip = &code->code[*ip]
+#define GET_LINENO(ip_) \
+    (code->ipToLineno.contains(ip_ - &code->code[0]) ? \
+    0 : code->ipToLineno[(ip_ - &code->code[0]) - 1])
 
 #define BINARY_OP(name, op_name)                        \
 case OpCode::name:                                      \
@@ -49,10 +52,13 @@ case OpCode::name:                                         \
     break;                                                 \
 }
 
-void VirtualMachine::throwException(ExceptionObject* exception)
+void VirtualMachine::throwException(ObjectType* exception, std::string message, WORD lineno)
 {
-    auto message = (StringObject*)GET_OPERATOR(exception, toString)(exception);
-    std::cerr << exception->objectType->name << ": " << message->value << std::endl;
+    if (lineno)
+    {
+        std::cerr << "На стрічці " << lineno << " знадено помилку" << std::endl;
+    }
+    std::cerr << exception->name << ": " << message << std::endl;
     exit(1);
 }
 
@@ -155,7 +161,8 @@ void VirtualMachine::execute(Frame* frame)
             }
             else
             {
-                throwException(NameErrorObject::create("Імені \"%s\" не існує", name));
+                throwException(&NameErrorObjectType,
+                    utils::format("Імені \"%s\" не існує", name.c_str()), GET_LINENO(ip-1));
             }
             break;
         }
@@ -194,9 +201,11 @@ void VirtualMachine::execute(Frame* frame)
             }
             else
             {
-                throwException(TypeErrorObject::create(
-                    "Об'єкт типу \"%s\" не може бути викликаний",
-                    functionObject->objectType->name));
+                throwException(&TypeErrorObjectType,
+                    utils::format("Об'єкт типу \"%s\" не може бути викликаний",
+                        functionObject->objectType->name.c_str()),
+                    GET_LINENO(ip-1)
+                );
             }
             break;
         }

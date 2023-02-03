@@ -56,7 +56,7 @@ namespace vm
         std::array<Object*, 512> stack;
 
     public:
-        void throwException(ExceptionObject* exception);
+        void throwException(ObjectType* exception, std::string message, WORD lineno);
         void execute(Frame* frame);
     };
 }
