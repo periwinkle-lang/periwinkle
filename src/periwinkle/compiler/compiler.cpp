@@ -122,6 +122,7 @@ void compiler::Compiler::compileBreakStatement(BreakStatement* statement)
     auto state = (WhileState*)unwindStateStack(CompilerStateType::WHILE);
     if (state)
     {
+        setLineno(statement->break_.lineno);
         emitOpCode(JMP);
         auto endBlock = emitOperand(0);
         state->addressesForPatchWithEndBlock.push_back(endBlock);
@@ -137,6 +138,7 @@ void compiler::Compiler::compileContinueStatement(ContinueStatement* statement)
     auto state = (WhileState*)unwindStateStack(CompilerStateType::WHILE);
     if (state)
     {
+        setLineno(statement->continue_.lineno);
         emitOpCode(JMP);
         emitOperand(state->startIp);
     }
@@ -224,9 +226,11 @@ void compiler::Compiler::compileAssignmentExpression(AssignmentExpression* expre
         return;
     }
 
+    setLineno(expression->id.lineno);
     emitOpCode(LOAD_NAME);
     emitOperand(nameIdx);
 
+    setLineno(expression->assignment.lineno);
     switch (assignmentType)
     {
     case PLUS_EQUAL: emitOpCode(ADD); break;
@@ -248,6 +252,7 @@ void compiler::Compiler::compileLiteralExpression(LiteralExpression* expression)
 {
     using enum lexer::TokenType;
     vm::WORD index;
+    setLineno(expression->literalToken.lineno);
     switch (expression->literalToken.tokenType)
     {
     case NUMBER:
@@ -290,6 +295,7 @@ void compiler::Compiler::compileVariableExpression(VariableExpression* expressio
 {
     auto& variableName = expression->variable.text;
     auto variableNameIdx = nameIdx(variableName);
+    setLineno(expression->variable.lineno);
     emitOpCode(LOAD_GLOBAL);
     emitOperand(variableNameIdx);
 }
@@ -305,6 +311,7 @@ void compiler::Compiler::compileCallExpression(CallExpression* expression)
         compileExpression(argument);
     }
 
+    setLineno(expression->identifier.lineno);
     emitOpCode(LOAD_NAME);
     emitOperand(functionNameIdx);
     emitOpCode(CALL);
@@ -316,6 +323,7 @@ void compiler::Compiler::compileBinaryExpression(BinaryExpression* expression)
     compileExpression(expression->right);
     compileExpression(expression->left);
 
+    setLineno(expression->operator_.lineno);
     switch (expression->operator_.tokenType)
     {
     case lexer::TokenType::PLUS: emitOpCode(ADD); break;
@@ -342,6 +350,7 @@ void compiler::Compiler::compileUnaryExpression(UnaryExpression* expression)
 {
     compileExpression(expression->operand);
 
+    setLineno(expression->operator_.lineno);
     switch (expression->operator_.tokenType)
     {
     case lexer::TokenType::PLUS: emitOpCode(POS); break;
@@ -426,10 +435,17 @@ void compiler::Compiler::throwCompileError(std::string message, lexer::Token tok
     exit(1);
 }
 
+void compiler::Compiler::setLineno(size_t lineno)
+{
+    currentLineno = (vm::WORD)lineno;
+}
+
 vm::WORD compiler::Compiler::emitOpCode(vm::OpCode op)
 {
     frame->codeObject->code.push_back((vm::WORD)op);
-    return vm::WORD(frame->codeObject->code.size() - 1);
+    auto ip = vm::WORD(frame->codeObject->code.size() - 1);
+    frame->codeObject->ipToLineno[ip] = currentLineno;
+    return ip;
 }
 
 vm::WORD compiler::Compiler::emitOperand(vm::WORD operand)

@@ -3,6 +3,8 @@
 
 #include <string>
 #include <vector>
+#include <map>
+
 #include "object.h"
 #include "vm.h"
 
@@ -16,6 +18,8 @@ namespace vm
         std::vector<WORD> code;
         std::vector<Object*> constants;
         std::vector<std::string> names; // Імена змінних
+        // Ключ - номер опкода, значення - номер лінії в коді
+        std::map<WORD, WORD> ipToLineno;
 
         static CodeObject* create(std::string name);
     };

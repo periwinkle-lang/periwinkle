@@ -71,10 +71,19 @@ std::string compiler::Decompiler::getValueAsString(vm::Object* object)
 std::string compiler::Decompiler::decompile()
 {
     std::stringstream out;
+    vm::WORD lineno = 0;
 
     for (vm::WORD ip = 0; ip < codeObject->code.size(); ++ip)
     {
         OpCode op = (OpCode)codeObject->code[ip];
+        if (codeObject->ipToLineno.contains(ip))
+        {
+            if (auto newLineno = codeObject->ipToLineno.at(ip); newLineno != lineno)
+            {
+                lineno = newLineno;
+                out << lineno << std::endl;
+            }
+        }
 
         out << std::right << std::setw(4) << ip << " ";
         out << std::left << std::setw(16);

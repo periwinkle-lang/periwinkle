@@ -25,6 +25,7 @@ namespace compiler
         std::string code;
         vm::Frame* frame;
         std::vector<CompilerState*> stateStack;
+        vm::WORD currentLineno = 0; // Номер лінії коду, який зараз компілюється
 
         void compileBlock(parser::BlockStatement* block);
         void compileStatement(parser::Statement* statement);
@@ -51,6 +52,9 @@ namespace compiler
         vm::WORD nullConstIdx();
         vm::WORD nameIdx(const std::string& name); // Повертає індекс з CodeObject->names
         void throwCompileError(std::string message, lexer::Token token);
+        // Встановлює номер стрічки в коді, який зараз компілюється.
+        // !!!Викликати перед компіляцією стрічки!!!
+        inline void setLineno(size_t lineno);
         inline vm::WORD emitOpCode(vm::OpCode op);
         inline vm::WORD emitOperand(vm::WORD operand);
         inline vm::WORD getOffset();
