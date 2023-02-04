@@ -68,7 +68,7 @@ void compiler::Compiler::compileBlock(BlockStatement* block)
 
 void compiler::Compiler::compileStatement(Statement* statement)
 {
-    switch (statement->kind())
+    switch (statement->kind)
     {
     case BLOCK_STATEMENT:
         compileBlock((BlockStatement*)statement);
@@ -89,7 +89,7 @@ void compiler::Compiler::compileStatement(Statement* statement)
         compileIfStatement((IfStatement*)statement);
         break;
     default:
-        plog::fatal << "Неможливо обробити вузол \"" << parser::stringEnum::enumToString(statement->kind())
+        plog::fatal << "Неможливо обробити вузол \"" << parser::stringEnum::enumToString(statement->kind)
             << "\"" << std::endl;
     }
 }
@@ -165,12 +165,12 @@ void compiler::Compiler::compileIfStatement(IfStatement* statement)
         patchJumpAddress(endIfBlock, getOffset());
 
         auto elseOrIf = statement->elseOrIf.value();
-        if (elseOrIf->kind() == ELSE_STATEMENT)
+        if (elseOrIf->kind == ELSE_STATEMENT)
         {
             auto elseStatement = (ElseStatement*)elseOrIf;
             compileBlock(elseStatement->block);
         }
-        else if (elseOrIf->kind() == IF_STATEMENT)
+        else if (elseOrIf->kind == IF_STATEMENT)
         {
             auto ifStatement = (IfStatement*)elseOrIf;
             compileIfStatement(ifStatement);
@@ -182,7 +182,7 @@ void compiler::Compiler::compileIfStatement(IfStatement* statement)
 
 void compiler::Compiler::compileExpression(Expression* expression)
 {
-    switch (expression->kind())
+    switch (expression->kind)
     {
     case ASSIGNMENT_EXPRESSION:
         compileAssignmentExpression((AssignmentExpression*)expression);
@@ -207,7 +207,7 @@ void compiler::Compiler::compileExpression(Expression* expression)
         break;
     default:
         plog::fatal << "Неможливо обробити вузол \""
-            << parser::stringEnum::enumToString(expression->kind()) << "\"";
+            << parser::stringEnum::enumToString(expression->kind) << "\"";
     }
 }
 

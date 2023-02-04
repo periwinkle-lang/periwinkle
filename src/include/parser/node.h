@@ -7,11 +7,12 @@ namespace parser
 {
     enum class NodeKind;
 
-    #define NODE_KIND(NAME) virtual NodeKind kind() final { return NodeKind::NAME; }
-
     struct Node
     {
-        virtual NodeKind kind() = 0;
+        Node* parent;
+        NodeKind kind;
+
+        Node(Node* parent, NodeKind kind) : parent(parent), kind(kind) {};
     };
 }
 

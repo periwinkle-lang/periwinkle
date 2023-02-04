@@ -22,26 +22,26 @@ namespace parser
         u64 sizeOfTokensVector;
         u64 position;
 
-        BlockStatement* parseBlock();
-        Statement* parseStatement();
-        Statement* parseExpressionStatement();
-        Statement* parseWhileStatement();
-        Statement* parseBreakStatement();
-        Statement* parseContinueStatement();
-        Statement* parseIfStatement(bool elseIf = false);
-        std::optional<Statement*> parseElseOrIfStatement();
+        BlockStatement* parseBlock(Node* parent);
+        Statement* parseStatement(Node* parent);
+        Statement* parseExpressionStatement(Node* parent);
+        Statement* parseWhileStatement(Node* parent);
+        Statement* parseBreakStatement(Node* parent);
+        Statement* parseContinueStatement(Node* parent);
+        Statement* parseIfStatement(Node* parent, bool elseIf = false);
+        std::optional<Statement*> parseElseOrIfStatement(Node* parent);
 
-        Expression* parseExpression();
-        Expression* parseAssignmentOrCallOrLiteralExpression();
-        Expression* parseAssignmentExpression();
-        Expression* parseBinaryExpression(int parentPrecedence = INT_MAX);
-        Expression* parsePrimaryExpression();
-        Expression* parseParenthesizedExpression();
-        Expression* parseVariableOrCallExpression();
-        Expression* parseVariableExpression();
-        Expression* parseCallExpression();
-        Expression* parseLiteralExpression();
-        std::vector<Expression*> parseArguments();
+        Expression* parseExpression(Node* parent);
+        Expression* parseAssignmentOrCallOrLiteralExpression(Node* parent);
+        Expression* parseAssignmentExpression(Node* parent);
+        Expression* parseBinaryExpression(Node* parent, int parentPrecedence = INT_MAX);
+        Expression* parsePrimaryExpression(Node* parent);
+        Expression* parseParenthesizedExpression(Node* parent);
+        Expression* parseVariableOrCallExpression(Node* parent);
+        Expression* parseVariableExpression(Node* parent);
+        Expression* parseCallExpression(Node* parent);
+        Expression* parseLiteralExpression(Node* parent);
+        std::vector<Expression*> parseArguments(Node* parent);
 
         lexer::Token nextToken();
         lexer::Token peek(int offset);

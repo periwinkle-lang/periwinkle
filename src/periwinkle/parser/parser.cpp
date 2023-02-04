@@ -1,6 +1,7 @@
 ﻿#include "parser.h"
 #include "node.h"
 #include "exception.h"
+#include "plogger.h"
 
 using namespace parser;
 using lexer::TokenType;
@@ -51,120 +52,138 @@ int parser::getBinaryOperatorPrecedence(TokenType type)
     }
 }
 
-BlockStatement* parser::Parser::parseBlock()
+BlockStatement* parser::Parser::parseBlock(Node* parent)
 {
-    std::vector<Statement*> statements;
-
+    auto blockStatement = new BlockStatement(parent);
     while (CURRENT.tokenType != EOF_)
     {
-        statements.push_back(parseStatement());
+        blockStatement->statements.push_back(parseStatement(blockStatement));
     }
-    return new BlockStatement(statements);
+    return blockStatement;
 }
 
-Statement* parser::Parser::parseStatement()
+Statement* parser::Parser::parseStatement(Node* parent)
 {
     switch (CURRENT.tokenType)
     {
     case WHILE:
-        return parseWhileStatement();
+        return parseWhileStatement(parent);
     case BREAK:
-        return parseBreakStatement();
+        return parseBreakStatement(parent);
     case CONTINUE:
-        return parseContinueStatement();
+        return parseContinueStatement(parent);
     case IF:
-        return parseIfStatement();
+        return parseIfStatement(parent);
     default:
-        return parseExpressionStatement();
+        return parseExpressionStatement(parent);
     }
 }
 
-Statement* parser::Parser::parseExpressionStatement()
+Statement* parser::Parser::parseExpressionStatement(Node* parent)
 {
-    Expression* expression = parseExpression();
-    return new ExpressionStatement(expression);
+    auto expressionStatement = new ExpressionStatement(parent);
+    expressionStatement->expression = parseExpression(expressionStatement);
+    return expressionStatement;
 }
 
-Statement* parser::Parser::parseWhileStatement()
+Statement* parser::Parser::parseWhileStatement(Node* parent)
 {
-    Token keyword = matchToken(WHILE);
-    Expression* condition = parseExpression();
-    std::vector<Statement*> statements;
+    auto whileStatement = new WhileStatement(parent);
+    whileStatement->keyword = matchToken(WHILE);
+    whileStatement->condition = parseExpression(whileStatement);
+    auto block = new BlockStatement(whileStatement);
     while (CURRENT.tokenType != EOF_ && CURRENT.tokenType != END)
     {
-        statements.push_back(parseStatement());
+        block->statements.push_back(parseStatement(block));
     }
-    BlockStatement* block = new BlockStatement(statements);
+    whileStatement->block = block;
+
     matchToken(END);
-
-    return new WhileStatement(keyword, condition, block);
+    return whileStatement;
 }
 
-Statement* parser::Parser::parseBreakStatement()
+Statement* parser::Parser::parseBreakStatement(Node* parent)
 {
-    Token break_ = matchToken(BREAK);
-    return new BreakStatement(break_);
+    auto breakStatement = new BreakStatement(parent);
+    breakStatement->break_ = matchToken(BREAK);
+    return breakStatement;
 }
 
-Statement* parser::Parser::parseContinueStatement()
+Statement* parser::Parser::parseContinueStatement(Node* parent)
 {
-    Token continue_ = matchToken(CONTINUE);
-    return new ContinueStatement(continue_);
+    auto continueStatement = new ContinueStatement(parent);
+    continueStatement->continue_ = matchToken(CONTINUE);
+    return continueStatement;
 }
 
-Statement* parser::Parser::parseIfStatement(bool elseIf)
+Statement* parser::Parser::parseIfStatement(Node* parent, bool elseIf)
 {
-    Token keyword = matchToken(elseIf ? ELSE_IF : IF);
-    Expression* condition = parseExpression();
-    std::vector<Statement*> statements;
+    auto ifStatement = new IfStatement(parent);
+    ifStatement->if_ = matchToken(elseIf ? ELSE_IF : IF);
+    ifStatement->condition = parseExpression(ifStatement);
+    auto block = new BlockStatement(ifStatement);
     while (CURRENT.tokenType != EOF_ && CURRENT.tokenType != END
         && CURRENT.tokenType != ELSE_IF && CURRENT.tokenType != ELSE)
     {
-        statements.push_back(parseStatement());
+        block->statements.push_back(parseStatement(block));
     }
-    BlockStatement* block = new BlockStatement(statements);
-    auto elseOrIf = parseElseOrIfStatement();
+    ifStatement->block = block;
+    ifStatement->elseOrIf = parseElseOrIfStatement(ifStatement);
 
-    if (!elseOrIf)
+    if (!ifStatement->elseOrIf)
     {
         matchToken(END);
     }
-
-    return new IfStatement(keyword, condition, block, elseOrIf);
+    return ifStatement;
 }
 
-std::optional<Statement*> parser::Parser::parseElseOrIfStatement()
+std::optional<Statement*> parser::Parser::parseElseOrIfStatement(Node* parent)
 {
     if (CURRENT.tokenType == IF || CURRENT.tokenType == ELSE_IF)
     {
-        return parseIfStatement(CURRENT.tokenType == ELSE_IF);
+        return parseIfStatement(parent, CURRENT.tokenType == ELSE_IF);
     }
     else if (CURRENT.tokenType == ELSE)
     {
-        Token keyword = matchToken(ELSE);
-        std::vector<Statement*> statements;
+        auto elseStatement = new ElseStatement(parent);
+        elseStatement->else_ = matchToken(ELSE);
+        auto block = new BlockStatement(elseStatement);
         while (CURRENT.tokenType != EOF_ && CURRENT.tokenType != END)
         {
-            statements.push_back(parseStatement());
+            block->statements.push_back(parseStatement(block));
         }
-        BlockStatement* block = new BlockStatement(statements);
+        elseStatement->block = block;
         matchToken(END);
-
-        return new ElseStatement(keyword, block);
+        return elseStatement;
     }
     return std::nullopt;
 }
 
-Expression* parser::Parser::parseAssignmentExpression()
+Expression* parser::Parser::parseAssignmentExpression(Node* parent)
 {
-    Token variable = matchToken(ID);
-    Token assignment = nextToken();
-    Expression* expression = parseExpression();
-
-    return new AssignmentExpression(variable, assignment, expression);
+    auto assignmentExpression = new AssignmentExpression(parent);
+    assignmentExpression->id = matchToken(ID);
+    auto assignment = nextToken();
+    switch (assignment.tokenType)
+    {
+    case EQUAL:
+    case PLUS_EQUAL:
+    case MINUS_EQUAL:
+    case STAR_EQUAL:
+    case SLASH_EQUAL:
+    case PERCENT_EQUAL:
+    case BACKSLASH_EQUAL:
+        break;
+    default:
+        plog::fatal << "Неправильний оператор призначення: \""
+            << lexer::stringEnum::enumToString(assignment.tokenType) << "\"";
+    }
+    assignmentExpression->assignment = assignment;
+    assignmentExpression->expression = parseExpression(assignmentExpression);
+    return assignmentExpression;
 }
 
-Expression* parser::Parser::parseExpression()
+Expression* parser::Parser::parseExpression(Node* parent)
 {
     switch (AHEAD.tokenType)
     {
@@ -175,25 +194,26 @@ Expression* parser::Parser::parseExpression()
     case SLASH_EQUAL:
     case PERCENT_EQUAL:
     case BACKSLASH_EQUAL:
-        return parseAssignmentExpression();
+        return parseAssignmentExpression(parent);
     default:
-        return parseBinaryExpression();
+        return parseBinaryExpression(parent);
     }
 }
 
-Expression* parser::Parser::parseBinaryExpression(int parentPrecedence)
+Expression* parser::Parser::parseBinaryExpression(Node* parent, int parentPrecedence)
 {
     Expression* left;
     int unaryPrecedence = getUnaryOperatorPrecedence(CURRENT.tokenType);
     if (unaryPrecedence != INT_MAX && unaryPrecedence <= parentPrecedence)
     {
-        Token operator_ = nextToken();
-        Expression* operand = parseBinaryExpression(unaryPrecedence);
-        left = new UnaryExpression(operator_, operand);
+        auto unaryExpression = new UnaryExpression(parent);
+        unaryExpression->operator_ = nextToken();
+        unaryExpression->operand = parseBinaryExpression(unaryExpression, unaryPrecedence);
+        left = unaryExpression;
     }
     else
     {
-        left = parsePrimaryExpression();
+        left = parsePrimaryExpression(parent);
     }
 
     for (;;)
@@ -204,28 +224,30 @@ Expression* parser::Parser::parseBinaryExpression(int parentPrecedence)
             break;
         }
 
-        Token operator_ = nextToken();
-        Expression* right = parseBinaryExpression(precedence);
-        left = new BinaryExpression(left, operator_, right);
+        auto binaryExpression = new BinaryExpression(parent);
+        binaryExpression->operator_= nextToken();
+        binaryExpression->right = parseBinaryExpression(binaryExpression, precedence);
+        binaryExpression->left = left;
+        left = binaryExpression;
     }
 
     return left;
 }
 
-Expression* parser::Parser::parsePrimaryExpression()
+Expression* parser::Parser::parsePrimaryExpression(Node* parent)
 {
     switch (CURRENT.tokenType)
     {
     case LPAR:
-        return parseParenthesizedExpression();
+        return parseParenthesizedExpression(parent);
     case ID:
-        return parseVariableOrCallExpression();
+        return parseVariableOrCallExpression(parent);
     case STRING:
     case NUMBER:
     case BOOLEAN:
     case REAL:
     case NULL_:
-        return parseLiteralExpression();
+        return parseLiteralExpression(parent);
     default:
         vm::SyntaxException exception("Неправильний синтаксис", CURRENT.lineno, CURRENT.positionInLine);
         vm::throwSyntaxException(exception, code);
@@ -233,56 +255,80 @@ Expression* parser::Parser::parsePrimaryExpression()
     }
 }
 
-Expression* parser::Parser::parseParenthesizedExpression()
+Expression* parser::Parser::parseParenthesizedExpression(Node* parent)
 {
-    Token left = matchToken(LPAR);
-    Expression* expression = parseExpression();
-    Token right = matchToken(RPAR);
-    return new ParenthesizedExpression(left, expression, right);
+    auto parExpression = new ParenthesizedExpression(parent);
+    parExpression->lpar = matchToken(LPAR);
+    parExpression->expression = parseExpression(parExpression);
+    parExpression->rpar = matchToken(RPAR);
+    return parExpression;
 }
 
-Expression* parser::Parser::parseVariableOrCallExpression()
+Expression* parser::Parser::parseVariableOrCallExpression(Node* parent)
 {
     if (AHEAD.tokenType == LPAR)
     {
-        return parseCallExpression();
+        return parseCallExpression(parent);
     }
     else
     {
-        return parseVariableExpression();
+        return parseVariableExpression(parent);
     }
 }
 
-Expression* parser::Parser::parseVariableExpression()
+Expression* parser::Parser::parseVariableExpression(Node* parent)
 {
-    Token id = matchToken(ID);
-    return new VariableExpression(id);
+    auto varExpression = new VariableExpression(parent);
+    varExpression->variable = matchToken(ID);
+    return varExpression;
 }
 
-Expression* parser::Parser::parseCallExpression()
+Expression* parser::Parser::parseCallExpression(Node* parent)
 {
-    auto identifier = matchToken(ID);
-    auto lpar = matchToken(LPAR);
-    auto arguments = parseArguments();
-    auto rpar = matchToken(RPAR);
-
-    return new CallExpression(identifier, lpar, arguments, rpar);
+    auto callExpression = new CallExpression(parent);
+    callExpression->identifier = matchToken(ID);
+    callExpression->lpar = matchToken(LPAR);
+    callExpression->arguments = parseArguments(callExpression);
+    callExpression->rpar = matchToken(RPAR);
+    return callExpression;
 }
 
-Expression* parser::Parser::parseLiteralExpression()
+Expression* parser::Parser::parseLiteralExpression(Node* parent)
 {
-    Token literalToken = nextToken();
-    return new LiteralExpression(literalToken);
+    auto literalExpression = new LiteralExpression(parent);
+    auto literalToken = nextToken();
+    switch (literalToken.tokenType)
+    {
+    case lexer::TokenType::NUMBER:
+        literalExpression->value = std::stoll(literalToken.text);
+        break;
+    case lexer::TokenType::REAL:
+        literalExpression->value = std::stod(literalToken.text);
+        break;
+    case lexer::TokenType::BOOLEAN:
+        literalExpression->value = std::string("правда").compare(literalToken.text) == 0;
+        break;
+    case lexer::TokenType::STRING:
+        literalExpression->value = literalToken.text;
+        break;
+    case lexer::TokenType::NULL_:
+        break;
+    default:
+        plog::fatal << "Переданий неправильний токен: \""
+            << lexer::stringEnum::enumToString(literalToken.tokenType) << "\"";
+    }
+    literalExpression->literalToken = literalToken;
+    return literalExpression;
 }
 
-std::vector<Expression*> parser::Parser::parseArguments()
+std::vector<Expression*> parser::Parser::parseArguments(Node* parent)
 {
     std::vector<Expression*> arguments;
 
     while (CURRENT.tokenType != RPAR
         && CURRENT.tokenType != EOF_)
     {
-        auto expression = parseExpression();
+        auto expression = parseExpression(parent);
         arguments.push_back(expression);
 
         if (CURRENT.tokenType == COMMA)
@@ -327,7 +373,7 @@ lexer::Token parser::Parser::matchToken(TokenType type)
 
 BlockStatement* parser::Parser::parse()
 {
-    return parseBlock();
+    return parseBlock(nullptr);
 }
 
 parser::Parser::Parser(std::vector<lexer::Token> tokens, std::string code)
