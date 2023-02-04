@@ -316,6 +316,24 @@ void compiler::Compiler::compileCallExpression(CallExpression* expression)
     emitOperand(functionNameIdx);
     emitOpCode(CALL);
     emitOperand(argc);
+
+    // Перевірка, чи повершене значення функцією використовується,
+    // якщо ні, то після виклику додається опкод "POP", щоб очистити стек
+    auto parent = expression->parent;
+    while (parent != nullptr)
+    {
+        switch (parent->kind)
+        {
+        case UNARY_EXPRESSION:
+        case BINARY_EXPRESSION:
+        case ASSIGNMENT_EXPRESSION:
+        case CALL_EXPRESSION:
+            return;
+        default:
+            parent = parent->parent;
+        }
+    }
+    emitOpCode(POP);
 }
 
 void compiler::Compiler::compileBinaryExpression(BinaryExpression* expression)
