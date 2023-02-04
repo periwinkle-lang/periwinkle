@@ -221,6 +221,7 @@ void compiler::Compiler::compileAssignmentExpression(AssignmentExpression* expre
     auto assignmentType = expression->assignment.tokenType;
     if (assignmentType == EQUAL)
     {
+        setLineno(expression->assignment.lineno);
         emitOpCode(STORE_GLOBAL);
         emitOperand(nameIdx);
         return;
