@@ -8,7 +8,8 @@
 
 namespace vm
 {
-    extern std::unordered_map<std::string, NativeFunctionObject*> builtin;
+    using builtin_t = std::unordered_map<std::string, NativeFunctionObject*>;
+    builtin_t* getBuiltin();
 }
 
 #endif

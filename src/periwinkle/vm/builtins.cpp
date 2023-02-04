@@ -20,10 +20,18 @@ Object* printNative(Object* args[])
     return &nullObject;
 }
 
-namespace vm
+
+builtin_t* vm::getBuiltin()
 {
-    std::unordered_map<std::string, NativeFunctionObject*> builtin
+    static builtin_t* builtin;
+    if (builtin == nullptr)
     {
-        {"друк", NativeFunctionObject::create(1, "друк", printNative)},
-    };
+        builtin = new builtin_t();
+        builtin->insert(
+            {
+                {"друк", NativeFunctionObject::create(1, "друк", printNative)},
+            }
+        );
+    }
+    return builtin;
 }

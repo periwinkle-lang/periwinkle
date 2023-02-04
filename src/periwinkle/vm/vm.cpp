@@ -70,6 +70,7 @@ void VirtualMachine::execute(Frame* frame)
 
     WORD* ip = &code->code[0];
     Object** sp = &stack[0];
+    auto builtin = getBuiltin();
 
     for (;;)
     {
@@ -180,9 +181,9 @@ void VirtualMachine::execute(Frame* frame)
                 PUSH(frame->globals[name]);
             }
             // TODO: Локальні змінні мають перевірятись після глобальних та перед builtin
-            else if (builtin.contains(name))
+            else if (builtin->contains(name))
             {
-                PUSH(builtin[name]);
+                PUSH(builtin->at(name));
             }
             else
             {
