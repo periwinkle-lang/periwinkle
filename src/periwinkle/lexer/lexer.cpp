@@ -26,8 +26,8 @@ std::string Lexer::peek(size_t offset)
 const static std::vector<std::pair<TokenType, regex>> tokenTypesRegexList
 {
     {TokenType::BOOLEAN,         uregex("^(правда)|^(брехня)")},
-    {TokenType::REAL,            uregex("^[-]?(([0-9]+[.][0-9]*)|([0-9]*[.][0-9]+))")},
-    {TokenType::NUMBER,          uregex("^0|^(\\-?[1-9][0-9]*)")},
+    {TokenType::REAL,            uregex("^(([0-9]+[.][0-9]*)|([0-9]*[.][0-9]+))")},
+    {TokenType::NUMBER,          uregex("^0|^([1-9][0-9]*)")},
     {TokenType::NULL_,           uregex("^нич")},
 
     {TokenType::PLUS_EQUAL,      uregex("^\\+=")},

@@ -14,6 +14,7 @@ namespace parser
     int getUnaryOperatorPrecedence(lexer::TokenType type);
     int getBinaryOperatorPrecedence(lexer::TokenType type);
 
+    // Парсить тонени в абстрактне синтаксичне дерево за правиплами, які описні в файлі "барвінок.ebnf"
     class Parser
     {
     private:
@@ -32,17 +33,20 @@ namespace parser
         std::optional<Statement*> parseElseOrIfStatement(Node* parent);
 
         Expression* parseExpression(Node* parent);
-        Expression* parseAssignmentOrCallOrLiteralExpression(Node* parent);
+        Expression* parseLhs(Node* parent);
+        Expression* parseRhs(Node* parent);
         Expression* parseAssignmentExpression(Node* parent);
+        Expression* parseUnaryExpression(Node* parent);
         Expression* parseBinaryExpression(Node* parent, int parentPrecedence = INT_MAX);
         Expression* parsePrimaryExpression(Node* parent);
         Expression* parseParenthesizedExpression(Node* parent);
-        Expression* parseVariableOrCallExpression(Node* parent);
         Expression* parseVariableExpression(Node* parent);
         Expression* parseCallExpression(Node* parent);
         Expression* parseLiteralExpression(Node* parent);
         std::vector<Expression*> parseArguments(Node* parent);
 
+        static bool isOperator(lexer::Token token);
+        static bool isUnaryOperator(lexer::Token token);
         lexer::Token nextToken();
         lexer::Token peek(int offset);
         lexer::Token matchToken(lexer::TokenType type);

@@ -90,7 +90,7 @@ Statement* parser::Parser::parseWhileStatement(Node* parent)
 {
     auto whileStatement = new WhileStatement(parent);
     whileStatement->keyword = matchToken(WHILE);
-    whileStatement->condition = parseExpression(whileStatement);
+    whileStatement->condition = parseRhs(whileStatement);
     auto block = new BlockStatement(whileStatement);
     while (CURRENT.tokenType != EOF_ && CURRENT.tokenType != END)
     {
@@ -120,7 +120,7 @@ Statement* parser::Parser::parseIfStatement(Node* parent, bool elseIf)
 {
     auto ifStatement = new IfStatement(parent);
     ifStatement->if_ = matchToken(elseIf ? ELSE_IF : IF);
-    ifStatement->condition = parseExpression(ifStatement);
+    ifStatement->condition = parseRhs(ifStatement);
     auto block = new BlockStatement(ifStatement);
     while (CURRENT.tokenType != EOF_ && CURRENT.tokenType != END
         && CURRENT.tokenType != ELSE_IF && CURRENT.tokenType != ELSE)
@@ -159,6 +159,36 @@ std::optional<Statement*> parser::Parser::parseElseOrIfStatement(Node* parent)
     return std::nullopt;
 }
 
+Expression* parser::Parser::parseLhs(Node* parent)
+{
+    return parseVariableExpression(parent);
+}
+
+Expression* parser::Parser::parseRhs(Node* parent)
+{
+    if (isUnaryOperator(CURRENT))
+    {
+        return parseUnaryExpression(parent);
+    }
+    else if (isOperator(AHEAD))
+    {
+       return parseBinaryExpression(parent);
+    }
+    else if (CURRENT.tokenType == ID)
+    {
+        if (AHEAD.tokenType == LPAR)
+        {
+            return parseCallExpression(parent);
+        }
+        return parseVariableExpression(parent);
+    }
+    else if (CURRENT.tokenType == LPAR)
+    {
+        return parseParenthesizedExpression(parent);
+    }
+    return parseLiteralExpression(parent);
+}
+
 Expression* parser::Parser::parseAssignmentExpression(Node* parent)
 {
     auto assignmentExpression = new AssignmentExpression(parent);
@@ -179,7 +209,7 @@ Expression* parser::Parser::parseAssignmentExpression(Node* parent)
             << lexer::stringEnum::enumToString(assignment.tokenType) << "\"";
     }
     assignmentExpression->assignment = assignment;
-    assignmentExpression->expression = parseExpression(assignmentExpression);
+    assignmentExpression->expression = parseRhs(assignmentExpression);
     return assignmentExpression;
 }
 
@@ -196,8 +226,16 @@ Expression* parser::Parser::parseExpression(Node* parent)
     case BACKSLASH_EQUAL:
         return parseAssignmentExpression(parent);
     default:
-        return parseBinaryExpression(parent);
+        return parseCallExpression(parent);
     }
+}
+
+Expression* parser::Parser::parseUnaryExpression(Node* parent)
+{
+    auto unaryExpression = new UnaryExpression(parent);
+    unaryExpression->operator_ = nextToken();
+    unaryExpression->operand = parseRhs(unaryExpression);
+    return unaryExpression;
 }
 
 Expression* parser::Parser::parseBinaryExpression(Node* parent, int parentPrecedence)
@@ -232,6 +270,12 @@ Expression* parser::Parser::parseBinaryExpression(Node* parent, int parentPreced
     }
 
     return left;
+
+    //auto binaryExpression = new BinaryExpression(parent);
+    //binaryExpression->left = parseRhs(binaryExpression);
+    //binaryExpression->operator_ = nextToken();
+    //binaryExpression->right = parseRhs(binaryExpression);
+    //return binaryExpression;
 }
 
 Expression* parser::Parser::parsePrimaryExpression(Node* parent)
@@ -241,7 +285,13 @@ Expression* parser::Parser::parsePrimaryExpression(Node* parent)
     case LPAR:
         return parseParenthesizedExpression(parent);
     case ID:
-        return parseVariableOrCallExpression(parent);
+    {
+        if (AHEAD.tokenType == LPAR)
+        {
+            return parseCallExpression(parent);
+        }
+        return parseVariableExpression(parent);
+    }
     case STRING:
     case NUMBER:
     case BOOLEAN:
@@ -259,21 +309,9 @@ Expression* parser::Parser::parseParenthesizedExpression(Node* parent)
 {
     auto parExpression = new ParenthesizedExpression(parent);
     parExpression->lpar = matchToken(LPAR);
-    parExpression->expression = parseExpression(parExpression);
+    parExpression->expression = parseRhs(parExpression);
     parExpression->rpar = matchToken(RPAR);
     return parExpression;
-}
-
-Expression* parser::Parser::parseVariableOrCallExpression(Node* parent)
-{
-    if (AHEAD.tokenType == LPAR)
-    {
-        return parseCallExpression(parent);
-    }
-    else
-    {
-        return parseVariableExpression(parent);
-    }
 }
 
 Expression* parser::Parser::parseVariableExpression(Node* parent)
@@ -328,7 +366,7 @@ std::vector<Expression*> parser::Parser::parseArguments(Node* parent)
     while (CURRENT.tokenType != RPAR
         && CURRENT.tokenType != EOF_)
     {
-        auto expression = parseExpression(parent);
+        auto expression = parseRhs(parent);
         arguments.push_back(expression);
 
         if (CURRENT.tokenType == COMMA)
@@ -342,6 +380,45 @@ std::vector<Expression*> parser::Parser::parseArguments(Node* parent)
     }
 
     return arguments;
+}
+
+bool parser::Parser::isOperator(Token token)
+{
+    switch (token.tokenType)
+    {
+    case GREATER_EQUAL:
+    case LESS_EQUAL:
+    case EQUAL_EQUAL:
+    case NOT_EQUAL:
+    case PLUS:
+    case MINUS:
+    case SLASH:
+    case STAR:
+    case PERCENT:
+    case BACKSLASH:
+    case GREATER:
+    case LESS:
+    case AND:
+    case OR:
+    case NOT:
+    case EQUAL:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool parser::Parser::isUnaryOperator(Token token)
+{
+    switch (token.tokenType)
+    {
+    case PLUS:
+    case MINUS:
+    case NOT:
+        return true;
+    default:
+        return false;
+    }
 }
 
 lexer::Token parser::Parser::nextToken()
