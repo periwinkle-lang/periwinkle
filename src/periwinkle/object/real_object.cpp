@@ -5,16 +5,38 @@
 #include "real_object.h"
 #include "native_function_object.h"
 #include "string_object.h"
+#include "int_object.h"
+#include "exception_object.h"
 
 using namespace vm;
 extern ObjectType objectObjectType;
 
+static bool tryConvertToDouble(Object* o, double& d)
+{
+    if (o->objectType->type != ObjectTypes::INTEGER)
+    {
+        return false;
+    }
+    d = (double)((IntObject*)o)->value;
+    return true;
+}
+
+#define TO_DOUBLE(object, d)                           \
+    if (object->objectType->type == ObjectTypes::REAL) \
+        d = ((RealObject*)object)->value;              \
+    else                                               \
+    {                                                  \
+        if (tryConvertToDouble(object, d) == false)    \
+            return &P_NotImplemented;                  \
+    }
+
 #define BINARY_OP(name, op)                     \
-static Object* name(Object* a, Object* b)       \
+static Object* name(Object* o1, Object* o2)     \
 {                                               \
-    auto arg1 = (RealObject*)a;                 \
-    auto arg2 = (RealObject*)b;                 \
-    double result = arg1->value op arg2->value; \
+    double a, b;                                \
+    TO_DOUBLE(o1, a);                           \
+    TO_DOUBLE(o2, b);                           \
+    double result = a op b;                     \
     return RealObject::create(result);          \
 }
 
@@ -32,24 +54,18 @@ BINARY_OP(realSub, -)
 BINARY_OP(realMul, *)
 BINARY_OP(realDiv, / )
 
-static Object* realFloorDiv(Object* a, Object* b)
+static Object* realFloorDiv(Object* o1, Object* o2)
 {
-    auto arg1 = (RealObject*)a;
-    auto arg2 = (RealObject*)b;
-    auto result = std::floor(arg1->value / arg2->value);
+    double a, b;
+    TO_DOUBLE(o1, a);
+    TO_DOUBLE(o2, b);
+    auto result = std::floor(a / b);
     return RealObject::create(result);
 }
 
-static Object* realInc(Object* a)
+static Object* realPos(Object* a)
 {
-    auto arg = (RealObject*)a;
-    return RealObject::create(arg->value + 1.);
-}
-
-static Object* realDec(Object* a)
-{
-    auto arg = (RealObject*)a;
-    return RealObject::create(arg->value - 1.);
+    return (RealObject*)a;
 }
 
 static Object* realNeg(Object* a)
@@ -76,8 +92,7 @@ namespace vm
             .mul = realMul,
             .div = realDiv,
             .floorDiv = realFloorDiv,
-            .inc = realInc,
-            .dec = realDec,
+            .pos = realPos,
             .neg = realNeg,
         },
     };

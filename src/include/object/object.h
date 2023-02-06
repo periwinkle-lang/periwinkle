@@ -4,10 +4,6 @@
 #include <string>
 #include <unordered_map>
 
-// object - вказівник на об'єкт
-// op - член перечислення Operator
-#define GET_OPERATOR(object, op) (object)->objectType->operators->op
-
 namespace vm
 {
     struct Object;
@@ -45,8 +41,6 @@ namespace vm
          binaryFunction div;
          binaryFunction floorDiv; // Ділення з округленням
          binaryFunction mod;
-         unaryFunction inc; // Інкремент
-         unaryFunction dec; // Декремент
          unaryFunction pos; // Унарний оператор +
          unaryFunction neg; // Заперечення
     };
@@ -71,6 +65,42 @@ namespace vm
     struct Object
     {
         ObjectType* objectType;
+
+        // Приведення об'єкту до типу StringObject
+        static Object* toString(Object* o);
+
+        // Приведення об'єкту до типу IntObject
+        static Object* toInteger(Object* o);
+
+        // Приведення об'єкту до типу RealObject
+        static Object* toReal(Object* o);
+
+        // Приведення об'єкту до типу BoolObject
+        static Object* toBool(Object* o);
+
+        // Викликає операцію + для вхідних об'єктів
+        static Object* add(Object* o1, Object* o2);
+
+        // Викликає операцію - для вхідних об'єктів
+        static Object* sub(Object* o1, Object* o2);
+
+        // Викликає операцію * для вхідних об'єктів
+        static Object* mul(Object* o1, Object* o2);
+
+        // Викликає операцію / для вхідних об'єктів
+        static Object* div(Object* o1, Object* o2);
+
+        // Викликає операцію \ для вхідних об'єктів
+        static Object* floorDiv(Object* o1, Object* o2);
+
+        // Викликає операцію % для вхідних об'єктів
+        static Object* mod(Object* o1, Object* o2);
+
+        // Викликає операцію унарного + для об'єкта
+        static Object* pos(Object* o);
+
+        // Викликає операцію унарного - для об'єкта
+        static Object* neg(Object* o);
     };
 
     Object* allocObject(ObjectType const *objectType);

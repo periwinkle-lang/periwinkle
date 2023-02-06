@@ -5,13 +5,20 @@
 #include "string_object.h"
 #include "bool_object.h"
 #include "real_object.h"
+#include "exception_object.h"
 
 using namespace vm;
 extern ObjectType objectObjectType;
 
+#define CHECK_INT(object)                                 \
+    if (object->objectType->type != ObjectTypes::INTEGER) \
+        return &P_NotImplemented;
+
 #define BINARY_OP(name, op)                   \
 static Object* name(Object* a, Object* b)     \
 {                                             \
+    CHECK_INT(a);                             \
+    CHECK_INT(b);                             \
     auto arg1 = (IntObject*)a;                \
     auto arg2 = (IntObject*)b;                \
     auto result = arg1->value op arg2->value; \
@@ -21,6 +28,8 @@ static Object* name(Object* a, Object* b)     \
 #define COMPARE_OP(name, op)                          \
 static Object* intCompare##name(Object* a, Object* b) \
 {                                                     \
+    CHECK_INT(a);                                     \
+    CHECK_INT(b);                                     \
     auto arg1 = (IntObject*)a;                        \
     auto arg2 = (IntObject*)b;                        \
     return P_BOOL(arg1->value op arg2->value);        \
@@ -53,6 +62,8 @@ BINARY_OP(intMod, %)
 
 static Object* intDiv(Object* a, Object* b)
 {
+    CHECK_INT(a);
+    CHECK_INT(b);
     auto arg1 = (IntObject*)a;
     auto arg2 = (IntObject*)b;
     auto result = (double)arg1->value / (double)arg2->value;
@@ -61,22 +72,12 @@ static Object* intDiv(Object* a, Object* b)
 
 static Object* intFloorDiv(Object* a, Object* b)
 {
+    CHECK_INT(a);
+    CHECK_INT(b);
     auto arg1 = (IntObject*)a;
     auto arg2 = (IntObject*)b;
     auto result = arg1->value / arg2->value;
     return IntObject::create(result);
-}
-
-static Object* intInc(Object* a)
-{
-    auto arg = (IntObject*)a;
-    return IntObject::create(arg->value + 1);
-}
-
-static Object* intDec(Object* a)
-{
-    auto arg = (IntObject*)a;
-    return IntObject::create(arg->value - 1);
 }
 
 static Object* intNeg(Object* a)
@@ -110,8 +111,6 @@ namespace vm
             .div = intDiv,
             .floorDiv = intFloorDiv,
             .mod = intMod,
-            .inc = intInc,
-            .dec = intDec,
             .pos = intPos,
             .neg = intNeg,
         },

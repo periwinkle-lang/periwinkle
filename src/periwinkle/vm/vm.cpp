@@ -24,10 +24,9 @@ using namespace vm;
 #define BINARY_OP(name, op_name)                        \
 case OpCode::name:                                      \
 {                                                       \
-    auto op = GET_OPERATOR(PEEK(), op_name);            \
     auto arg1 = POP();                                  \
     auto arg2 = POP();                                  \
-    auto result = op(arg1, arg2);                       \
+    auto result = Object::op_name(arg1, arg2);          \
     PUSH(result);                                       \
     break;                                              \
 }
@@ -35,21 +34,21 @@ case OpCode::name:                                      \
 #define UNARY_OP(name, op_name)                         \
 case OpCode::name:                                      \
 {                                                       \
-    auto op = GET_OPERATOR(PEEK(), op_name);            \
-    auto result = op(POP());                            \
+    auto arg = POP();                                   \
+    auto result = Object::op_name(arg);                 \
     PUSH(result);                                       \
     break;                                              \
 }
 
-#define BOOLEAN_OP(name, op)                               \
-case OpCode::name:                                         \
-{                                                          \
-    auto o1 = POP();                                       \
-    auto o2 = POP();                                       \
-    auto arg1 = (BoolObject*)GET_OPERATOR(o1, toBool)(o1); \
-    auto arg2 = (BoolObject*)GET_OPERATOR(o2, toBool)(o2); \
-    PUSH(P_BOOL(arg1->value op arg2->value));              \
-    break;                                                 \
+#define BOOLEAN_OP(name, op)                            \
+case OpCode::name:                                      \
+{                                                       \
+    auto o1 = POP();                                    \
+    auto o2 = POP();                                    \
+    auto arg1 = (BoolObject*)Object::toBool(o1);        \
+    auto arg2 = (BoolObject*)Object::toBool(o2);        \
+    PUSH(P_BOOL(arg1->value op arg2->value));           \
+    break;                                              \
 }
 
 void VirtualMachine::throwException(ObjectType* exception, std::string message, WORD lineno)
@@ -88,8 +87,6 @@ void VirtualMachine::execute(Frame* frame)
             PUSH(object);
             break;
         }
-        UNARY_OP(INC, inc)
-        UNARY_OP(DEC, dec)
         UNARY_OP(POS, pos)
         UNARY_OP(NEG, neg)
         BINARY_OP(ADD, add)
@@ -111,7 +108,7 @@ void VirtualMachine::execute(Frame* frame)
         case NOT:
         {
             auto o = POP();
-            auto arg = (BoolObject*)GET_OPERATOR(o, toBool)(o);
+            auto arg = (BoolObject*)Object::toBool(o);
             PUSH(P_BOOL(!arg->value));
             break;
         }
@@ -122,8 +119,8 @@ void VirtualMachine::execute(Frame* frame)
         }
         case JMP_IF_TRUE:
         {
-            auto op = GET_OPERATOR(PEEK(), toBool);
-            auto condition = (BoolObject*)op(POP());
+            auto o = POP();
+            auto condition = (BoolObject*)Object::toBool(o);
             if ((condition)->value)
             {
                 JUMP();
@@ -136,8 +133,8 @@ void VirtualMachine::execute(Frame* frame)
         }
         case JMP_IF_FALSE:
         {
-            auto op = GET_OPERATOR(PEEK(), toBool);
-            auto condition = (BoolObject*)op(POP());
+            auto o = POP();
+            auto condition = (BoolObject*)Object::toBool(o);
             if (((BoolObject*)condition)->value == false)
             {
                 JUMP();
@@ -233,4 +230,14 @@ void VirtualMachine::execute(Frame* frame)
             plog::fatal << "Опкод не реалізовано: \"" << stringEnum::enumToString((OpCode)a) << "\"";
         }
     }
+}
+
+vm::VirtualMachine::VirtualMachine()
+{
+    _currentVM = this;
+}
+
+namespace vm
+{
+    VirtualMachine* _currentVM = nullptr;
 }

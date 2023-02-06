@@ -10,7 +10,7 @@ Object* printNative(Object* args[])
     StringObject* result;
     if (args[0]->objectType->type != ObjectTypes::STRING)
     {
-        result = (StringObject*)GET_OPERATOR(args[0], toString)(args[0]);
+        result = (StringObject*)Object::toString(args[0]);
     }
     else
     {

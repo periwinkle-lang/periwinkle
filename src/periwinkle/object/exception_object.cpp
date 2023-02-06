@@ -50,6 +50,11 @@ namespace vm
 
     EXCEPTION_EXTEND(ExceptionObjectType, TypeError, "ПомилкаТипу",
         new ObjectOperators{ .toString = exceptionToString });
+
+    EXCEPTION_EXTEND(ExceptionObjectType, NotImplementedError, "ПомилкаРеалізації",
+        new ObjectOperators{ .toString = exceptionToString });
+
+    NotImplementedErrorObject P_NotImplemented{ {{.objectType = &NotImplementedErrorObjectType}} };
 }
 
 Object* allocExceptionObject()

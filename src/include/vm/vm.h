@@ -21,7 +21,7 @@ namespace vm
         POP, DUP,
 
         // Арифметичні операції
-        INC, DEC, POS, NEG, ADD, SUB, MUL, DIV, MOD, FLOOR_DIV,
+        POS, NEG, ADD, SUB, MUL, DIV, MOD, FLOOR_DIV,
 
         // Бінарні операції
         BIN_AND, BIN_OR, BIN_NOT, XOR, SHL, SHR, COMPARE,
@@ -56,8 +56,12 @@ namespace vm
         std::array<Object*, 512> stack;
 
     public:
-        void throwException(ObjectType* exception, std::string message, WORD lineno);
+        void throwException(ObjectType* exception, std::string message, WORD lineno=0);
         void execute(Frame* frame);
+
+        VirtualMachine();
     };
+
+    extern VirtualMachine* _currentVM;
 }
 #endif
