@@ -31,6 +31,9 @@ namespace vm
             .toBool = boolToBool,
         }
     };
+
+    BoolObject P_true  { {.objectType = &boolObjectType} };
+    BoolObject P_false { {.objectType = &boolObjectType} };
 }
 
 Object* allocBoolObject()
@@ -38,11 +41,4 @@ Object* allocBoolObject()
     auto boolObject = new BoolObject;
     boolObject->objectType = &boolObjectType;
     return (Object*)boolObject;
-}
-
-BoolObject* vm::BoolObject::create(bool value)
-{
-    auto boolObject = (BoolObject*)allocObject(&boolObjectType);
-    boolObject->value = value;
-    return boolObject;
 }

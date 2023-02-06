@@ -26,7 +26,7 @@ namespace vm
         },
     };
 
-    NullObject nullObject{ {.objectType = &nullObjectType} };
+    NullObject P_null { {.objectType = &nullObjectType} };
 }
 
 Object* allocNullObject()

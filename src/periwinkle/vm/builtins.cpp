@@ -17,7 +17,7 @@ Object* printNative(Object* args[])
         result = (StringObject*)args[0];
     }
     std::cout << result->value << std::flush;
-    return &nullObject;
+    return &P_null;
 }
 
 

@@ -18,12 +18,12 @@ static Object* name(Object* a, Object* b)     \
     return IntObject::create(result);         \
 }
 
-#define COMPARE_OP(name, op)                               \
-static Object* intCompare##name(Object* a, Object* b)    \
-{                                                          \
-    auto arg1 = (IntObject*)a;                             \
-    auto arg2 = (IntObject*)b;                             \
-    return BoolObject::create(arg1->value op arg2->value); \
+#define COMPARE_OP(name, op)                          \
+static Object* intCompare##name(Object* a, Object* b) \
+{                                                     \
+    auto arg1 = (IntObject*)a;                        \
+    auto arg2 = (IntObject*)b;                        \
+    return P_BOOL(arg1->value op arg2->value);        \
 }
 
 COMPARE_OP(EQ, ==);
@@ -43,7 +43,7 @@ static Object* intToString(Object* a)
 static Object* intToBool(Object* a)
 {
     auto integer = (IntObject*)a;
-    return BoolObject::create((bool)integer->value);
+    return P_BOOL(integer->value);
 }
 
 BINARY_OP(intAdd, +)

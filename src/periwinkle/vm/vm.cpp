@@ -48,7 +48,7 @@ case OpCode::name:                                         \
     auto o2 = POP();                                       \
     auto arg1 = (BoolObject*)GET_OPERATOR(o1, toBool)(o1); \
     auto arg2 = (BoolObject*)GET_OPERATOR(o2, toBool)(o2); \
-    PUSH(BoolObject::create(arg1->value op arg2->value));  \
+    PUSH(P_BOOL(arg1->value op arg2->value));              \
     break;                                                 \
 }
 
@@ -112,7 +112,7 @@ void VirtualMachine::execute(Frame* frame)
         {
             auto o = POP();
             auto arg = (BoolObject*)GET_OPERATOR(o, toBool)(o);
-            PUSH(BoolObject::create(!(arg->value)));
+            PUSH(P_BOOL(!arg->value));
             break;
         }
         case JMP:

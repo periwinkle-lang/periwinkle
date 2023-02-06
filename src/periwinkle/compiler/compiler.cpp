@@ -400,7 +400,20 @@ CompilerState* compiler::Compiler::unwindStateStack(CompilerStateType type)
 
 vm::WORD compiler::Compiler::booleanConstIdx(bool value)
 {
-    FIND_CONST_IDX(BoolObject, BOOL)
+    auto codeObject = frame->codeObject;
+    for (vm::WORD i = 0; i < (vm::WORD)codeObject->constants.size(); ++i)
+    {
+        if (codeObject->constants[i]->objectType->type != vm::ObjectTypes::BOOL)
+        {
+            continue;
+        }
+        if (((vm::BoolObject*)codeObject->constants[i])->value == value)
+        {
+            return i;
+        }
+    }
+    codeObject->constants.push_back(P_BOOL(value));
+    return (vm::WORD)codeObject->constants.size() - 1;
 }
 
 vm::WORD compiler::Compiler::realConstIdx(double value)
@@ -428,7 +441,7 @@ vm::WORD compiler::Compiler::nullConstIdx()
             return i;
         }
     }
-    codeObject->constants.push_back(&vm::nullObject);
+    codeObject->constants.push_back(&vm::P_null);
     return (vm::WORD)codeObject->constants.size() - 1;
 }
 
