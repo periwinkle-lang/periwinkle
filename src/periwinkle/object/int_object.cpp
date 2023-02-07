@@ -57,6 +57,17 @@ static Object* intToString(Object* a)
     return StringObject::create(str);
 }
 
+static Object* intToInteger(Object* a)
+{
+    return a;
+}
+
+static Object* intToReal(Object* a)
+{
+    auto value = ((IntObject*)a)->value;
+    return RealObject::create((double)value);
+}
+
 static Object* intToBool(Object* a)
 {
     auto integer = (IntObject*)a;
@@ -112,6 +123,8 @@ namespace vm
         .operators = new ObjectOperators
         {
             .toString = intToString,
+            .toInteger = intToInteger,
+            .toReal = intToReal,
             .toBool = intToBool,
             .add = intAdd,
             .sub = intSub,

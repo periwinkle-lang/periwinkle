@@ -2,6 +2,7 @@
 #include "native_function_object.h"
 #include "exception_object.h"
 #include "null_object.h"
+#include "bool_object.h"
 
 using namespace vm;
 
@@ -15,6 +16,10 @@ static bool tryConvertToString(Object * o, std::string& str)
     return false;
 }
 
+#define CHECK_STRING(object)                             \
+    if (object->objectType->type != ObjectTypes::STRING) \
+        return &P_NotImplemented;
+
 // Конвертує об'єкт до StringObject, окрім випадку, коли об'єкт типу "нич"
 #define TO_STRING(object, str)                           \
     if (object->objectType->type == ObjectTypes::STRING) \
@@ -25,6 +30,27 @@ static bool tryConvertToString(Object * o, std::string& str)
             || tryConvertToString(object, str) == false) \
             return &P_NotImplemented;                    \
     }
+
+static Object* strComparison(Object* o1, Object* o2, ObjectCompOperator op)
+{
+    std::string a, b;
+    CHECK_STRING(o1);
+    CHECK_STRING(o2);
+    a = ((StringObject*)o1)->value;
+    b = ((StringObject*)o2)->value;
+    bool result;
+
+    using enum ObjectCompOperator;
+    switch (op)
+    {
+    case EQ: result = a.compare(b) == 0; break;
+    case NE: result = a.compare(b) != 0; break;
+    default:
+        return &P_NotImplemented;
+    }
+
+    return P_BOOL(result);
+}
 
 static Object* strAdd(Object* o1, Object* o2)
 {
@@ -48,6 +74,7 @@ namespace vm
         {
             .add = strAdd,
         },
+        .comparison = strComparison,
     };
 }
 
