@@ -7,7 +7,7 @@ extern ObjectType objectObjectType;
 static Object* boolToString(Object* a)
 {
     auto arg = (BoolObject*)a;
-    return StringObject::create(arg->value ? "правда" : "брехня");
+    return StringObject::create(arg->value ? "істина" : "хиба");
 }
 
 static Object* boolToBool(Object* a)

@@ -47,7 +47,7 @@ std::string compiler::Decompiler::getValueAsString(vm::Object* object)
     }
     case BOOL:
     {
-        return ((vm::BoolObject*)object)->value ? "правда" : "брехня";
+        return ((vm::BoolObject*)object)->value ? "істина" : "хиба";
     }
     case STRING:
     {

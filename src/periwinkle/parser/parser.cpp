@@ -344,7 +344,7 @@ Expression* parser::Parser::parseLiteralExpression(Node* parent)
         literalExpression->value = std::stod(literalToken.text);
         break;
     case lexer::TokenType::BOOLEAN:
-        literalExpression->value = std::string("правда").compare(literalToken.text) == 0;
+        literalExpression->value = std::string("істина").compare(literalToken.text) == 0;
         break;
     case lexer::TokenType::STRING:
         literalExpression->value = literalToken.text;
