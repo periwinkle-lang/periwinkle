@@ -99,8 +99,8 @@ void VirtualMachine::execute(Frame* frame)
         {
             auto arg1 = POP();
             auto arg2 = POP();
-            auto op = arg1->objectType->comparisonOperators[READ()];
-            PUSH(op(arg1, arg2));
+            auto result = Object::compare(arg1, arg2, (ObjectCompOperator)READ());
+            PUSH(result);
             break;
         }
         BOOLEAN_OP(AND, &&)

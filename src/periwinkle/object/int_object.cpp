@@ -14,6 +14,10 @@ extern ObjectType objectObjectType;
     if (object->objectType->type != ObjectTypes::INTEGER) \
         return &P_NotImplemented;
 
+#define TO_INT(object, i)            \
+    CHECK_INT(object)                \
+    i = ((IntObject*)object)->value;
+
 #define BINARY_OP(name, op)                   \
 static Object* name(Object* a, Object* b)     \
 {                                             \
@@ -25,22 +29,26 @@ static Object* name(Object* a, Object* b)     \
     return IntObject::create(result);         \
 }
 
-#define COMPARE_OP(name, op)                          \
-static Object* intCompare##name(Object* a, Object* b) \
-{                                                     \
-    CHECK_INT(a);                                     \
-    CHECK_INT(b);                                     \
-    auto arg1 = (IntObject*)a;                        \
-    auto arg2 = (IntObject*)b;                        \
-    return P_BOOL(arg1->value op arg2->value);        \
-}
+static Object* intComparison(Object* o1, Object* o2, ObjectCompOperator op)
+{
+    i64 a, b;
+    TO_INT(o1, a);
+    TO_INT(o2, b);
+    bool result;
 
-COMPARE_OP(EQ, ==);
-COMPARE_OP(NE, !=);
-COMPARE_OP(GT, >);
-COMPARE_OP(GE, >=);
-COMPARE_OP(LT, <);
-COMPARE_OP(LE, <=);
+    using enum ObjectCompOperator;
+    switch (op)
+    {
+    case EQ: result = a == b; break;
+    case NE: result = a != b; break;
+    case GT: result = a > b; break;
+    case GE: result = a >= b; break;
+    case LT: result = a < b; break;
+    case LE: result = a <= b; break;
+    }
+
+    return P_BOOL(result);
+}
 
 static Object* intToString(Object* a)
 {
@@ -114,15 +122,7 @@ namespace vm
             .pos = intPos,
             .neg = intNeg,
         },
-        .comparisonOperators
-        {
-            intCompareEQ,
-            intCompareNE,
-            intCompareGT,
-            intCompareGE,
-            intCompareLT,
-            intCompareLE
-        }
+        .comparison = intComparison,
     };
 }
 

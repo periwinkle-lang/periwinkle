@@ -107,14 +107,15 @@ std::string compiler::Decompiler::decompile()
             else if (op == COMPARE)
             {
                 out << "(";
-                switch (argument)
+                using enum vm::ObjectCompOperator;
+                switch ((vm::ObjectCompOperator)argument)
                 {
-                case 0: out << "=="; break;
-                case 1: out << "!="; break;
-                case 2: out << "більше"; break;
-                case 3: out << "більше="; break;
-                case 4: out << "менше"; break;
-                case 5: out << "менше="; break;
+                case EQ: out << "=="; break;
+                case NE: out << "!="; break;
+                case GT: out << "більше"; break;
+                case GE: out << "більше="; break;
+                case LT: out << "менше"; break;
+                case LE: out << "менше="; break;
                 }
                 out << ")";
             }

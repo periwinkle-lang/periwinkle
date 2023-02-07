@@ -86,6 +86,35 @@ static Object* callBinaryOperator(Object* o1, Object* o2, size_t operatorOffset)
     return &P_NotImplemented;
 }
 
+static Object* callCompareOperator(Object* o1, Object* o2, ObjectCompOperator op)
+{
+    auto o1Operator = o1->objectType->comparison;
+    auto o2Operator = o2->objectType->comparison;
+
+    Object* result;
+    if (o1Operator)
+    {
+        if (o1Operator == o2Operator)
+        {
+            return o1Operator(o1, o2, op);
+        }
+        result = o1Operator(o1, o2, op);
+        if (result != &P_NotImplemented)
+        {
+            return result;
+        }
+    }
+
+    if (o2Operator)
+    {
+        result = o2Operator(o1, o2, op);
+        if (result != &P_NotImplemented)
+        {
+            return result;
+        }
+    }
+    return &P_NotImplemented;
+}
 
 #define CALL_UNARY_OPERATOR(object, op)  \
     auto op_ = GET_OPERATOR(object, op); \
@@ -120,6 +149,30 @@ static Object* callBinaryOperator(Object* o1, Object* o2, size_t operatorOffset)
         }                                                                          \
         return result;                                                             \
     }
+
+Object* vm::Object::compare(Object* o1, Object* o2, ObjectCompOperator op)
+{
+    auto result = callCompareOperator(o1, o2, op);
+    if (result == &P_NotImplemented)
+    {
+
+        std::string opName;
+        using enum ObjectCompOperator;
+        switch (op)
+        {
+        case EQ: opName = "=="; break;
+        case NE: opName = "!="; break;
+        case GT: opName = "більше"; break;
+        case GE: opName = "більше="; break;
+        case LT: opName = "менше"; break;
+        case LE: opName = "менше="; break;
+        }
+        _currentVM->throwException(&TypeErrorObjectType, utils::format(
+            "Неможливо порівняти об'єкти типів \"%s\" та \"%s\" за допомогою оператора %s",
+            o1->objectType->name.c_str(), o2->objectType->name.c_str(), opName.c_str()));
+    }
+    return result;
+}
 
 UNARY_OPERATOR(toString, toString)
 UNARY_OPERATOR(toInteger, toInteger)

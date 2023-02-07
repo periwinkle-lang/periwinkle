@@ -343,6 +343,7 @@ void compiler::Compiler::compileBinaryExpression(BinaryExpression* expression)
     compileExpression(expression->left);
 
     setLineno(expression->operator_.lineno);
+    using enum vm::ObjectCompOperator;
     switch (expression->operator_.tokenType)
     {
     case lexer::TokenType::PLUS: emitOpCode(ADD); break;
@@ -353,12 +354,18 @@ void compiler::Compiler::compileBinaryExpression(BinaryExpression* expression)
     case lexer::TokenType::BACKSLASH: emitOpCode(FLOOR_DIV); break;
     case lexer::TokenType::AND: emitOpCode(AND); break;
     case lexer::TokenType::OR: emitOpCode(OR); break;
-    case lexer::TokenType::EQUAL_EQUAL: emitOpCode(COMPARE); emitOperand(0); break;
-    case lexer::TokenType::NOT_EQUAL: emitOpCode(COMPARE); emitOperand(1); break;
-    case lexer::TokenType::GREATER: emitOpCode(COMPARE); emitOperand(2); break;
-    case lexer::TokenType::GREATER_EQUAL: emitOpCode(COMPARE); emitOperand(3); break;
-    case lexer::TokenType::LESS: emitOpCode(COMPARE); emitOperand(4); break;
-    case lexer::TokenType::LESS_EQUAL: emitOpCode(COMPARE); emitOperand(5); break;
+    case lexer::TokenType::EQUAL_EQUAL:
+        emitOpCode(COMPARE); emitOperand((vm::WORD)EQ); break;
+    case lexer::TokenType::NOT_EQUAL:
+        emitOpCode(COMPARE); emitOperand((vm::WORD)NE); break;
+    case lexer::TokenType::GREATER:
+        emitOpCode(COMPARE); emitOperand((vm::WORD)GT); break;
+    case lexer::TokenType::GREATER_EQUAL:
+        emitOpCode(COMPARE); emitOperand((vm::WORD)GE); break;
+    case lexer::TokenType::LESS:
+        emitOpCode(COMPARE); emitOperand((vm::WORD)LT); break;
+    case lexer::TokenType::LESS_EQUAL:
+        emitOpCode(COMPARE); emitOperand((vm::WORD)LE); break;
     default:
         plog::fatal << "Неправильний токен оператора: \""
             <<  lexer::stringEnum::enumToString(expression->operator_.tokenType) << "\"";
