@@ -5,7 +5,7 @@
 
 using namespace vm;
 
-Object* printNative(Object* args[])
+static Object* printNative(Object* args[])
 {
     StringObject* result;
     if (args[0]->objectType->type != ObjectTypes::STRING)
@@ -20,6 +20,20 @@ Object* printNative(Object* args[])
     return &P_null;
 }
 
+static Object* printLnNative(Object* args[])
+{
+    StringObject* result;
+    if (args[0]->objectType->type != ObjectTypes::STRING)
+    {
+        result = (StringObject*)Object::toString(args[0]);
+    }
+    else
+    {
+        result = (StringObject*)args[0];
+    }
+    std::cout << result->value << std::endl;
+    return &P_null;
+}
 
 builtin_t* vm::getBuiltin()
 {
@@ -30,6 +44,7 @@ builtin_t* vm::getBuiltin()
         builtin->insert(
             {
                 {"друк", NativeFunctionObject::create(1, "друк", printNative)},
+                {"друклн", NativeFunctionObject::create(1, "друклн", printLnNative)},
             }
         );
     }
