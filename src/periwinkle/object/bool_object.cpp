@@ -32,8 +32,8 @@ namespace vm
         }
     };
 
-    BoolObject P_true  { {.objectType = &boolObjectType} };
-    BoolObject P_false { {.objectType = &boolObjectType} };
+    BoolObject P_true  { {.objectType = &boolObjectType}, true  };
+    BoolObject P_false { {.objectType = &boolObjectType}, false };
 }
 
 Object* allocBoolObject()
