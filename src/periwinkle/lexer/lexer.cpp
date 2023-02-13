@@ -23,9 +23,12 @@ std::string Lexer::peek(size_t offset)
     return std::string(1, code.at(index));
 }
 
+// Аналогічно метасимволу b(працює лише з ascii символами), але для українських слів
+#define WB "(?=[^а-яА-ЯїієґЇІЄҐ]|$)"
+
 const static std::vector<std::pair<TokenType, regex>> tokenTypesRegexList
 {
-    {TokenType::BOOLEAN,         uregex("^(істина)|^(хиба)")},
+    {TokenType::BOOLEAN,         uregex("^((істина)|(хиба))" WB)},
     {TokenType::REAL,            uregex("^(([0-9]+[.][0-9]*)|([0-9]*[.][0-9]+))")},
     {TokenType::NUMBER,          uregex("^0|^([1-9][0-9]*)")},
     {TokenType::NULL_,           uregex("^нич")},
@@ -47,20 +50,20 @@ const static std::vector<std::pair<TokenType, regex>> tokenTypesRegexList
     {TokenType::STAR,            uregex("^\\*")},
     {TokenType::PERCENT,         uregex("^%")},
     {TokenType::BACKSLASH,       uregex("^\\\\")},
-    {TokenType::GREATER,         uregex("^більше")},
-    {TokenType::LESS,            uregex("^менше")},
-    {TokenType::AND,             uregex("^та")},
-    {TokenType::OR,              uregex("^або")},
-    {TokenType::NOT,             uregex("^не")},
+    {TokenType::GREATER,         uregex("^більше" WB)},
+    {TokenType::LESS,            uregex("^менше" WB)},
+    {TokenType::AND,             uregex("^та" WB)},
+    {TokenType::NOT,             uregex("^не" WB)},
     {TokenType::EQUAL,           uregex("^=")},
 
-    {TokenType::END,             uregex("^кінець")},
-    {TokenType::WHILE,           uregex("^поки")},
-    {TokenType::BREAK,           uregex("^завершити")},
-    {TokenType::CONTINUE,        uregex("^продовжити")},
-    {TokenType::IF,              uregex("^якщо")},
-    {TokenType::ELSE_IF,         uregex("^або якщо")},
-    {TokenType::ELSE,            uregex("^інакше")},
+    {TokenType::END,             uregex("^кінець" WB)},
+    {TokenType::WHILE,           uregex("^поки" WB)},
+    {TokenType::BREAK,           uregex("^завершити" WB)},
+    {TokenType::CONTINUE,        uregex("^продовжити" WB)},
+    {TokenType::IF,              uregex("^якщо" WB)},
+    {TokenType::ELSE_IF,         uregex("^або якщо" WB)},
+    {TokenType::OR,              uregex("^або" WB)},
+    {TokenType::ELSE,            uregex("^інакше" WB)},
 
     {TokenType::ID,              uregex("^[а-яА-ЯїієґЇІЄҐ_][а-яА-ЯїієґЇІЄҐ0-9_]*")},
     {TokenType::LPAR,            uregex("^\\(")},
