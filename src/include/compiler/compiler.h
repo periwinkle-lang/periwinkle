@@ -2,15 +2,17 @@
 #define  COMPILATOR_H
 
 #include <vector>
+
 #include "expression.h"
 #include "statement.h"
 #include "vm.h"
+#include "scope.h"
 
 namespace compiler
 {
     enum class CompilerStateType
     {
-        WHILE
+        WHILE, FUNCTION
     };
 
     struct CompilerState
@@ -23,9 +25,11 @@ namespace compiler
     private:
         parser::BlockStatement* root;
         std::string code;
-        vm::Frame* frame;
+        vm::CodeObject* codeObject;
         std::vector<CompilerState*> stateStack;
         vm::WORD currentLineno = 0; // Номер лінії коду, який зараз компілюється
+        std::vector<Scope*> scopeStack;
+        ScopeAnalyzer::scope_info_t scopeInfo;
 
         void compileBlock(parser::BlockStatement* block);
         void compileStatement(parser::Statement* statement);
@@ -34,6 +38,8 @@ namespace compiler
         void compileBreakStatement(parser::BreakStatement* statement);
         void compileContinueStatement(parser::ContinueStatement* statement);
         void compileIfStatement(parser::IfStatement* statement);
+        void compileFunctionDeclaration(parser::FunctionDeclaration* statement);
+        void compileReturnStatement(parser::ReturnStatement* statement);
 
         void compileExpression(parser::Expression* expression);
         void compileAssignmentExpression(parser::AssignmentExpression* expression);
@@ -44,12 +50,17 @@ namespace compiler
         void compileUnaryExpression(parser::UnaryExpression* expression);
         void compileParenthesizedExpression(parser::ParenthesizedExpression* expression);
 
+        void compileNameGet(const std::string& name);
+        void compileNameSet(const std::string& name);
+
         CompilerState* unwindStateStack(CompilerStateType type);
         vm::WORD booleanConstIdx(bool value);
         vm::WORD realConstIdx(double value);
         vm::WORD integerConstIdx(i64 value);
         vm::WORD stringConstIdx(const std::string& value);
         vm::WORD nullConstIdx();
+        vm::WORD freeIdx(const std::string& name); // Повертає індекс для Frame->freevars
+        vm::WORD localIdx(const std::string& name); // Повертає індекс з CodeObject->locals
         vm::WORD nameIdx(const std::string& name); // Повертає індекс з CodeObject->names
         void throwCompileError(std::string message, lexer::Token token);
         // Встановлює номер стрічки в коді, який зараз компілюється.

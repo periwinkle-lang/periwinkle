@@ -21,7 +21,6 @@ using enum vm::OpCode;
 using enum parser::NodeKind;
 
 #define FIND_CONST_IDX(OBJECT, OBJECT_TYPES)                              \
-    auto codeObject = frame->codeObject;                                  \
     for (vm::WORD i = 0; i < (vm::WORD)codeObject->constants.size(); ++i) \
     {                                                                     \
         auto constant = codeObject->constants[i];                         \
@@ -39,6 +38,9 @@ using enum parser::NodeKind;
 
 #define STATE_POP() stateStack.pop_back()
 #define STATE_BACK(stateType) ((stateType*)stateStack.back())
+#define PUSH_SCOPE(node) scopeStack.push_back(scopeInfo[node])
+#define SCOPE_POP() scopeStack.pop_back()
+#define SCOPE_BACK() scopeStack.back()
 
 struct WhileState : CompilerState
 {
@@ -47,14 +49,29 @@ struct WhileState : CompilerState
     std::vector<vm::WORD> addressesForPatchWithEndBlock;
 };
 
+struct FunctionState : CompilerState
+{
+    vm::CodeObject* codeObject;
+};
+
 #define PUSH_WHILE_STATE(startIp) \
     stateStack.push_back(new WhileState{{CompilerStateType::WHILE}, startIp})
+
+#define PUSH_FUNCTION_STATE(codeObject) \
+    stateStack.push_back(new FunctionState{{CompilerStateType::FUNCTION}, codeObject})
 
 
 vm::Frame* compiler::Compiler::compile()
 {
+    ScopeAnalyzer scopeAnalyzer(root);
+    scopeInfo = scopeAnalyzer.analyze();
+    PUSH_SCOPE(root);
     compileBlock(root);
+    SCOPE_POP();
     emitOpCode(HALT);
+    auto frame = new vm::Frame;
+    frame->codeObject = codeObject;
+    frame->globals = new vm::Frame::object_map_t;
     return frame;
 }
 
@@ -88,9 +105,15 @@ void compiler::Compiler::compileStatement(Statement* statement)
     case IF_STATEMENT:
         compileIfStatement((IfStatement*)statement);
         break;
+    case FUNCTION_STATEMENT:
+        compileFunctionDeclaration((FunctionDeclaration*)statement);
+        break;
+    case RETURN_STATEMENT:
+        compileReturnStatement((ReturnStatement*)statement);
+        break;
     default:
-        plog::fatal << "Неможливо обробити вузол \"" << parser::stringEnum::enumToString(statement->kind)
-            << "\"" << std::endl;
+        plog::fatal << "Неможливо обробити вузол \""
+            << parser::stringEnum::enumToString(statement->kind) << "\"";
     }
 }
 
@@ -180,6 +203,85 @@ void compiler::Compiler::compileIfStatement(IfStatement* statement)
     }
 }
 
+void compiler::Compiler::compileFunctionDeclaration(parser::FunctionDeclaration* statement)
+{
+    auto& name = statement->id.text;
+    auto fnCodeObject = vm::CodeObject::create(name);
+    auto prevCodeObject = codeObject;
+    codeObject = fnCodeObject;
+    PUSH_FUNCTION_STATE(fnCodeObject);
+    PUSH_SCOPE(statement);
+
+    codeObject->locals = SCOPE_BACK()->locals;
+    codeObject->cells = SCOPE_BACK()->cells;
+    codeObject->freevars = SCOPE_BACK()->freeVariables;
+
+    for (auto& argName : codeObject->locals)
+    {
+        for (auto& cellName : codeObject->cells)
+        {
+            if (argName == cellName)
+            {
+                codeObject->argsAsCells.push_back(argName);
+            }
+        }
+    }
+
+    codeObject->arity = statement->parameters.size();
+    compileBlock(statement->block);
+    emitOpCode(LOAD_CONST);
+    emitOperand(nullConstIdx());
+    emitOpCode(RETURN);
+
+    SCOPE_POP();
+    STATE_POP();
+    codeObject = prevCodeObject;
+
+    setLineno(statement->id.lineno);
+
+    if (fnCodeObject->freevars.size() > 0)
+    {
+        auto state = (FunctionState*)unwindStateStack(CompilerStateType::FUNCTION);
+        auto& cells = state->codeObject->cells;
+
+        for (auto& name : state->codeObject->cells)
+        {
+            emitOpCode(GET_CELL);
+            auto cellIdx = std::find(cells.begin(), cells.end(), name);
+            emitOperand(cellIdx - cells.begin());
+        }
+    }
+
+    codeObject->constants.push_back(fnCodeObject);
+    emitOpCode(LOAD_CONST);
+    emitOperand(codeObject->constants.size() - 1);
+    emitOpCode(MAKE_FUNCTION);
+    compileNameSet(name);
+}
+
+void compiler::Compiler::compileReturnStatement(parser::ReturnStatement* statement)
+{
+    auto state = (FunctionState*)unwindStateStack(CompilerStateType::FUNCTION);
+    if (state)
+    {
+        setLineno(statement->return_.lineno);
+        if (statement->returnValue)
+        {
+            compileExpression(statement->returnValue.value());
+        }
+        else
+        {
+            emitOpCode(LOAD_CONST);
+            emitOperand(nullConstIdx());
+        }
+        emitOpCode(RETURN);
+    }
+    else
+    {
+        throwCompileError("Оператор \"повернути\" знаходиться поза функцією!", statement->return_);
+    }
+}
+
 void compiler::Compiler::compileExpression(Expression* expression)
 {
     switch (expression->kind)
@@ -215,21 +317,18 @@ void compiler::Compiler::compileAssignmentExpression(AssignmentExpression* expre
 {
     using enum lexer::TokenType;
     std::string name = expression->id.text;
-    auto nameIdx = this->nameIdx(name);
 
     compileExpression(expression->expression);
     auto assignmentType = expression->assignment.tokenType;
     if (assignmentType == EQUAL)
     {
         setLineno(expression->assignment.lineno);
-        emitOpCode(STORE_GLOBAL);
-        emitOperand(nameIdx);
+        compileNameSet(name);
         return;
     }
 
     setLineno(expression->id.lineno);
-    emitOpCode(LOAD_NAME);
-    emitOperand(nameIdx);
+    compileNameGet(name);
 
     setLineno(expression->assignment.lineno);
     switch (assignmentType)
@@ -245,8 +344,7 @@ void compiler::Compiler::compileAssignmentExpression(AssignmentExpression* expre
             << lexer::stringEnum::enumToString(assignmentType) << "\"";
     }
 
-    emitOpCode(STORE_GLOBAL);
-    emitOperand(nameIdx);
+    compileNameSet(name);
 }
 
 void compiler::Compiler::compileLiteralExpression(LiteralExpression* expression)
@@ -295,26 +393,23 @@ void compiler::Compiler::compileLiteralExpression(LiteralExpression* expression)
 void compiler::Compiler::compileVariableExpression(VariableExpression* expression)
 {
     auto& variableName = expression->variable.text;
-    auto variableNameIdx = nameIdx(variableName);
     setLineno(expression->variable.lineno);
-    emitOpCode(LOAD_GLOBAL);
-    emitOperand(variableNameIdx);
+    compileNameGet(variableName);
 }
 
 void compiler::Compiler::compileCallExpression(CallExpression* expression)
 {
     auto& functionName = expression->identifier.text;
-    auto functionNameIdx = nameIdx(functionName);
     auto argc = (vm::WORD)expression->arguments.size();
+
+    setLineno(expression->identifier.lineno);
+    compileNameGet(functionName);
 
     for (auto argument : expression->arguments)
     {
         compileExpression(argument);
     }
 
-    setLineno(expression->identifier.lineno);
-    emitOpCode(LOAD_NAME);
-    emitOperand(functionNameIdx);
     emitOpCode(CALL);
     emitOperand(argc);
 
@@ -329,6 +424,7 @@ void compiler::Compiler::compileCallExpression(CallExpression* expression)
         case BINARY_EXPRESSION:
         case ASSIGNMENT_EXPRESSION:
         case CALL_EXPRESSION:
+        case RETURN_STATEMENT:
             return;
         default:
             parent = parent->parent;
@@ -393,13 +489,53 @@ void compiler::Compiler::compileParenthesizedExpression(ParenthesizedExpression*
     compileExpression(expression->expression);
 }
 
+void compiler::Compiler::compileNameGet(const std::string& name)
+{
+    auto scope = SCOPE_BACK();
+    auto varGetter = scope->getVarGetter(name);
+
+    emitOpCode(varGetter);
+    if (varGetter == LOAD_LOCAL)
+    {
+        emitOperand(localIdx(name));
+    }
+    else if (varGetter == LOAD_CELL)
+    {
+        emitOperand(freeIdx(name));
+    }
+    else if (varGetter == LOAD_GLOBAL)
+    {
+        emitOperand(nameIdx(name));
+    }
+}
+
+void compiler::Compiler::compileNameSet(const std::string& name)
+{
+    auto scope = SCOPE_BACK();
+    auto varSetter = scope->getVarSetter(name);
+
+    emitOpCode(varSetter);
+    if (varSetter == STORE_LOCAL)
+    {
+        emitOperand(localIdx(name));
+    }
+    else if (varSetter == STORE_CELL)
+    {
+        emitOperand(freeIdx(name));
+    }
+    else if (varSetter == STORE_GLOBAL)
+    {
+        emitOperand(nameIdx(name));
+    }
+}
+
 CompilerState* compiler::Compiler::unwindStateStack(CompilerStateType type)
 {
-    for (auto item : stateStack)
+    for (auto it = stateStack.rbegin(); it != stateStack.rend(); ++it)
     {
-        if (item->type == type)
+        if ((*it)->type == type)
         {
-            return item;
+            return *it;
         }
     }
     return nullptr;
@@ -407,7 +543,6 @@ CompilerState* compiler::Compiler::unwindStateStack(CompilerStateType type)
 
 vm::WORD compiler::Compiler::booleanConstIdx(bool value)
 {
-    auto codeObject = frame->codeObject;
     for (vm::WORD i = 0; i < (vm::WORD)codeObject->constants.size(); ++i)
     {
         if (codeObject->constants[i]->objectType->type != vm::ObjectTypes::BOOL)
@@ -440,7 +575,6 @@ vm::WORD compiler::Compiler::stringConstIdx(const std::string& value)
 
 vm::WORD compiler::Compiler::nullConstIdx()
 {
-    auto codeObject = frame->codeObject;
     for (vm::WORD i = 0; i < (vm::WORD)codeObject->constants.size(); ++i)
     {
         if (codeObject->constants[i]->objectType->type == vm::ObjectTypes::NULL_)
@@ -452,9 +586,46 @@ vm::WORD compiler::Compiler::nullConstIdx()
     return (vm::WORD)codeObject->constants.size() - 1;
 }
 
+vm::WORD compiler::Compiler::freeIdx(const std::string& name)
+{
+    auto& cells = codeObject->cells;
+    auto cellIdx = std::find(cells.begin(), cells.end(), name);
+    if (cellIdx != cells.end())
+    {
+        return cellIdx - cells.begin();
+    }
+    else
+    {
+        auto& freevars = codeObject->freevars;
+        auto freeIndex = std::find(freevars.begin(), freevars.end(), name);
+        if (freeIndex != freevars.end())
+        {
+            return freeIndex - freevars.begin() + cells.size();
+        }
+        else
+        {
+            plog::fatal << "Неможливо знайти змінну \"" << name << "\"";
+        }
+    }
+}
+
+vm::WORD compiler::Compiler::localIdx(const std::string& name)
+{
+    auto& locals = codeObject->locals;
+    auto nameIdx = std::find(locals.begin(), locals.end(), name);
+    if (nameIdx != locals.end())
+    {
+        return nameIdx - locals.begin();
+    }
+    else
+    {
+        plog::fatal << "Локальної змінної \"" << name << "\" не існує";
+    }
+}
+
 vm::WORD compiler::Compiler::nameIdx(const std::string& name)
 {
-    auto& names = frame->codeObject->names;
+    auto& names = codeObject->names;
     auto nameIdx = std::find(names.begin(), names.end(), name);
     if (nameIdx != names.end())
     {
@@ -481,33 +652,32 @@ void compiler::Compiler::setLineno(size_t lineno)
 
 vm::WORD compiler::Compiler::emitOpCode(vm::OpCode op)
 {
-    frame->codeObject->code.push_back((vm::WORD)op);
-    auto ip = vm::WORD(frame->codeObject->code.size() - 1);
-    frame->codeObject->ipToLineno[ip] = currentLineno;
+    codeObject->code.push_back((vm::WORD)op);
+    auto ip = vm::WORD(codeObject->code.size() - 1);
+    codeObject->ipToLineno[ip] = currentLineno;
     return ip;
 }
 
 vm::WORD compiler::Compiler::emitOperand(vm::WORD operand)
 {
-    frame->codeObject->code.push_back(operand);
-    return vm::WORD(frame->codeObject->code.size() - 1);
+    codeObject->code.push_back(operand);
+    return vm::WORD(codeObject->code.size() - 1);
 }
 
 vm::WORD compiler::Compiler::getOffset()
 {
-    return (vm::WORD)frame->codeObject->code.size();
+    return (vm::WORD)codeObject->code.size();
 }
 
 void compiler::Compiler::patchJumpAddress(int offset, vm::WORD newAddress)
 {
-    frame->codeObject->code[offset] = newAddress;
+    codeObject->code[offset] = newAddress;
 }
 
 compiler::Compiler::Compiler(BlockStatement* root, std::string code)
     :
     root(root),
-    code(code),
-    frame(new vm::Frame)
+    code(code)
 {
-    frame->codeObject = vm::CodeObject::create("TODO");
+    codeObject = vm::CodeObject::create("TODO");
 }

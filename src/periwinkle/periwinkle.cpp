@@ -1,4 +1,6 @@
-﻿#include "periwinkle.h"
+﻿#include <array>
+
+#include "periwinkle.h"
 #include "vm.h"
 #include "lexer.h"
 #include "parser.h"
@@ -23,8 +25,12 @@ void periwinkle::Periwinkle::execute()
     lexer::Lexer lex(code);
     parser::Parser parser(lex.tokenize(), code);
     compiler::Compiler comp(parser.parse(), code);
-    vm::VirtualMachine virtualMachine;
-    virtualMachine.execute(comp.compile());
+    std::array<vm::Object*, 512> stack{};
+    auto frame = comp.compile();
+    frame->sp = &stack[0];
+    frame->bp = &stack[0];
+    vm::VirtualMachine virtualMachine(frame);
+    virtualMachine.execute();
 }
 
 #ifdef DEBUG
@@ -49,8 +55,8 @@ void periwinkle::Periwinkle::printDisassemble()
     lexer::Lexer lex(code);
     parser::Parser parser(lex.tokenize(), code);
     compiler::Compiler comp(parser.parse(), code);
-    compiler::Decompiler decompiler(comp.compile()->codeObject);
-    std::cout << decompiler.decompile();
+    compiler::Decompiler decompiler;
+    std::cout << decompiler.decompile(comp.compile()->codeObject);
 }
 #endif
 

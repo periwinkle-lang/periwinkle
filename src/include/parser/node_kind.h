@@ -15,6 +15,8 @@ namespace parser
         CONTINUE_STATEMENT,
         IF_STATEMENT,
         ELSE_STATEMENT,
+        FUNCTION_STATEMENT,
+        RETURN_STATEMENT,
 
         // Expression
         ASSIGNMENT_EXPRESSION,

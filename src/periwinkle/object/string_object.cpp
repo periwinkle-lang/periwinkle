@@ -8,7 +8,7 @@ using namespace vm;
 
 static bool tryConvertToString(Object * o, std::string& str)
 {
-    if (o->objectType->operators->toString != NULL)
+    if (o->objectType->operators.toString != NULL)
     {
         str = ((StringObject*)Object::toString(o))->value;
         return true;
@@ -70,7 +70,7 @@ namespace vm
         .name = "String",
         .type = ObjectTypes::STRING,
         .alloc = &allocStringObject,
-        .operators = new ObjectOperators
+        .operators =
         {
             .add = strAdd,
         },

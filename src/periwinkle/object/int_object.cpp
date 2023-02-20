@@ -120,7 +120,7 @@ namespace vm
         .name = "Integer",
         .type = ObjectTypes::INTEGER,
         .alloc = &allocIntObject,
-        .operators = new ObjectOperators
+        .operators =
         {
             .toString = intToString,
             .toInteger = intToInteger,

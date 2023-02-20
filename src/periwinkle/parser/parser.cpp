@@ -74,6 +74,10 @@ Statement* parser::Parser::parseStatement(Node* parent)
         return parseContinueStatement(parent);
     case IF:
         return parseIfStatement(parent);
+    case FUNCTION:
+        return parseFunctionDeclaration(parent);
+    case RETURN:
+        return parseReturnStatement(parent);
     default:
         return parseExpressionStatement(parent);
     }
@@ -157,6 +161,63 @@ std::optional<Statement*> parser::Parser::parseElseOrIfStatement(Node* parent)
         return elseStatement;
     }
     return std::nullopt;
+}
+
+Statement* parser::Parser::parseFunctionDeclaration(Node* parent)
+{
+    auto fnDeclaration = new FunctionDeclaration(parent);
+    fnDeclaration->keyword = matchToken(FUNCTION);
+    fnDeclaration->id = matchToken(ID);
+    fnDeclaration->lpar = matchToken(LPAR);
+    fnDeclaration->parameters = parseParameters(parent);
+    fnDeclaration->rpar = matchToken(RPAR);
+    auto block = new BlockStatement(fnDeclaration);
+    while (CURRENT.tokenType != EOF_ && CURRENT.tokenType != END)
+    {
+        block->statements.push_back(parseStatement(block));
+    }
+    fnDeclaration->block = block;
+    matchToken(END);
+    return fnDeclaration;
+}
+
+std::vector<Token> parser::Parser::parseParameters(Node* parent)
+{
+    std::vector<Token> parameters;
+
+    while (CURRENT.tokenType != RPAR
+           && CURRENT.tokenType != EOF_)
+    {
+        parameters.push_back(matchToken(ID));
+
+        if (CURRENT.tokenType == COMMA && AHEAD.tokenType != RPAR)
+        {
+            nextToken();
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    return parameters;
+}
+
+Statement* parser::Parser::parseReturnStatement(Node* parent)
+{
+    auto returnStatement = new ReturnStatement(parent);
+    returnStatement->return_ = matchToken(RETURN);
+    if (CURRENT.tokenType == SEMICOLON)
+    {
+        nextToken();
+        returnStatement->returnValue = std::nullopt;
+    }
+    else
+    {
+        returnStatement->returnValue = isRhs() ?
+            std::optional(parseRhs(returnStatement)) : std::nullopt;
+    }
+    return returnStatement;
 }
 
 Expression* parser::Parser::parseLhs(Node* parent)
@@ -270,12 +331,6 @@ Expression* parser::Parser::parseBinaryExpression(Node* parent, int parentPreced
     }
 
     return left;
-
-    //auto binaryExpression = new BinaryExpression(parent);
-    //binaryExpression->left = parseRhs(binaryExpression);
-    //binaryExpression->operator_ = nextToken();
-    //binaryExpression->right = parseRhs(binaryExpression);
-    //return binaryExpression;
 }
 
 Expression* parser::Parser::parsePrimaryExpression(Node* parent)
@@ -380,6 +435,31 @@ std::vector<Expression*> parser::Parser::parseArguments(Node* parent)
     }
 
     return arguments;
+}
+
+bool parser::Parser::isRhs()
+{
+    if (isUnaryOperator(CURRENT)
+        || isOperator(CURRENT)
+        || CURRENT.tokenType == ID
+        || CURRENT.tokenType == LPAR)
+    {
+        return true;
+    }
+
+    // Перевірка на літерал
+    switch (CURRENT.tokenType)
+    {
+    case lexer::TokenType::NUMBER:
+    case lexer::TokenType::REAL:
+    case lexer::TokenType::BOOLEAN:
+    case lexer::TokenType::STRING:
+    case lexer::TokenType::NULL_:
+        return true;
+    default:
+        break;
+    }
+    return false;
 }
 
 bool parser::Parser::isOperator(Token token)

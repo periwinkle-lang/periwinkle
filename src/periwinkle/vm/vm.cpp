@@ -4,7 +4,9 @@
 #include "bool_object.h"
 #include "string_object.h"
 #include "exception_object.h"
-#include "call.h"
+#include "function_object.h"
+#include "null_object.h"
+#include "cell_object.h"
 #include "builtins.h"
 #include "plogger.h"
 #include "utils.h"
@@ -18,8 +20,8 @@ using namespace vm;
 #define POP() *sp--
 #define JUMP() ip = &code->code[*ip]
 #define GET_LINENO(ip_) \
-    (code->ipToLineno.contains(ip_ - &code->code[0]) ? \
-    0 : code->ipToLineno[(ip_ - &code->code[0]) - 1])
+    (frame->codeObject->ipToLineno.contains(ip_ - &frame->codeObject->code[0]) ? \
+    0 : frame->codeObject->ipToLineno[(ip_ - &frame->codeObject->code[0]) - 1])
 
 #define BINARY_OP(name, op_name)                        \
 case OpCode::name:                                      \
@@ -53,22 +55,20 @@ case OpCode::name:                                      \
 
 void VirtualMachine::throwException(ObjectType* exception, std::string message, WORD lineno)
 {
-    if (lineno)
+    if (!lineno)
     {
-        std::cerr << "На стрічці " << lineno << " знадено помилку" << std::endl;
+        lineno = GET_LINENO(ip - 1);
     }
+    std::cerr << "На стрічці " << lineno << " знадено помилку" << std::endl;
     std::cerr << exception->name << ": " << message << std::endl;
     exit(1);
 }
 
-void VirtualMachine::execute(Frame* frame)
+Object* VirtualMachine::execute()
 {
     using enum OpCode;
     const auto code = frame->codeObject;
     const auto& names = code->names;
-
-    WORD* ip = &code->code[0];
-    Object** sp = &stack[0];
     auto builtin = getBuiltin();
 
     for (;;)
@@ -145,6 +145,21 @@ void VirtualMachine::execute(Frame* frame)
             }
             break;
         }
+        case CALL:
+        {
+            auto argc = READ();
+            auto callable = *(sp - argc);
+
+            auto result = Object::call(callable, sp, argc);
+            sp -= argc + 1;
+            PUSH(result);
+            break;
+        }
+        case RETURN:
+        {
+            auto returnValue = POP();
+            return returnValue;
+        }
         case LOAD_CONST:
         {
             PUSH(GET_CONST());
@@ -153,9 +168,13 @@ void VirtualMachine::execute(Frame* frame)
         case LOAD_GLOBAL:
         {
             auto& name = names[READ()];
-            if (frame->globals.contains(name))
+            if (frame->globals->contains(name))
             {
-                PUSH(frame->globals[name]);
+                PUSH((*frame->globals)[name]);
+            }
+            else if (builtin->contains(name))
+            {
+                PUSH(builtin->at(name));
             }
             else
             {
@@ -167,64 +186,53 @@ void VirtualMachine::execute(Frame* frame)
         case STORE_GLOBAL:
         {
             auto& name = names[READ()];
-            frame->globals[name] = POP();
+            (*frame->globals)[name] = POP();
             break;
         }
-        case LOAD_NAME:
+        case LOAD_LOCAL:
         {
-            auto& name = names[READ()];
-            if (frame->globals.contains(name))
-            {
-                PUSH(frame->globals[name]);
-            }
-            // TODO: Локальні змінні мають перевірятись після глобальних та перед builtin
-            else if (builtin->contains(name))
-            {
-                PUSH(builtin->at(name));
-            }
-            else
-            {
-                plog::fatal << "Локальні змінні ще не реалізовані";
-            }
+            PUSH(bp[READ()]);
             break;
         }
-        case CALL:
+        case STORE_LOCAL:
         {
-            auto functionObject = POP();
-            auto argc = READ();
-            if (IS_CALLABLE(functionObject))
-            {
-                auto result = objectCall(functionObject, sp, argc);
-                PUSH(result);
-            }
-            else
-            {
-                throwException(&TypeErrorObjectType,
-                    utils::format("Об'єкт типу \"%s\" не може бути викликаний",
-                        functionObject->objectType->name.c_str()),
-                    GET_LINENO(ip-1)
-                );
-            }
+            bp[READ()] = POP();
             break;
         }
-        //case MAKE_FUNCTION:
-        //{
-        //    auto codeObject = (CodeObject*)POP();
-        //    auto cellCount = READ();
-        //    auto functionObject = (FunctionObject*)allocObject(&functionObjectType);
+        case GET_CELL:
+        {
+            PUSH(freevars[READ()]);
+            break;
+        }
+        case LOAD_CELL:
+        {
+            auto cell = (CellObject*)freevars[READ()];
+            PUSH(cell->value);
+            break;
+        }
+        case STORE_CELL:
+        {
+            auto value = POP();
+            auto cell = (CellObject*)freevars[READ()];
+            cell->value = value;
+            break;
+        }
+        case MAKE_FUNCTION:
+        {
+            auto codeObject = (CodeObject*)POP();
+            auto functionObject = FunctionObject::create(codeObject);
 
-        //    // Комірки передаються через стек
-        //    for (WORD i = 0; i < cellCount; ++i)
-        //    {
-        //        auto cell = POP();
-        //        functionObject->cells.push_back(cell);
-        //    }
-        //    PUSH(functionObject);
-        //    break;
-        //}
+            for (WORD i = 0; i < codeObject->freevars.size(); ++i)
+            {
+                functionObject->closure.push_back((CellObject*)POP());
+            }
+
+            PUSH(functionObject);
+            break;
+        }
         case HALT:
         {
-            return;
+            return &P_null;
         }
         default:
             plog::fatal << "Опкод не реалізовано: \"" << stringEnum::enumToString((OpCode)a) << "\"";
@@ -232,12 +240,20 @@ void VirtualMachine::execute(Frame* frame)
     }
 }
 
-vm::VirtualMachine::VirtualMachine()
+Frame* vm::VirtualMachine::getFrame() const
 {
-    _currentVM = this;
+    return frame;
 }
 
-namespace vm
+VirtualMachine* vm::VirtualMachine::currentVm = nullptr;
+
+vm::VirtualMachine::VirtualMachine(Frame* frame)
+    :
+    frame(frame),
+    ip(&frame->codeObject->code[0]),
+    sp(frame->sp),
+    bp(frame->bp),
+    freevars(frame->freevars)
 {
-    VirtualMachine* _currentVM = nullptr;
+    currentVm = this;
 }

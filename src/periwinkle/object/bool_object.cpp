@@ -62,7 +62,7 @@ namespace vm
         .name = "Bool",
         .type = ObjectTypes::BOOL,
         .alloc = &allocBoolObject,
-        .operators = new ObjectOperators
+        .operators =
         {
             .toString = boolToString,
             .toInteger = boolToInteger,

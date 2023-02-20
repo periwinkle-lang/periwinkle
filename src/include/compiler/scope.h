@@ -3,8 +3,13 @@
 
 #include <iostream>
 #include <unordered_map>
+#include <map>
 #include <vector>
 #include <string>
+
+#include "node.h"
+#include "statement.h"
+#include "vm.h"
 
 namespace compiler
 {
@@ -23,14 +28,36 @@ namespace compiler
         ScopeType type;
         Scope* parent;
         std::unordered_map<std::string, VariableType> variableInfo;
+        std::vector<std::string> locals;
         std::vector<std::string> cells;
-        std::vector<std::string> freeVariable;
+        std::vector<std::string> freeVariables;
 
         void addLocal(const std::string& name);
         void addCell(const std::string& name);
         void addFree(const std::string& name);
-        void localVariableToCell(const std::string& name, Scope* owner);
+
+        // Переносить змінну з LOCAL до CELL
+        void promote(const std::string& name, Scope* owner);
+        void maybePromote(const std::string& name);
         std::pair<Scope*, VariableType> resolve(const std::string& name, VariableType type);
+
+        vm::OpCode getVarGetter(const std::string& name);
+        vm::OpCode getVarSetter(const std::string& name);
+    };
+
+    class ScopeAnalyzer
+    {
+    public:
+        using scope_info_t = std::map<const parser::Node*, Scope*>;
+    private:
+        scope_info_t scopeInfo;
+        parser::BlockStatement* rootNode;
+
+        void _analyze(parser::Node* node, Scope* parent);
+    public:
+        scope_info_t analyze();
+
+        ScopeAnalyzer(parser::BlockStatement* root);
     };
 }
 

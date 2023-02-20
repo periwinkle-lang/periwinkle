@@ -1,11 +1,12 @@
-﻿#include "builtins.h"
+﻿#include <span>
+
+#include "builtins.h"
 #include "null_object.h"
-#include "call.h"
 #include "string_object.h"
 
 using namespace vm;
 
-static Object* printNative(Object* args[])
+static Object* printNative(std::span<Object*> args)
 {
     StringObject* result;
     if (args[0]->objectType->type != ObjectTypes::STRING)
@@ -20,7 +21,7 @@ static Object* printNative(Object* args[])
     return &P_null;
 }
 
-static Object* printLnNative(Object* args[])
+static Object* printLnNative(std::span<Object*> args)
 {
     StringObject* result;
     if (args[0]->objectType->type != ObjectTypes::STRING)

@@ -2,8 +2,10 @@
 #define FUNCTION_OBJECT_H
 
 #include <vector>
+
 #include "object.h"
 #include "code_object.h"
+#include "cell_object.h"
 
 namespace vm
 {
@@ -12,7 +14,9 @@ namespace vm
     struct FunctionObject : Object
     {
         CodeObject* code;
-        std::vector<Object*> cells;
+        std::vector<CellObject*> closure; // Масив комірок
+
+        static FunctionObject* create(CodeObject* code);
     };
 }
 

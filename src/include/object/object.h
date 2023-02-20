@@ -4,6 +4,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "types.h"
+
 namespace vm
 {
     struct Object;
@@ -20,6 +22,7 @@ namespace vm
         REAL,
         NULL_,
         EXCEPTION,
+        CELL,
     };
 
     enum class ObjectCompOperator
@@ -30,7 +33,7 @@ namespace vm
     using unaryFunction      = vm::Object*(*)(Object*);
     using binaryFunction     = vm::Object*(*)(Object*, Object*);
     using ternaryFunction    = vm::Object*(*)(Object*, Object*, Object*);
-    using callFunction       = vm::Object*(*)(Object*[]);
+    using callFunction       = vm::Object*(*)(Object*, Object**, u64);
     using comparisonFunction = vm::Object*(*)(Object*, Object*, ObjectCompOperator);
 
     struct ObjectOperators
@@ -58,7 +61,7 @@ namespace vm
         Object* (*alloc)(void); // Створення нового екземпляра
         void (*constructor)(Object* object, Object* args[]); // Ініціалізація екземпляра
         void (*destructor)(Object* object);
-        ObjectOperators* operators;
+        ObjectOperators operators;
         comparisonFunction comparison;
         // Зберігає методи, константи та статичні поля
         std::unordered_map<std::string, Object*> *publicAttributes;
@@ -70,6 +73,9 @@ namespace vm
     struct Object
     {
         ObjectType* objectType;
+
+        // Викликає об'єкт
+        static Object* call(Object* callable, Object** sp, u64 argc);
 
         // Викликає операції порівяння для вхідних об'єктів
         static Object* compare(Object* o1, Object* o2, ObjectCompOperator op);

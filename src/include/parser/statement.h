@@ -79,6 +79,28 @@ namespace parser
         ElseStatement(Node* parent)
             : Statement(parent, NodeKind::ELSE_STATEMENT) {};
     };
+
+    struct FunctionDeclaration : Statement
+    {
+        lexer::Token keyword;
+        lexer::Token id;
+        lexer::Token lpar;
+        std::vector<lexer::Token> parameters;
+        lexer::Token rpar;
+        BlockStatement* block;
+
+        FunctionDeclaration(Node* parent)
+            : Statement(parent, NodeKind::FUNCTION_STATEMENT) {};
+    };
+
+    struct ReturnStatement : Statement
+    {
+        lexer::Token return_;
+        std::optional<Expression*> returnValue;
+
+        ReturnStatement(Node* parent)
+            : Statement(parent, NodeKind::RETURN_STATEMENT) {};
+    };
 }
 
 #endif

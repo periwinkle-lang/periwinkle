@@ -20,7 +20,7 @@ namespace vm
         .name = "Null",
         .type = ObjectTypes::NULL_,
         .alloc = &allocNullObject,
-        .operators = new ObjectOperators
+        .operators =
         {
             .toString = nullToString,
         },

@@ -31,6 +31,9 @@ namespace parser
         Statement* parseContinueStatement(Node* parent);
         Statement* parseIfStatement(Node* parent, bool elseIf = false);
         std::optional<Statement*> parseElseOrIfStatement(Node* parent);
+        Statement* parseFunctionDeclaration(Node* parent);
+        std::vector <lexer::Token> parseParameters(Node* parent);
+        Statement* parseReturnStatement(Node* parent);
 
         Expression* parseExpression(Node* parent);
         Expression* parseLhs(Node* parent);
@@ -45,6 +48,7 @@ namespace parser
         Expression* parseLiteralExpression(Node* parent);
         std::vector<Expression*> parseArguments(Node* parent);
 
+        bool isRhs();
         static bool isOperator(lexer::Token token);
         static bool isUnaryOperator(lexer::Token token);
         lexer::Token nextToken();

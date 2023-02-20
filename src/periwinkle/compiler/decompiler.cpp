@@ -2,10 +2,10 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+
 #include "decompiler.h"
 #include "types.h"
 #include "utils.h"
-#include "call.h"
 #include "native_function_object.h"
 #include "int_object.h"
 #include "bool_object.h"
@@ -27,7 +27,11 @@ int compiler::Decompiler::opCodeLenArguments(OpCode code)
     case LOAD_CONST:
     case LOAD_GLOBAL:
     case STORE_GLOBAL:
-    case LOAD_NAME:
+    case LOAD_LOCAL:
+    case STORE_LOCAL:
+    case LOAD_CELL:
+    case STORE_CELL:
+    case GET_CELL:
     case CALL:
     case COMPARE:
         return 1;
@@ -63,15 +67,23 @@ std::string compiler::Decompiler::getValueAsString(vm::Object* object)
     {
         return "нич";
     }
+    case CODE:
+    {
+        std::stringstream ss;
+        ss << "<CodeObject " << ((vm::CodeObject*)object)->name << ": " << object << ">";
+        return ss.str();
+
+    }
     default:
         plog::fatal << "Нереалізовано для типу: \"" << object->objectType->name << "\"";
     }
 }
 
-std::string compiler::Decompiler::decompile()
+std::string compiler::Decompiler::decompile(vm::CodeObject* codeObject)
 {
     std::stringstream out;
     vm::WORD lineno = 0;
+    std::vector<vm::CodeObject*> codeObjects;
 
     for (vm::WORD ip = 0; ip < codeObject->code.size(); ++ip)
     {
@@ -98,8 +110,12 @@ std::string compiler::Decompiler::decompile()
             {
                 auto argumentAsObject = codeObject->constants[argument];
                 out << "(" << getValueAsString(argumentAsObject) << ")";
+                if (argumentAsObject->objectType->type == vm::ObjectTypes::CODE)
+                {
+                    codeObjects.push_back((vm::CodeObject*)argumentAsObject);
+                }
             }
-            else if (op == LOAD_NAME || op == STORE_GLOBAL || op == LOAD_GLOBAL)
+            else if (op == STORE_GLOBAL || op == LOAD_GLOBAL)
             {
                 auto& name = codeObject->names[argument];
                 out << "(" << name << ")";
@@ -119,15 +135,36 @@ std::string compiler::Decompiler::decompile()
                 }
                 out << ")";
             }
+            else if (op == LOAD_LOCAL || op == STORE_LOCAL)
+            {
+                auto& name = codeObject->locals[argument];
+                out << "(" << name << ")";
+            }
+            else if (op == LOAD_CELL || op == STORE_CELL || op == GET_CELL)
+            {
+                std::string name;
+                if (argument < codeObject->cells.size())
+                {
+                    name = codeObject->cells[argument];
+                }
+                else
+                {
+                    name = codeObject->freevars[argument - codeObject->cells.size()];
+                }
+                out << "(" << name << ")";
+            }
         }
 
-
         out << std::endl;
+
+    }
+
+    for (auto value : codeObjects)
+    {
+        out << std::endl;
+        out << "Decompile " << getValueAsString(value) << ":" << std::endl;
+        out << decompile(value);
     }
 
     return out.str();
-}
-
-compiler::Decompiler::Decompiler(vm::CodeObject* codeObject) : codeObject(codeObject)
-{
 }

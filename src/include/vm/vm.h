@@ -1,10 +1,9 @@
 ﻿#ifndef VM_H
 #define VM_H
 
-#include <array>
 #include <algorithm>
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <iostream>
 
 #include "object.h"
@@ -33,7 +32,8 @@ namespace vm
         JMP, JMP_IF_TRUE, JMP_IF_FALSE, CALL, RETURN,
 
         // Операції для роботи з пам'яттю
-        LOAD_CONST, LOAD_GLOBAL, STORE_GLOBAL, LOAD_NAME,
+        LOAD_CONST, LOAD_GLOBAL, STORE_GLOBAL, LOAD_LOCAL, STORE_LOCAL,
+        GET_CELL, LOAD_CELL, STORE_CELL,
 
         MAKE_FUNCTION,
 
@@ -47,21 +47,34 @@ namespace vm
     {
         Frame* previous;
         CodeObject* codeObject;
-        std::unordered_map<std::string, Object*> globals; // Глобальні змінні
+        using object_map_t = std::unordered_map<std::string, Object*>;
+        object_map_t* globals; // Глобальні змінні
+
+        Object** sp; // stack pointer. Посилається на вершину стека
+        Object** bp; // base pointer. Посилається на початок стека для даного фрейма
+
+        // Посилається на стек після локальних змінних, те саме що й
+        //  bp + кількість_локальних_змінних.
+        //  Спочатку йдуть комірки, потім вільні змінні
+        Object** freevars;
     };
 
     class VirtualMachine
     {
     private:
-        std::array<Object*, 512> stack;
+        Frame* frame;
+        WORD* ip;
+        Object**& sp;
+        Object**& bp;
+        Object**& freevars;
 
     public:
         void throwException(ObjectType* exception, std::string message, WORD lineno=0);
-        void execute(Frame* frame);
+        Object* execute();
+        Frame* getFrame() const;
 
-        VirtualMachine();
+        static VirtualMachine* currentVm;
+        VirtualMachine(Frame* frame);
     };
-
-    extern VirtualMachine* _currentVM;
 }
 #endif

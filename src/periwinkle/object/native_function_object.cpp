@@ -1,7 +1,22 @@
 ﻿#include "native_function_object.h"
+#include "vm.h"
+#include "utils.h"
 
 using namespace vm;
 extern ObjectType objectObjectType;
+
+Object* nativeCall(Object* callable, Object** sp, WORD argc)
+{
+   auto nativeFunction = (NativeFunctionObject*)callable;
+   if (nativeFunction->arity != argc)
+   {
+       VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
+           utils::format("Функція \"%s\" очікує %u аргументів, натомість було передано %u",
+               nativeFunction->name.c_str(), nativeFunction->arity, argc));
+   }
+   auto result = nativeFunction->function({sp - argc + 1, argc});
+   return result;
+}
 
 Object* allocNativeFunction();
 
@@ -13,6 +28,10 @@ namespace vm
         .name = "NativeFunction",
         .type = ObjectTypes::NATIVE_FUNCTION,
         .alloc = &allocNativeFunction,
+        .operators =
+        {
+            .call = nativeCall,
+        },
     };
 }
 

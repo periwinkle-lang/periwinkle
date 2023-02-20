@@ -64,11 +64,14 @@ const static std::vector<std::pair<TokenType, regex>> tokenTypesRegexList
     {TokenType::ELSE_IF,         uregex("^або якщо" WB)},
     {TokenType::OR,              uregex("^або" WB)},
     {TokenType::ELSE,            uregex("^інакше" WB)},
+    {TokenType::FUNCTION,        uregex("^функція" WB)},
+    {TokenType::RETURN,          uregex("^повернути" WB)},
 
     {TokenType::ID,              uregex("^[а-яА-ЯїієґЇІЄҐ_][а-яА-ЯїієґЇІЄҐ0-9_]*")},
     {TokenType::LPAR,            uregex("^\\(")},
     {TokenType::RPAR,            uregex("^\\)")},
     {TokenType::COMMA,           uregex("^,")},
+    {TokenType::SEMICOLON,       uregex("^;")},
 };
 
 bool Lexer::nextToken()

@@ -124,7 +124,7 @@ namespace vm
         .name = "Real",
         .type = ObjectTypes::REAL,
         .alloc = &allocRealObject,
-        .operators = new ObjectOperators
+        .operators =
         {
             .toString = realToString,
             .toInteger = realToInteger,

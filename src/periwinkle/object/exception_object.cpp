@@ -39,20 +39,20 @@ namespace vm
         .name = "Виняток",
         .type = ObjectTypes::EXCEPTION,
         .alloc = &allocExceptionObject,
-        .operators = new ObjectOperators
+        .operators =
         {
             .toString = exceptionToString,
         },
     };
 
     EXCEPTION_EXTEND(ExceptionObjectType, NameError, "ПомилкаІмені",
-        new ObjectOperators{ .toString = exceptionToString });
+        { .toString = exceptionToString });
 
     EXCEPTION_EXTEND(ExceptionObjectType, TypeError, "ПомилкаТипу",
-        new ObjectOperators{ .toString = exceptionToString });
+        { .toString = exceptionToString });
 
     EXCEPTION_EXTEND(ExceptionObjectType, NotImplementedError, "ПомилкаРеалізації",
-        new ObjectOperators{ .toString = exceptionToString });
+        { .toString = exceptionToString });
 
     NotImplementedErrorObject P_NotImplemented{ {{.objectType = &NotImplementedErrorObjectType}} };
 }
