@@ -200,6 +200,12 @@ void ScopeAnalyzer::_analyze(parser::Node* node, Scope* parent)
         _analyze(unaryExpression->operand, parent);
         break;
     }
+    case PARENTHESIZED_EXPRESSION:
+    {
+        auto parenthesizedExpression = (parser::ParenthesizedExpression*)node;
+        _analyze(parenthesizedExpression->expression, parent);
+        break;
+    }
     case VARIABLE_EXPRESSION:
     {
         auto variable = (parser::VariableExpression*)node;
