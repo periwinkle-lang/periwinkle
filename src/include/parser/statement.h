@@ -10,7 +10,6 @@
 #include "node_kind.h"
 #include "lexer.h"
 
-
 namespace parser
 {
     struct Statement : Node
@@ -100,6 +99,14 @@ namespace parser
 
         ReturnStatement(Node* parent)
             : Statement(parent, NodeKind::RETURN_STATEMENT) {};
+
+        ~ReturnStatement()
+        {
+            if (returnValue)
+            {
+                delete returnValue.value();
+            }
+        }
     };
 }
 

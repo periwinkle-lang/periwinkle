@@ -8,193 +8,295 @@ using lexer::TokenType;
 using enum lexer::TokenType;
 using lexer::Token;
 
-#define CURRENT peek(0)
-#define AHEAD peek(1)
+#define SIMPLE_RULE(rule, ...)             \
+    if (auto __##rule = rule(__VA_ARGS__)) \
+        return __##rule;
 
-int parser::getUnaryOperatorPrecedence(TokenType type)
-{
-    switch (type)
-    {
-    case TokenType::PLUS:
-    case TokenType::MINUS:
-    case TokenType::NOT:
-        return 1;
-    default:
-        return INT_MAX;
-    }
-}
 
-int parser::getBinaryOperatorPrecedence(TokenType type)
+template <typename R, typename... Args>
+struct parser::Parser::LeftRecursionDecorator<R(Args...)>
 {
-    switch (type)
+    std::function<R(Parser*, Args...)> func;
+    Parser* parser;
+
+    LeftRecursionDecorator(std::function<R(Parser*, Args...)> func) : func(func) {}
+
+    R operator()(Args... args)
     {
-    case TokenType::STAR:
-    case TokenType::SLASH:
-    case TokenType::PERCENT:
-    case TokenType::BACKSLASH:
-        return 2;
-    case TokenType::PLUS:
-    case TokenType::MINUS:
-        return 3;
-    case TokenType::EQUAL_EQUAL:
-    case TokenType::NOT_EQUAL:
-    case TokenType::LESS:
-    case TokenType::GREATER:
-    case TokenType::LESS_EQUAL:
-    case TokenType::GREATER_EQUAL:
-        return 4;
-    case TokenType::AND:
-        return 5;
-    case TokenType::OR:
-        return 6;
-    default:
-        return INT_MAX;
+        auto mark = parser->position;
+        void* key = (void*)&func;
+
+        if (parser->memo[mark].contains(key))
+        {
+            auto [result, endPosition] = parser->memo[mark][key];
+            parser->position = endPosition;
+            return (R)result;
+        }
+        else
+        {
+            parser->memo[mark][key] = { nullptr, mark };
+            Node* lastResult = nullptr;
+            auto lastPosition = mark;
+            u64 endPosition;
+
+            while (true)
+            {
+                parser->position = mark;
+                Node* result = func(parser, args...);
+                endPosition = parser->position;
+                if (endPosition <= lastPosition)
+                    break;
+                parser->memo[mark][key] = { result, endPosition };
+                lastResult = result;
+                lastPosition = endPosition;
+            }
+
+            parser->position = lastPosition;
+            return (R)lastResult;
+        }
     }
-}
+};
 
 BlockStatement* parser::Parser::parseBlock(Node* parent)
 {
     auto blockStatement = new BlockStatement(parent);
-    while (CURRENT.tokenType != EOF_)
+    while (auto statement = parseStatement(blockStatement))
     {
-        blockStatement->statements.push_back(parseStatement(blockStatement));
+        blockStatement->statements.push_back(statement);
     }
     return blockStatement;
 }
 
 Statement* parser::Parser::parseStatement(Node* parent)
 {
-    switch (CURRENT.tokenType)
-    {
-    case WHILE:
-        return parseWhileStatement(parent);
-    case BREAK:
-        return parseBreakStatement(parent);
-    case CONTINUE:
-        return parseContinueStatement(parent);
-    case IF:
-        return parseIfStatement(parent);
-    case FUNCTION:
-        return parseFunctionDeclaration(parent);
-    case RETURN:
-        return parseReturnStatement(parent);
-    default:
-        return parseExpressionStatement(parent);
-    }
+    SIMPLE_RULE(parseWhileStatement, parent);
+    SIMPLE_RULE(parseBreakStatement, parent);
+    SIMPLE_RULE(parseContinueStatement, parent);
+    SIMPLE_RULE(parseIfStatement, parent);
+    SIMPLE_RULE(parseFunctionDeclaration, parent);
+    SIMPLE_RULE(parseReturnStatement, parent);
+    SIMPLE_RULE(parseExpressionStatement, parent);
+    return nullptr;
 }
 
 Statement* parser::Parser::parseExpressionStatement(Node* parent)
 {
     auto expressionStatement = new ExpressionStatement(parent);
-    expressionStatement->expression = parseExpression(expressionStatement);
-    return expressionStatement;
+    if ((expressionStatement->expression = parseExpression(expressionStatement)))
+        return expressionStatement;
+
+    delete expressionStatement;
+    return nullptr;
 }
 
 Statement* parser::Parser::parseWhileStatement(Node* parent)
 {
+    auto mark = position;
     auto whileStatement = new WhileStatement(parent);
-    whileStatement->keyword = matchToken(WHILE);
-    whileStatement->condition = parseRhs(whileStatement);
-    auto block = new BlockStatement(whileStatement);
-    while (CURRENT.tokenType != EOF_ && CURRENT.tokenType != END)
+    if (auto keyword = matchToken(WHILE))
     {
-        block->statements.push_back(parseStatement(block));
+        whileStatement->keyword = keyword.value();
+        if ((whileStatement->condition = parseRhs(whileStatement)))
+        {
+            auto block = new BlockStatement(whileStatement);
+            while (!matchToken(END))
+            {
+                if (auto statement = parseStatement(block))
+                {
+                    block->statements.push_back(statement);
+                }
+                else
+                {
+                    throwParserError(
+                        "Інструкція \"поки\" повинна закінчуватись на ключове слово \"кінець\"",
+                        whileStatement->keyword);
+                }
+            }
+            whileStatement->block = block;
+            return whileStatement;
+        }
     }
-    whileStatement->block = block;
 
-    matchToken(END);
-    return whileStatement;
+    position = mark;
+    delete whileStatement;
+    return nullptr;
 }
 
 Statement* parser::Parser::parseBreakStatement(Node* parent)
 {
-    auto breakStatement = new BreakStatement(parent);
-    breakStatement->break_ = matchToken(BREAK);
-    return breakStatement;
+    if (auto keyword = matchToken(BREAK))
+    {
+        auto breakStatement = new BreakStatement(parent);
+        breakStatement->break_ = keyword.value();
+        return breakStatement;
+    }
+
+    return nullptr;
 }
 
 Statement* parser::Parser::parseContinueStatement(Node* parent)
 {
-    auto continueStatement = new ContinueStatement(parent);
-    continueStatement->continue_ = matchToken(CONTINUE);
-    return continueStatement;
+    if (auto keyword = matchToken(CONTINUE))
+    {
+        auto continueStatement = new ContinueStatement(parent);
+        continueStatement->continue_ = keyword.value();
+        return continueStatement;
+    }
+
+    return nullptr;
 }
 
 Statement* parser::Parser::parseIfStatement(Node* parent, bool elseIf)
 {
+    auto mark = position;
     auto ifStatement = new IfStatement(parent);
-    ifStatement->if_ = matchToken(elseIf ? ELSE_IF : IF);
-    ifStatement->condition = parseRhs(ifStatement);
-    auto block = new BlockStatement(ifStatement);
-    while (CURRENT.tokenType != EOF_ && CURRENT.tokenType != END
-        && CURRENT.tokenType != ELSE_IF && CURRENT.tokenType != ELSE)
+    if (auto keyword = matchToken(elseIf ? ELSE_IF : IF))
     {
-        block->statements.push_back(parseStatement(block));
+        ifStatement->if_ = keyword.value();
+        if ((ifStatement->condition = parseRhs(ifStatement)))
+        {
+            auto block = new BlockStatement(ifStatement);
+            while (!matchToken(END))
+            {
+                if (auto elseOrIf = parseElseOrIfStatement(ifStatement))
+                {
+                    ifStatement->elseOrIf = elseOrIf;
+                    break;
+                }
+                else
+                {
+                    if (auto statement = parseStatement(block))
+                    {
+                        block->statements.push_back(statement);
+                    }
+                    else
+                    {
+                        throwParserError("Неправильний синтаксис", peekToken());
+                    }
+                }
+            }
+            ifStatement->block = block;
+            return ifStatement;
+        }
     }
-    ifStatement->block = block;
-    ifStatement->elseOrIf = parseElseOrIfStatement(ifStatement);
 
-    if (!ifStatement->elseOrIf)
-    {
-        matchToken(END);
-    }
-    return ifStatement;
+    position = mark;
+    delete ifStatement;
+    return nullptr;
 }
 
-std::optional<Statement*> parser::Parser::parseElseOrIfStatement(Node* parent)
+Statement* parser::Parser::parseElseOrIfStatement(Node* parent)
 {
-    if (CURRENT.tokenType == IF || CURRENT.tokenType == ELSE_IF)
+    if (peekToken().tokenType == IF || peekToken().tokenType == ELSE_IF)
     {
-        return parseIfStatement(parent, CURRENT.tokenType == ELSE_IF);
-    }
-    else if (CURRENT.tokenType == ELSE)
-    {
-        auto elseStatement = new ElseStatement(parent);
-        elseStatement->else_ = matchToken(ELSE);
-        auto block = new BlockStatement(elseStatement);
-        while (CURRENT.tokenType != EOF_ && CURRENT.tokenType != END)
+        if (auto statement = parseIfStatement(parent, peekToken().tokenType == ELSE_IF))
         {
-            block->statements.push_back(parseStatement(block));
+            return statement;
         }
-        elseStatement->block = block;
-        matchToken(END);
+    }
+
+    if (auto elseStatement = parseElseStatement(parent))
+    {
         return elseStatement;
     }
-    return std::nullopt;
+
+    return nullptr;
+}
+
+Statement* parser::Parser::parseElseStatement(Node* parent)
+{
+    auto mark = position;
+    auto elseStatement = new ElseStatement(parent);
+    if (auto keyword = matchToken(ELSE))
+    {
+        elseStatement->else_ = keyword.value();
+        auto block = new BlockStatement(elseStatement);
+        while (!matchToken(END))
+        {
+            if (auto statement = parseStatement(block))
+            {
+                block->statements.push_back(statement);
+            }
+            else
+            {
+                throwParserError(
+                    "Інструкція \"інакше\" повинна закінчуватись на ключове слово \"кінець\"",
+                    elseStatement->else_);
+            }
+        }
+        elseStatement->block = block;
+        return elseStatement;
+    }
+
+    position = mark;
+    delete elseStatement;
+    return nullptr;
 }
 
 Statement* parser::Parser::parseFunctionDeclaration(Node* parent)
 {
+    auto mark = position;
     auto fnDeclaration = new FunctionDeclaration(parent);
-    fnDeclaration->keyword = matchToken(FUNCTION);
-    fnDeclaration->id = matchToken(ID);
-    fnDeclaration->lpar = matchToken(LPAR);
-    fnDeclaration->parameters = parseParameters(parent);
-    fnDeclaration->rpar = matchToken(RPAR);
-    auto block = new BlockStatement(fnDeclaration);
-    while (CURRENT.tokenType != EOF_ && CURRENT.tokenType != END)
+    if (auto keyword = matchToken(FUNCTION))
     {
-        block->statements.push_back(parseStatement(block));
+        fnDeclaration->keyword = keyword.value();
+        if (auto identifier = matchToken(ID))
+        {
+            fnDeclaration->id = identifier.value();
+            if (auto lpar = matchToken(LPAR))
+            {
+                fnDeclaration->lpar = lpar.value();
+                fnDeclaration->parameters = parseParameters(fnDeclaration);
+                if (auto rpar = matchToken(RPAR))
+                {
+                    fnDeclaration->rpar = rpar.value();
+                    auto block = new BlockStatement(fnDeclaration);
+                    while (!matchToken(END))
+                    {
+                        if (auto statement = parseStatement(block))
+                        {
+                            block->statements.push_back(statement);
+                        }
+                        else
+                        {
+                            throwParserError(
+                                "Інструкція \"функція\" повинна закінчуватись на ключове"
+                                "слово \"кінець\"",
+                                fnDeclaration->keyword);
+                        }
+                    }
+                    fnDeclaration->block = block;
+                    return fnDeclaration;
+                }
+                else
+                {
+                    throwParserError("Відсутня закриваюча дужка", fnDeclaration->keyword);
+                }
+            }
+        }
     }
-    fnDeclaration->block = block;
-    matchToken(END);
-    return fnDeclaration;
+
+    position = mark;
+    delete fnDeclaration;
+    return nullptr;
 }
 
 std::vector<Token> parser::Parser::parseParameters(Node* parent)
 {
     std::vector<Token> parameters;
 
-    while (CURRENT.tokenType != RPAR
-           && CURRENT.tokenType != EOF_)
+    while (peekToken().tokenType != RPAR)
     {
-        parameters.push_back(matchToken(ID));
-
-        if (CURRENT.tokenType == COMMA && AHEAD.tokenType != RPAR)
+        if (auto identifier = matchToken(ID))
         {
-            nextToken();
+            parameters.push_back(identifier.value());
         }
         else
+        {
+            break;
+        }
+
+        if (!matchToken(COMMA))
         {
             break;
         }
@@ -205,230 +307,437 @@ std::vector<Token> parser::Parser::parseParameters(Node* parent)
 
 Statement* parser::Parser::parseReturnStatement(Node* parent)
 {
+    auto mark = position;
     auto returnStatement = new ReturnStatement(parent);
-    returnStatement->return_ = matchToken(RETURN);
-    if (CURRENT.tokenType == SEMICOLON)
+    if (auto keyword = matchToken(RETURN))
     {
-        nextToken();
-        returnStatement->returnValue = std::nullopt;
+        returnStatement->return_ = keyword.value();
+        if (matchToken(SEMICOLON))
+        {
+            returnStatement->returnValue = std::nullopt;
+            return returnStatement;
+        }
+
+        auto returnValue = parseRhs(returnStatement);
+        returnStatement->returnValue = returnValue == nullptr ?
+            std::nullopt : std::optional(returnValue);
+        return returnStatement;
     }
-    else
-    {
-        returnStatement->returnValue = isRhs() ?
-            std::optional(parseRhs(returnStatement)) : std::nullopt;
-    }
-    return returnStatement;
+
+    position = mark;
+    delete returnStatement;
+    return nullptr;
 }
 
 Expression* parser::Parser::parseLhs(Node* parent)
 {
-    return parseVariableExpression(parent);
+    SIMPLE_RULE(parseVariableExpression, parent);
+    return nullptr;
 }
 
 Expression* parser::Parser::parseRhs(Node* parent)
 {
-    if (isUnaryOperator(CURRENT))
+    SIMPLE_RULE(parseOperator7, parent);
+    return nullptr;
+}
+
+Expression* parser::Parser::_parseOperator7(Node* parent)
+{
+    auto mark = position;
+    auto binary = new BinaryExpression(parent);
+    if ((binary->left = parseOperator7(binary)))
     {
-        return parseUnaryExpression(parent);
-    }
-    else if (isOperator(AHEAD))
-    {
-       return parseBinaryExpression(parent);
-    }
-    else if (CURRENT.tokenType == ID)
-    {
-        if (AHEAD.tokenType == LPAR)
+        if (auto op = matchToken(OR))
         {
-            return parseCallExpression(parent);
+            binary->operator_ = op.value();
+            if ((binary->right = parseOperator6(binary)))
+            {
+                return binary;
+            }
+            else
+            {
+                throwParserError("Неправильний синтаксис", peekToken());
+            }
         }
-        return parseVariableExpression(parent);
     }
-    else if (CURRENT.tokenType == LPAR)
+    position = mark;
+    delete binary;
+
+    if (auto node = parseOperator6(parent))
     {
-        return parseParenthesizedExpression(parent);
+        return node;
     }
-    return parseLiteralExpression(parent);
+
+    return nullptr;
+}
+
+Expression* parser::Parser::_parseOperator6(Node* parent)
+{
+    auto mark = position;
+    auto binary = new BinaryExpression(parent);
+    if ((binary->left = parseOperator6(binary)))
+    {
+        if (auto op = matchToken(AND))
+        {
+            binary->operator_ = op.value();
+            if ((binary->right = parseOperator5(binary)))
+            {
+                return binary;
+            }
+            else
+            {
+                throwParserError("Неправильний синтаксис", peekToken());
+            }
+        }
+    }
+    position = mark;
+    delete binary;
+
+    if (auto node = parseOperator5(parent))
+    {
+        return node;
+    }
+
+    return nullptr;
+}
+
+Expression* parser::Parser::_parseOperator5(Node* parent)
+{
+    if (auto op = matchToken(NOT))
+    {
+        auto unary = new UnaryExpression(parent);
+        unary->operator_ = op.value();
+        if ((unary->operand = parseOperator5(unary)))
+        {
+            return unary;
+        }
+        else
+        {
+            throwParserError("Після оператора \"не\" очікується вираз", unary->operator_);
+        }
+    }
+
+    if (auto node = parseOperator4(parent))
+    {
+        return node;
+    }
+
+    return nullptr;
+}
+
+
+Expression* parser::Parser::_parseOperator4(Node* parent)
+{
+    auto mark = position;
+    auto binary = new BinaryExpression(parent);
+    if ((binary->left = parseOperator4(binary)))
+    {
+        switch (peekToken().tokenType)
+        {
+        case LESS:
+        case LESS_EQUAL:
+        case GREATER:
+        case GREATER_EQUAL:
+        case EQUAL_EQUAL:
+        case NOT_EQUAL:
+        {
+            binary->operator_ = nextToken();
+            if ((binary->right = parseOperator3(binary)))
+            {
+                return binary;
+            }
+            else
+            {
+                throwParserError("Неправильний синтаксис", binary->operator_);
+            }
+        }
+        default:
+            break;
+        }
+    }
+    position = mark;
+    delete binary;
+
+    if (auto node = parseOperator3(parent))
+    {
+        return node;
+    }
+
+    return nullptr;
+}
+
+Expression* parser::Parser::_parseOperator3(Node* parent)
+{
+    auto mark = position;
+    auto binary = new BinaryExpression(parent);
+    if ((binary->left = parseOperator3(binary)))
+    {
+        switch (peekToken().tokenType)
+        {
+        case PLUS:
+        case MINUS:
+        {
+            binary->operator_ = nextToken();
+            if ((binary->right = parseOperator2(binary)))
+            {
+                return binary;
+            }
+            else
+            {
+                throwParserError("Неправильний синтаксис", binary->operator_);
+            }
+        }
+        default:
+            break;
+        }
+    }
+    position = mark;
+    delete binary;
+
+    if (auto node = parseOperator2(parent))
+    {
+        return node;
+    }
+
+    return nullptr;
+}
+
+Expression* parser::Parser::_parseOperator2(Node* parent)
+{
+    auto mark = position;
+    auto binary = new BinaryExpression(parent);
+    if ((binary->left = parseOperator2(binary)))
+    {
+        switch (peekToken().tokenType)
+        {
+        case STAR:
+        case SLASH:
+        case PERCENT:
+        case BACKSLASH:
+        {
+            binary->operator_ = nextToken();
+            if ((binary->right = parseOperator1(binary)))
+            {
+                return binary;
+            }
+            else
+            {
+                throwParserError("Неправильний синтаксис", binary->operator_);
+            }
+        }
+        default:
+            break;
+        }
+    }
+    position = mark;
+    delete binary;
+
+    if (auto node = parseOperator1(parent))
+    {
+        return node;
+    }
+
+    return nullptr;
+}
+
+Expression* parser::Parser::parseOperator1(Node* parent)
+{
+    if (auto op = matchToken(PLUS))
+    {
+        auto unary = new UnaryExpression(parent);
+        unary->operator_ = op.value();
+        if ((unary->operand = parseOperator1(unary)))
+        {
+            return unary;
+        }
+        else
+        {
+            throwParserError("Після оператора \"+\" очікується вираз", op.value());
+        }
+    }
+
+    if (auto op = matchToken(MINUS))
+    {
+        auto unary = new UnaryExpression(parent);
+        unary->operator_ = op.value();
+        if ((unary->operand = parseOperator1(unary)))
+        {
+            return unary;
+        }
+        else
+        {
+            throwParserError("Після оператора \"-\" очікується вираз", op.value());
+        }
+    }
+
+    if (auto primary = parsePrimaryExpression(parent))
+    {
+        return primary;
+    }
+
+    return nullptr;
 }
 
 Expression* parser::Parser::parseAssignmentExpression(Node* parent)
 {
+    auto mark = position;
     auto assignmentExpression = new AssignmentExpression(parent);
-    assignmentExpression->id = matchToken(ID);
-    auto assignment = nextToken();
-    switch (assignment.tokenType)
+    if (auto identifier = matchToken(ID))
     {
-    case EQUAL:
-    case PLUS_EQUAL:
-    case MINUS_EQUAL:
-    case STAR_EQUAL:
-    case SLASH_EQUAL:
-    case PERCENT_EQUAL:
-    case BACKSLASH_EQUAL:
-        break;
-    default:
-        plog::fatal << "Неправильний оператор призначення: \""
-            << lexer::stringEnum::enumToString(assignment.tokenType) << "\"";
+        assignmentExpression->id = identifier.value();
+        if (auto assignmentOperator = parseAssignmentOperator())
+        {
+            assignmentExpression->assignment = assignmentOperator.value();
+            if ((assignmentExpression->expression = parseRhs(assignmentExpression)))
+            {
+                return assignmentExpression;
+            }
+            else
+            {
+                throwParserError("Неможливо присвоїти змінній такий вираз",
+                    assignmentExpression->assignment);
+            }
+        }
     }
-    assignmentExpression->assignment = assignment;
-    assignmentExpression->expression = parseRhs(assignmentExpression);
-    return assignmentExpression;
+
+    position = mark;
+    delete assignmentExpression;
+    return nullptr;
 }
 
 Expression* parser::Parser::parseExpression(Node* parent)
 {
-    switch (AHEAD.tokenType)
-    {
-    case EQUAL:
-    case PLUS_EQUAL:
-    case MINUS_EQUAL:
-    case STAR_EQUAL:
-    case SLASH_EQUAL:
-    case PERCENT_EQUAL:
-    case BACKSLASH_EQUAL:
-        return parseAssignmentExpression(parent);
-    default:
-        return parseCallExpression(parent);
-    }
-}
-
-Expression* parser::Parser::parseUnaryExpression(Node* parent)
-{
-    auto unaryExpression = new UnaryExpression(parent);
-    unaryExpression->operator_ = nextToken();
-    unaryExpression->operand = parseRhs(unaryExpression);
-    return unaryExpression;
-}
-
-Expression* parser::Parser::parseBinaryExpression(Node* parent, int parentPrecedence)
-{
-    Expression* left;
-    int unaryPrecedence = getUnaryOperatorPrecedence(CURRENT.tokenType);
-    if (unaryPrecedence != INT_MAX && unaryPrecedence <= parentPrecedence)
-    {
-        auto unaryExpression = new UnaryExpression(parent);
-        unaryExpression->operator_ = nextToken();
-        unaryExpression->operand = parseBinaryExpression(unaryExpression, unaryPrecedence);
-        left = unaryExpression;
-    }
-    else
-    {
-        left = parsePrimaryExpression(parent);
-    }
-
-    for (;;)
-    {
-        int precedence = getBinaryOperatorPrecedence(CURRENT.tokenType);
-        if (precedence == INT_MAX || precedence >= parentPrecedence)
-        {
-            break;
-        }
-
-        auto binaryExpression = new BinaryExpression(parent);
-        binaryExpression->operator_= nextToken();
-        binaryExpression->right = parseBinaryExpression(binaryExpression, precedence);
-        binaryExpression->left = left;
-        left = binaryExpression;
-    }
-
-    return left;
+    SIMPLE_RULE(parseAssignmentExpression, parent);
+    SIMPLE_RULE(parseCallExpression, parent);
+    return nullptr;
 }
 
 Expression* parser::Parser::parsePrimaryExpression(Node* parent)
 {
-    switch (CURRENT.tokenType)
-    {
-    case LPAR:
-        return parseParenthesizedExpression(parent);
-    case ID:
-    {
-        if (AHEAD.tokenType == LPAR)
-        {
-            return parseCallExpression(parent);
-        }
-        return parseVariableExpression(parent);
-    }
-    case STRING:
-    case NUMBER:
-    case BOOLEAN:
-    case REAL:
-    case NULL_:
-        return parseLiteralExpression(parent);
-    default:
-        vm::SyntaxException exception("Неправильний синтаксис", CURRENT.lineno, CURRENT.positionInLine);
-        vm::throwSyntaxException(exception, code);
-        exit(1);
-    }
+    SIMPLE_RULE(parseCallExpression, parent);
+    SIMPLE_RULE(parseVariableExpression, parent);
+    SIMPLE_RULE(parseLiteralExpression, parent);
+    SIMPLE_RULE(parseParenthesizedExpression, parent);
+    return nullptr;
 }
 
 Expression* parser::Parser::parseParenthesizedExpression(Node* parent)
 {
+    auto mark = position;
     auto parExpression = new ParenthesizedExpression(parent);
-    parExpression->lpar = matchToken(LPAR);
-    parExpression->expression = parseRhs(parExpression);
-    parExpression->rpar = matchToken(RPAR);
-    return parExpression;
+    if (auto lpar = matchToken(LPAR))
+    {
+        parExpression->lpar = lpar.value();
+        if ((parExpression->expression = parseRhs(parExpression)))
+        {
+            if (auto rpar = matchToken(RPAR))
+            {
+                parExpression->rpar = rpar.value();
+                return parExpression;
+            }
+        }
+    }
+
+    position = mark;
+    delete parExpression;
+    return nullptr;
 }
 
 Expression* parser::Parser::parseVariableExpression(Node* parent)
 {
     auto varExpression = new VariableExpression(parent);
-    varExpression->variable = matchToken(ID);
-    return varExpression;
+    if (auto identifier = matchToken(ID))
+    {
+        varExpression->variable = identifier.value();
+        return varExpression;
+    }
+
+    delete varExpression;
+    return nullptr;
 }
 
 Expression* parser::Parser::parseCallExpression(Node* parent)
 {
+    auto mark = position;
     auto callExpression = new CallExpression(parent);
-    callExpression->identifier = matchToken(ID);
-    callExpression->lpar = matchToken(LPAR);
-    callExpression->arguments = parseArguments(callExpression);
-    callExpression->rpar = matchToken(RPAR);
-    return callExpression;
+    if (auto identifier = matchToken(ID))
+    {
+        callExpression->identifier = identifier.value();
+        if (auto lpar = matchToken(LPAR))
+        {
+            callExpression->lpar = lpar.value();
+            callExpression->arguments = parseArguments(callExpression);
+
+            if (auto rpar = matchToken(RPAR))
+            {
+                callExpression->rpar = rpar.value();
+                return callExpression;
+            }
+        }
+    }
+
+    position = mark;
+    delete callExpression;
+    return nullptr;
 }
 
 Expression* parser::Parser::parseLiteralExpression(Node* parent)
 {
     auto literalExpression = new LiteralExpression(parent);
-    auto literalToken = nextToken();
-    switch (literalToken.tokenType)
+
+    if (auto number = matchToken(NUMBER))
     {
-    case lexer::TokenType::NUMBER:
-        literalExpression->value = std::stoll(literalToken.text);
-        break;
-    case lexer::TokenType::REAL:
-        literalExpression->value = std::stod(literalToken.text);
-        break;
-    case lexer::TokenType::BOOLEAN:
-        literalExpression->value = std::string("істина").compare(literalToken.text) == 0;
-        break;
-    case lexer::TokenType::STRING:
-        literalExpression->value = literalToken.text;
-        break;
-    case lexer::TokenType::NULL_:
-        break;
-    default:
-        plog::fatal << "Переданий неправильний токен: \""
-            << lexer::stringEnum::enumToString(literalToken.tokenType) << "\"";
+        literalExpression->literalToken = number.value();
+        literalExpression->value = std::stoll(number.value().text);
+        return literalExpression;
     }
-    literalExpression->literalToken = literalToken;
-    return literalExpression;
+
+    if (auto real = matchToken(REAL))
+    {
+        literalExpression->literalToken = real.value();
+        literalExpression->value = std::stod(real.value().text);
+        return literalExpression;
+    }
+
+    if (auto boolean = matchToken(BOOLEAN))
+    {
+        literalExpression->literalToken = boolean.value();
+        literalExpression->value = std::string("істина").compare(boolean.value().text) == 0;
+        return literalExpression;
+    }
+
+    if (auto str = matchToken(STRING))
+    {
+        literalExpression->literalToken = str.value();
+        literalExpression->value = str.value().text;
+        return literalExpression;
+    }
+
+    if (auto null_ = matchToken(NULL_))
+    {
+        literalExpression->literalToken = null_.value();
+        return literalExpression;
+    }
+
+    return nullptr;
 }
 
 std::vector<Expression*> parser::Parser::parseArguments(Node* parent)
 {
     std::vector<Expression*> arguments;
 
-    while (CURRENT.tokenType != RPAR
-        && CURRENT.tokenType != EOF_)
+    while (peekToken().tokenType != RPAR)
     {
-        auto expression = parseRhs(parent);
-        arguments.push_back(expression);
-
-        if (CURRENT.tokenType == COMMA)
+        if (auto rhs = parseRhs(parent))
         {
-            nextToken();
+            arguments.push_back(rhs);
         }
         else
+        {
+            break;
+        }
+
+        if (!matchToken(COMMA))
         {
             break;
         }
@@ -437,94 +746,65 @@ std::vector<Expression*> parser::Parser::parseArguments(Node* parent)
     return arguments;
 }
 
-bool parser::Parser::isRhs()
+std::optional<Token> parser::Parser::parseAssignmentOperator()
 {
-    if (isUnaryOperator(CURRENT)
-        || isOperator(CURRENT)
-        || CURRENT.tokenType == ID
-        || CURRENT.tokenType == LPAR)
+    switch (peekToken().tokenType)
     {
-        return true;
-    }
-
-    // Перевірка на літерал
-    switch (CURRENT.tokenType)
-    {
-    case lexer::TokenType::NUMBER:
-    case lexer::TokenType::REAL:
-    case lexer::TokenType::BOOLEAN:
-    case lexer::TokenType::STRING:
-    case lexer::TokenType::NULL_:
-        return true;
-    default:
-        break;
-    }
-    return false;
-}
-
-bool parser::Parser::isOperator(Token token)
-{
-    switch (token.tokenType)
-    {
-    case GREATER_EQUAL:
-    case LESS_EQUAL:
-    case EQUAL_EQUAL:
-    case NOT_EQUAL:
-    case PLUS:
-    case MINUS:
-    case SLASH:
-    case STAR:
-    case PERCENT:
-    case BACKSLASH:
-    case GREATER:
-    case LESS:
-    case AND:
-    case OR:
-    case NOT:
     case EQUAL:
-        return true;
+    case PLUS_EQUAL:
+    case MINUS_EQUAL:
+    case STAR_EQUAL:
+    case SLASH_EQUAL:
+    case BACKSLASH_EQUAL:
+    case PERCENT_EQUAL:
+        return nextToken();
     default:
-        return false;
+        return std::nullopt;
     }
 }
 
-bool parser::Parser::isUnaryOperator(Token token)
+std::optional<Token> parser::Parser::parseUnaryOperator()
 {
-    switch (token.tokenType)
+    switch (peekToken().tokenType)
     {
     case PLUS:
     case MINUS:
     case NOT:
-        return true;
+        return nextToken();
     default:
-        return false;
+        return std::nullopt;
     }
 }
+
+
 
 lexer::Token parser::Parser::nextToken()
 {
-    auto current = CURRENT;
+    auto current = peekToken();
     position++;
     return current;
 }
 
-lexer::Token parser::Parser::peek(int offset)
+lexer::Token parser::Parser::peekToken()
 {
-    u64 index = position + offset;
-    return index >= sizeOfTokensVector ?
-        lexer::Token{ TokenType::EOF_, "", 0, 0 } : tokens[index];
+    return position >= sizeOfTokensVector ?
+        Token{ TokenType::EOF_, "", 0, 0 } : tokens[position];
 }
 
-lexer::Token parser::Parser::matchToken(TokenType type)
+std::optional<Token> parser::Parser::matchToken(TokenType type)
 {
-    if (CURRENT.tokenType == type)
+    if (peekToken().tokenType == type)
     {
         return nextToken();
     }
 
-    std::cerr << "Неочікуваний токен на позиції: " << position << ". Очікується токен: "
-        << lexer::stringEnum::enumToString(type) << ", натомість на цьому місці був токен: ("
-        << lexer::stringEnum::enumToString(CURRENT.tokenType) << " " << CURRENT.text << ")" << std::endl;
+    return std::nullopt;
+}
+
+void parser::Parser::throwParserError(std::string message, Token token)
+{
+    vm::SyntaxException exception(message, token.lineno, token.positionInLine);
+    vm::throwSyntaxException(exception, code);
     exit(1);
 }
 
@@ -533,11 +813,17 @@ BlockStatement* parser::Parser::parse()
     return parseBlock(nullptr);
 }
 
-parser::Parser::Parser(std::vector<lexer::Token> tokens, std::string code)
+parser::Parser::Parser(std::vector<Token> tokens, std::string code)
     :
     tokens(tokens),
     code(code),
     sizeOfTokensVector(tokens.size()),
     position(0)
 {
+    parseOperator7 = makeLeftRecRule(&Parser::_parseOperator7, this);
+    parseOperator6 = makeLeftRecRule(&Parser::_parseOperator6, this);
+    parseOperator5 = makeLeftRecRule(&Parser::_parseOperator5, this);
+    parseOperator4 = makeLeftRecRule(&Parser::_parseOperator4, this);
+    parseOperator3 = makeLeftRecRule(&Parser::_parseOperator3, this);
+    parseOperator2 = makeLeftRecRule(&Parser::_parseOperator2, this);
 }
