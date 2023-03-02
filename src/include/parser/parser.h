@@ -30,9 +30,9 @@ namespace parser
         template <typename> friend struct LeftRecursionDecorator;
 
         template<typename R, typename... Args>
-        auto makeLeftRecRule(R(Parser::* f)(Args...), Parser* parser)
+        auto makeLeftRecRule(R(Parser::* f)(Node*, Args...), Parser* parser)
         {
-            auto decorated = Parser::LeftRecursionDecorator<R(Args...)>(f);
+            auto decorated = Parser::LeftRecursionDecorator<R(Node*, Args...)>(f);
             decorated.parser = parser;
             return decorated;
         }

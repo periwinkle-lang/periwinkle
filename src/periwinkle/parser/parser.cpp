@@ -14,14 +14,14 @@ using lexer::Token;
 
 
 template <typename R, typename... Args>
-struct parser::Parser::LeftRecursionDecorator<R(Args...)>
+struct parser::Parser::LeftRecursionDecorator<R(Node*, Args...)>
 {
-    std::function<R(Parser*, Args...)> func;
+    std::function<R(Parser*, Node*, Args...)> func;
     Parser* parser;
 
-    LeftRecursionDecorator(std::function<R(Parser*, Args...)> func) : func(func) {}
+    LeftRecursionDecorator(std::function<R(Parser*, Node*, Args...)> func) : func(func) {}
 
-    R operator()(Args... args)
+    R operator()(Node* parent, Args... args)
     {
         auto mark = parser->position;
         void* key = (void*)&func;
@@ -30,6 +30,8 @@ struct parser::Parser::LeftRecursionDecorator<R(Args...)>
         {
             auto [result, endPosition] = parser->memo[mark][key];
             parser->position = endPosition;
+            if (result != nullptr)
+                result->parent = parent;
             return (R)result;
         }
         else
@@ -42,7 +44,7 @@ struct parser::Parser::LeftRecursionDecorator<R(Args...)>
             while (true)
             {
                 parser->position = mark;
-                Node* result = func(parser, args...);
+                Node* result = func(parser, parent, args...);
                 endPosition = parser->position;
                 if (endPosition <= lastPosition)
                     break;
@@ -51,6 +53,8 @@ struct parser::Parser::LeftRecursionDecorator<R(Args...)>
                 lastPosition = endPosition;
             }
 
+            if (lastResult != nullptr)
+                lastResult->parent = parent;
             parser->position = lastPosition;
             return (R)lastResult;
         }
