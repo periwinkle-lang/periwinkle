@@ -75,7 +75,7 @@ namespace parser
 
     struct CallExpression : Expression
     {
-        lexer::Token identifier;
+        Expression* callable;
         lexer::Token lpar;
         std::vector<Expression*> arguments;
         lexer::Token rpar;

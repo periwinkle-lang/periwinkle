@@ -399,11 +399,8 @@ void compiler::Compiler::compileVariableExpression(VariableExpression* expressio
 
 void compiler::Compiler::compileCallExpression(CallExpression* expression)
 {
-    auto& functionName = expression->identifier.text;
     auto argc = (vm::WORD)expression->arguments.size();
-
-    setLineno(expression->identifier.lineno);
-    compileNameGet(functionName);
+    compileExpression(expression->callable);
 
     for (auto argument : expression->arguments)
     {

@@ -64,7 +64,7 @@ namespace parser
         Expression* parsePrimaryExpression(Node* parent);
         Expression* parseParenthesizedExpression(Node* parent);
         Expression* parseVariableExpression(Node* parent);
-        Expression* parseCallExpression(Node* parent);
+        simpleParseFunction parseCallExpression; Expression* _parseCallExpression(Node* parent);
         Expression* parseLiteralExpression(Node* parent);
         std::vector<Expression*> parseArguments(Node* parent);
 

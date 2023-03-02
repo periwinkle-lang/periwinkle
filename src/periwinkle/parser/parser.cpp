@@ -660,13 +660,13 @@ Expression* parser::Parser::parseVariableExpression(Node* parent)
     return nullptr;
 }
 
-Expression* parser::Parser::parseCallExpression(Node* parent)
+Expression* parser::Parser::_parseCallExpression(Node* parent)
 {
     auto mark = position;
     auto callExpression = new CallExpression(parent);
-    if (auto identifier = matchToken(ID))
+    if ((callExpression->callable = parseCallExpression(callExpression))
+        || (callExpression->callable = parseVariableExpression(callExpression)))
     {
-        callExpression->identifier = identifier.value();
         if (auto lpar = matchToken(LPAR))
         {
             callExpression->lpar = lpar.value();
@@ -814,7 +814,12 @@ void parser::Parser::throwParserError(std::string message, Token token)
 
 BlockStatement* parser::Parser::parse()
 {
-    return parseBlock(nullptr);
+    auto block = parseBlock(nullptr);
+    if (matchToken(EOF_))
+    {
+        return block;
+    }
+    throwParserError("Неправильний синтаксис", peekToken());
 }
 
 parser::Parser::Parser(std::vector<Token> tokens, std::string code)
@@ -830,4 +835,5 @@ parser::Parser::Parser(std::vector<Token> tokens, std::string code)
     parseOperator4 = makeLeftRecRule(&Parser::_parseOperator4, this);
     parseOperator3 = makeLeftRecRule(&Parser::_parseOperator3, this);
     parseOperator2 = makeLeftRecRule(&Parser::_parseOperator2, this);
+    parseCallExpression = makeLeftRecRule(&Parser::_parseCallExpression, this);
 }

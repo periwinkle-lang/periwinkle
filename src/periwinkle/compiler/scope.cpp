@@ -215,7 +215,7 @@ void ScopeAnalyzer::_analyze(parser::Node* node, Scope* parent)
     case CALL_EXPRESSION:
     {
         auto callExpression = (parser::CallExpression*)node;
-        parent->maybePromote(callExpression->identifier.text);
+        _analyze(callExpression->callable, parent);
         for (auto argument : callExpression->arguments)
         {
             _analyze(argument, parent);
