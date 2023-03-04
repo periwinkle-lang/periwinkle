@@ -1,6 +1,7 @@
 ﻿#include <string>
 #include <sstream>
 #include <cmath>
+#include <limits>
 
 #include "real_object.h"
 #include "native_function_object.h"
@@ -66,9 +67,14 @@ static Object* realToString(Object* a)
 {
     auto real = (RealObject*)a;
     std::stringstream ss;
-    ss.precision(10);
+    ss.precision(std::numeric_limits<double>::max_digits10);
     ss << real->value;
-    return StringObject::create(ss.str());
+    auto s = ss.str();
+    if (s.find('.') == std::string::npos)
+    {
+        s.append(".0");
+    }
+    return StringObject::create(s);
 }
 
 static Object* realToInteger(Object* a)
