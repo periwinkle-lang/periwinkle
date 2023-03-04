@@ -212,6 +212,12 @@ void ScopeAnalyzer::_analyze(parser::Node* node, Scope* parent)
         parent->maybePromote(variable->variable.text);
         break;
     }
+    case ATTRIBUTE_EXPRESSION:
+    {
+        auto attr = (parser::AttributeExpression*)node;
+        _analyze(attr->expression, parent);
+        break;
+    }
     case CALL_EXPRESSION:
     {
         auto callExpression = (parser::CallExpression*)node;

@@ -217,6 +217,19 @@ Object* VirtualMachine::execute()
             cell->value = value;
             break;
         }
+        case GET_ATTR:
+        {
+            auto object = POP();
+            auto& name = names[READ()];
+            auto value = Object::getAttr(object, name);
+            if (value == nullptr)
+            {
+                throwException(&AttributeErrorObjectType,
+                    utils::format("Об'єкт \"%s\" не має атрибута \"%s\"",
+                        object->objectType->name.c_str(), name.c_str()));
+            }
+            break;
+        }
         case MAKE_FUNCTION:
         {
             auto codeObject = (CodeObject*)POP();

@@ -33,7 +33,7 @@ namespace vm
 
         // Операції для роботи з пам'яттю
         LOAD_CONST, LOAD_GLOBAL, STORE_GLOBAL, LOAD_LOCAL, STORE_LOCAL,
-        GET_CELL, LOAD_CELL, STORE_CELL,
+        GET_CELL, LOAD_CELL, STORE_CELL, GET_ATTR,
 
         MAKE_FUNCTION,
 

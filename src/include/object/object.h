@@ -63,9 +63,8 @@ namespace vm
         void (*destructor)(Object* object);
         ObjectOperators operators;
         comparisonFunction comparison;
-        // Зберігає методи, константи та статичні поля
-        std::unordered_map<std::string, Object*> *publicAttributes;
-        std::unordered_map<std::string, Object*> *privateAttributes;
+        // Зберігає методи та поля
+        std::unordered_map<std::string, Object*> attributes;
     };
 
     extern ObjectType objectObjectType;
@@ -115,12 +114,13 @@ namespace vm
 
         // Викликає операцію унарного - для об'єкта
         static Object* neg(Object* o);
+
+
+        static Object* getAttr(Object* o, const std::string& name);
     };
 
     Object* allocObject(ObjectType const *objectType);
     inline std::string objectTypeToString(const ObjectType *type);
-    inline Object* getPublicAttribute(Object* object, std::string name);
-    inline Object* getPrivateAttribute(Object* object, std::string name);
 }
 
 #endif

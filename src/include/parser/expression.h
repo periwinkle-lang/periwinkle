@@ -64,6 +64,15 @@ namespace parser
             : Expression(parent, NodeKind::VARIABLE_EXPRESSION) {};
     };
 
+    struct AttributeExpression : Expression
+    {
+        Expression* expression;
+        lexer::Token attribute;
+
+        AttributeExpression(Node* parent)
+            : Expression(parent, NodeKind::ATTRIBUTE_EXPRESSION) {};
+    };
+
     struct LiteralExpression : Expression
     {
         lexer::Token literalToken;

@@ -28,26 +28,6 @@ std::string vm::objectTypeToString(const ObjectType *type)
     return type->name;
 }
 
-Object* vm::getPublicAttribute(Object *object, std::string name)
-{
-    auto attribute = object->objectType->publicAttributes->find(name);
-    if (attribute != object->objectType->publicAttributes->end())
-    {
-        return attribute->second;
-    }
-    return nullptr;
-}
-
-Object* vm::getPrivateAttribute(Object *object, std::string name)
-{
-    auto attribute = object->objectType->privateAttributes->find(name);
-    if (attribute != object->objectType->privateAttributes->end())
-    {
-        return attribute->second;
-    }
-    return nullptr;
-}
-
 #define GET_OPERATOR(object, op) (object)->objectType->operators.op
 
 // Повертає посилання на binaryFunction з структуки ObjectOperators за зсувом
@@ -195,3 +175,12 @@ BINARY_OPERATOR(floorDiv, \\)
 BINARY_OPERATOR(mod, %)
 UNARY_OPERATOR(pos, +)
 UNARY_OPERATOR(neg, -)
+
+Object* vm::Object::getAttr(Object* o, const std::string& name)
+{
+    if (o->objectType->attributes.contains(name))
+    {
+        return o->objectType->attributes[name];
+    }
+    return nullptr;
+}

@@ -32,6 +32,7 @@ int compiler::Decompiler::opCodeLenArguments(OpCode code)
     case LOAD_CELL:
     case STORE_CELL:
     case GET_CELL:
+    case GET_ATTR:
     case CALL:
     case COMPARE:
         return 1;
@@ -115,7 +116,7 @@ std::string compiler::Decompiler::decompile(vm::CodeObject* codeObject)
                     codeObjects.push_back((vm::CodeObject*)argumentAsObject);
                 }
             }
-            else if (op == STORE_GLOBAL || op == LOAD_GLOBAL)
+            else if (op == STORE_GLOBAL || op == LOAD_GLOBAL || op == GET_ATTR)
             {
                 auto& name = codeObject->names[argument];
                 out << "(" << name << ")";

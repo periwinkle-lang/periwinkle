@@ -49,6 +49,7 @@ namespace compiler
         void compileBinaryExpression(parser::BinaryExpression* expression);
         void compileUnaryExpression(parser::UnaryExpression* expression);
         void compileParenthesizedExpression(parser::ParenthesizedExpression* expression);
+        void compileAttributeExpression(parser::AttributeExpression* expression);
 
         void compileNameGet(const std::string& name);
         void compileNameSet(const std::string& name);

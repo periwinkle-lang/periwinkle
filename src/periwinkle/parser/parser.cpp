@@ -429,7 +429,6 @@ Expression* parser::Parser::_parseOperator5(Node* parent)
     return nullptr;
 }
 
-
 Expression* parser::Parser::_parseOperator4(Node* parent)
 {
     auto mark = position;
@@ -612,12 +611,13 @@ Expression* parser::Parser::parseAssignmentExpression(Node* parent)
 Expression* parser::Parser::parseExpression(Node* parent)
 {
     SIMPLE_RULE(parseAssignmentExpression, parent);
-    SIMPLE_RULE(parseCallExpression, parent);
+    SIMPLE_RULE(parsePrimaryExpression, parent);
     return nullptr;
 }
 
-Expression* parser::Parser::parsePrimaryExpression(Node* parent)
+Expression* parser::Parser::_parsePrimaryExpression(Node* parent)
 {
+    SIMPLE_RULE(parseAttributeExpression, parent);
     SIMPLE_RULE(parseCallExpression, parent);
     SIMPLE_RULE(parseVariableExpression, parent);
     SIMPLE_RULE(parseLiteralExpression, parent);
@@ -647,6 +647,27 @@ Expression* parser::Parser::parseParenthesizedExpression(Node* parent)
     return nullptr;
 }
 
+Expression* parser::Parser::parseAttributeExpression(Node* parent)
+{
+    auto mark = position;
+    auto attrExpression = new AttributeExpression(parent);
+    if ((attrExpression->expression = parsePrimaryExpression(attrExpression)))
+    {
+        if (matchToken(DOT))
+        {
+            if (auto attribute = matchToken(ID))
+            {
+                attrExpression->attribute = attribute.value();
+                return attrExpression;
+            }
+        }
+    }
+
+    position = mark;
+    delete attrExpression;
+    return nullptr;
+}
+
 Expression* parser::Parser::parseVariableExpression(Node* parent)
 {
     auto varExpression = new VariableExpression(parent);
@@ -660,12 +681,11 @@ Expression* parser::Parser::parseVariableExpression(Node* parent)
     return nullptr;
 }
 
-Expression* parser::Parser::_parseCallExpression(Node* parent)
+Expression* parser::Parser::parseCallExpression(Node* parent)
 {
     auto mark = position;
     auto callExpression = new CallExpression(parent);
-    if ((callExpression->callable = parseCallExpression(callExpression))
-        || (callExpression->callable = parseVariableExpression(callExpression)))
+    if ((callExpression->callable = parsePrimaryExpression(callExpression)))
     {
         if (auto lpar = matchToken(LPAR))
         {
@@ -780,8 +800,6 @@ std::optional<Token> parser::Parser::parseUnaryOperator()
     }
 }
 
-
-
 lexer::Token parser::Parser::nextToken()
 {
     auto current = peekToken();
@@ -835,5 +853,5 @@ parser::Parser::Parser(std::vector<Token> tokens, std::string code)
     parseOperator4 = makeLeftRecRule(&Parser::_parseOperator4, this);
     parseOperator3 = makeLeftRecRule(&Parser::_parseOperator3, this);
     parseOperator2 = makeLeftRecRule(&Parser::_parseOperator2, this);
-    parseCallExpression = makeLeftRecRule(&Parser::_parseCallExpression, this);
+    parsePrimaryExpression = makeLeftRecRule(&Parser::_parsePrimaryExpression, this);
 }

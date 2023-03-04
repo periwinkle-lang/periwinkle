@@ -54,6 +54,9 @@ namespace vm
     EXCEPTION_EXTEND(ExceptionObjectType, NotImplementedError, "ПомилкаРеалізації",
         { .toString = exceptionToString });
 
+    EXCEPTION_EXTEND(ExceptionObjectType, AttributeError, "ПомилкаАтрибута",
+        { .toString = exceptionToString });
+
     NotImplementedErrorObject P_NotImplemented{ {{.objectType = &NotImplementedErrorObjectType}} };
 }
 
