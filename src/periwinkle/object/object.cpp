@@ -31,7 +31,7 @@ std::string vm::objectTypeToString(const ObjectType *type)
 #define GET_OPERATOR(object, op) (object)->objectType->operators.op
 
 // Повертає посилання на binaryFunction з структуки ObjectOperators за зсувом
-#define GET_BINARY_OPERATOR_BY_OFFSET(object, offset) \
+#define GET_BINARY_OPERATOR_BY_OFFSET(object, operatorOffset) \
     (*(binaryFunction*)(&((char*)&object->objectType->operators)[operatorOffset]));
 
 #define OPERATOR_OFFSET(op) offsetof(ObjectOperators, op)
