@@ -36,30 +36,6 @@ using enum parser::NodeKind;
     codeObject->constants.push_back(vm::OBJECT::create(value));           \
     return vm::WORD(codeObject->constants.size() - 1);
 
-// Видаляє значення зі стеку, якщо воно не використовується
-#define POP_IF_UNUSED(expression)      \
-    auto _parent = expression->parent; \
-    bool _used = false;                \
-    while (_parent != nullptr          \
-           && _used == false)          \
-    {                                  \
-        switch (_parent->kind)         \
-        {                              \
-        case UNARY_EXPRESSION:         \
-        case BINARY_EXPRESSION:        \
-        case ASSIGNMENT_EXPRESSION:    \
-        case CALL_EXPRESSION:          \
-        case RETURN_STATEMENT:         \
-        case ATTRIBUTE_EXPRESSION:     \
-            _used = true;              \
-            break;                     \
-        default:                       \
-            _parent = _parent->parent; \
-        }                              \
-    }                                  \
-    if (_used == false)                \
-        emitOpCode(POP);
-
 #define STATE_POP() stateStack.pop_back()
 #define STATE_BACK(stateType) ((stateType*)stateStack.back())
 #define PUSH_SCOPE(node) scopeStack.push_back(scopeInfo[node])
@@ -415,7 +391,6 @@ void compiler::Compiler::compileLiteralExpression(LiteralExpression* expression)
     }
     emitOpCode(LOAD_CONST);
     emitOperand(index);
-    POP_IF_UNUSED(expression);
 }
 
 void compiler::Compiler::compileVariableExpression(VariableExpression* expression)
@@ -423,7 +398,6 @@ void compiler::Compiler::compileVariableExpression(VariableExpression* expressio
     auto& variableName = expression->variable.text;
     setLineno(expression->variable.lineno);
     compileNameGet(variableName);
-    POP_IF_UNUSED(expression);
 }
 
 void compiler::Compiler::compileCallExpression(CallExpression* expression)
@@ -438,7 +412,6 @@ void compiler::Compiler::compileCallExpression(CallExpression* expression)
 
     emitOpCode(CALL);
     emitOperand(argc);
-    POP_IF_UNUSED(expression);
 }
 
 void compiler::Compiler::compileBinaryExpression(BinaryExpression* expression)
@@ -495,7 +468,6 @@ void compiler::Compiler::compileUnaryExpression(UnaryExpression* expression)
 void compiler::Compiler::compileParenthesizedExpression(ParenthesizedExpression* expression)
 {
     compileExpression(expression->expression);
-    POP_IF_UNUSED(expression);
 }
 
 void compiler::Compiler::compileAttributeExpression(AttributeExpression* expression)
@@ -504,7 +476,6 @@ void compiler::Compiler::compileAttributeExpression(AttributeExpression* express
     setLineno(expression->attribute.lineno);
     emitOpCode(GET_ATTR);
     emitOperand(nameIdx(expression->attribute.text));
-    POP_IF_UNUSED(expression);
 }
 
 void compiler::Compiler::compileNameGet(const std::string& name)

@@ -14,7 +14,7 @@ namespace parser
 {
     struct Expression : Node
     {
-        Expression(Node* parent, NodeKind kind) : Node(parent, kind) {};
+        Expression(NodeKind kind) : Node(kind) {};
     };
 
     struct AssignmentExpression : Expression
@@ -23,8 +23,8 @@ namespace parser
         lexer::Token assignment;
         Expression* expression;
 
-        AssignmentExpression(Node* parent)
-            : Expression(parent, NodeKind::ASSIGNMENT_EXPRESSION) {};
+        AssignmentExpression()
+            : Expression(NodeKind::ASSIGNMENT_EXPRESSION) {};
     };
 
     struct BinaryExpression : Expression
@@ -33,8 +33,8 @@ namespace parser
         lexer::Token operator_;
         Expression* right;
 
-        BinaryExpression(Node* parent)
-            : Expression(parent, NodeKind::BINARY_EXPRESSION) {};
+        BinaryExpression()
+            : Expression(NodeKind::BINARY_EXPRESSION) {};
     };
 
     struct UnaryExpression : Expression
@@ -42,8 +42,8 @@ namespace parser
         lexer::Token operator_;
         Expression* operand;
 
-        UnaryExpression(Node* parent)
-            : Expression(parent, NodeKind::UNARY_EXPRESSION) {};
+        UnaryExpression()
+            : Expression(NodeKind::UNARY_EXPRESSION) {};
     };
 
     struct ParenthesizedExpression : Expression
@@ -52,16 +52,16 @@ namespace parser
         Expression* expression;
         lexer::Token rpar;
 
-        ParenthesizedExpression(Node* parent)
-            : Expression(parent, NodeKind::PARENTHESIZED_EXPRESSION) {};
+        ParenthesizedExpression()
+            : Expression(NodeKind::PARENTHESIZED_EXPRESSION) {};
     };
 
     struct VariableExpression : Expression
     {
         lexer::Token variable;
 
-        VariableExpression(Node* parent)
-            : Expression(parent, NodeKind::VARIABLE_EXPRESSION) {};
+        VariableExpression()
+            : Expression(NodeKind::VARIABLE_EXPRESSION) {};
     };
 
     struct AttributeExpression : Expression
@@ -69,8 +69,8 @@ namespace parser
         Expression* expression;
         lexer::Token attribute;
 
-        AttributeExpression(Node* parent)
-            : Expression(parent, NodeKind::ATTRIBUTE_EXPRESSION) {};
+        AttributeExpression()
+            : Expression(NodeKind::ATTRIBUTE_EXPRESSION) {};
     };
 
     struct LiteralExpression : Expression
@@ -78,8 +78,8 @@ namespace parser
         lexer::Token literalToken;
         std::variant<i64, double, bool, std::string> value;
 
-        LiteralExpression(Node* parent)
-            : Expression(parent, NodeKind::LITERAL_EXPRESSION) {};
+        LiteralExpression()
+            : Expression(NodeKind::LITERAL_EXPRESSION) {};
     };
 
     struct CallExpression : Expression
@@ -89,8 +89,8 @@ namespace parser
         std::vector<Expression*> arguments;
         lexer::Token rpar;
 
-        CallExpression(Node* parent)
-            : Expression(parent, NodeKind::CALL_EXPRESSION) {};
+        CallExpression()
+            : Expression(NodeKind::CALL_EXPRESSION) {};
     };
 }
 

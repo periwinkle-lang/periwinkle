@@ -14,15 +14,15 @@ namespace parser
 {
     struct Statement : Node
     {
-        Statement(Node* parent, NodeKind kind) : Node(parent, kind) {};
+        Statement(NodeKind kind) : Node(kind) {};
     };
 
     struct BlockStatement : Statement
     {
         std::vector<Statement*> statements;
 
-        BlockStatement(Node* parent)
-            : Statement(parent, NodeKind::BLOCK_STATEMENT) {};
+        BlockStatement()
+            : Statement(NodeKind::BLOCK_STATEMENT) {};
     };
 
     struct WhileStatement : Statement
@@ -31,32 +31,32 @@ namespace parser
         Expression* condition;
         BlockStatement* block;
 
-        WhileStatement(Node* parent)
-            : Statement(parent, NodeKind::WHILE_STATEMENT) {};
+        WhileStatement()
+            : Statement(NodeKind::WHILE_STATEMENT) {};
     };
 
     struct ExpressionStatement : Statement
     {
         Expression* expression;
 
-        ExpressionStatement(Node* parent)
-            : Statement(parent, NodeKind::EXPRESSION_STATEMENT) {};
+        ExpressionStatement()
+            : Statement(NodeKind::EXPRESSION_STATEMENT) {};
     };
 
     struct BreakStatement : Statement
     {
         lexer::Token break_;
 
-        BreakStatement(Node* parent)
-            : Statement(parent, NodeKind::BREAK_STATEMENT) {};
+        BreakStatement()
+            : Statement(NodeKind::BREAK_STATEMENT) {};
     };
 
     struct ContinueStatement : Statement
     {
         lexer::Token continue_;
 
-        ContinueStatement(Node* parent)
-            : Statement(parent, NodeKind::CONTINUE_STATEMENT) {};
+        ContinueStatement()
+            : Statement(NodeKind::CONTINUE_STATEMENT) {};
     };
 
     struct IfStatement : Statement
@@ -66,8 +66,8 @@ namespace parser
         BlockStatement* block;
         std::optional<Statement*> elseOrIf;
 
-        IfStatement(Node* parent)
-            : Statement(parent, NodeKind::IF_STATEMENT) {};
+        IfStatement()
+            : Statement(NodeKind::IF_STATEMENT) {};
     };
 
     struct ElseStatement : Statement
@@ -75,8 +75,8 @@ namespace parser
         lexer::Token else_;
         BlockStatement* block;
 
-        ElseStatement(Node* parent)
-            : Statement(parent, NodeKind::ELSE_STATEMENT) {};
+        ElseStatement()
+            : Statement(NodeKind::ELSE_STATEMENT) {};
     };
 
     struct FunctionDeclaration : Statement
@@ -88,8 +88,8 @@ namespace parser
         lexer::Token rpar;
         BlockStatement* block;
 
-        FunctionDeclaration(Node* parent)
-            : Statement(parent, NodeKind::FUNCTION_STATEMENT) {};
+        FunctionDeclaration()
+            : Statement(NodeKind::FUNCTION_STATEMENT) {};
     };
 
     struct ReturnStatement : Statement
@@ -97,8 +97,8 @@ namespace parser
         lexer::Token return_;
         std::optional<Expression*> returnValue;
 
-        ReturnStatement(Node* parent)
-            : Statement(parent, NodeKind::RETURN_STATEMENT) {};
+        ReturnStatement()
+            : Statement(NodeKind::RETURN_STATEMENT) {};
 
         ~ReturnStatement()
         {

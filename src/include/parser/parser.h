@@ -24,50 +24,50 @@ namespace parser
         u64 sizeOfTokensVector;
         u64 position;
         std::map<u64, std::map<void*, std::pair<Node*, u64>>> memo;
-        using simpleParseFunction = std::function<Expression*(Node*)>;
+        using simpleParseFunction = std::function<Expression*(void)>;
 
         template <typename> struct LeftRecursionDecorator;
         template <typename> friend struct LeftRecursionDecorator;
 
         template<typename R, typename... Args>
-        auto makeLeftRecRule(R(Parser::* f)(Node*, Args...), Parser* parser)
+        auto makeLeftRecRule(R(Parser::* f)(Args...), Parser* parser)
         {
-            auto decorated = Parser::LeftRecursionDecorator<R(Node*, Args...)>(f);
+            auto decorated = Parser::LeftRecursionDecorator<R(Args...)>(f);
             decorated.parser = parser;
             return decorated;
         }
 
-        BlockStatement* parseBlock(Node* parent);
-        Statement* parseStatement(Node* parent);
-        Statement* parseExpressionStatement(Node* parent);
-        Statement* parseWhileStatement(Node* parent);
-        Statement* parseBreakStatement(Node* parent);
-        Statement* parseContinueStatement(Node* parent);
-        Statement* parseIfStatement(Node* parent, bool elseIf = false);
-        Statement* parseElseOrIfStatement(Node* parent);
-        Statement* parseElseStatement(Node* parent);
-        Statement* parseFunctionDeclaration(Node* parent);
-        std::vector <lexer::Token> parseParameters(Node* parent);
-        Statement* parseReturnStatement(Node* parent);
+        BlockStatement* parseBlock();
+        Statement* parseStatement();
+        Statement* parseExpressionStatement();
+        Statement* parseWhileStatement();
+        Statement* parseBreakStatement();
+        Statement* parseContinueStatement();
+        Statement* parseIfStatement(bool elseIf = false);
+        Statement* parseElseOrIfStatement();
+        Statement* parseElseStatement();
+        Statement* parseFunctionDeclaration();
+        std::vector <lexer::Token> parseParameters();
+        Statement* parseReturnStatement();
 
-        Expression* parseExpression(Node* parent);
-        Expression* parseLhs(Node* parent);
-        Expression* parseRhs(Node* parent);
-        simpleParseFunction parseOperator7; Expression* _parseOperator7(Node* parent);
-        simpleParseFunction parseOperator6; Expression* _parseOperator6(Node* parent);
-        simpleParseFunction parseOperator5; Expression* _parseOperator5(Node* parent);
-        simpleParseFunction parseOperator4; Expression* _parseOperator4(Node* parent);
-        simpleParseFunction parseOperator3; Expression* _parseOperator3(Node* parent);
-        simpleParseFunction parseOperator2; Expression* _parseOperator2(Node* parent);
-        Expression* parseOperator1(Node* parent);
-        Expression* parseAssignmentExpression(Node* parent);
-        simpleParseFunction parsePrimaryExpression; Expression* _parsePrimaryExpression(Node* parent);
-        Expression* parseParenthesizedExpression(Node* parent);
-        Expression* parseAttributeExpression(Node* parent);
-        Expression* parseVariableExpression(Node* parent);
-        Expression* parseCallExpression(Node* parent);
-        Expression* parseLiteralExpression(Node* parent);
-        std::vector<Expression*> parseArguments(Node* parent);
+        Expression* parseExpression();
+        Expression* parseLhs();
+        Expression* parseRhs();
+        simpleParseFunction parseOperator7; Expression* _parseOperator7();
+        simpleParseFunction parseOperator6; Expression* _parseOperator6();
+        simpleParseFunction parseOperator5; Expression* _parseOperator5();
+        simpleParseFunction parseOperator4; Expression* _parseOperator4();
+        simpleParseFunction parseOperator3; Expression* _parseOperator3();
+        simpleParseFunction parseOperator2; Expression* _parseOperator2();
+        Expression* parseOperator1();
+        Expression* parseAssignmentExpression();
+        simpleParseFunction parsePrimaryExpression; Expression* _parsePrimaryExpression();
+        Expression* parseParenthesizedExpression();
+        Expression* parseAttributeExpression();
+        Expression* parseVariableExpression();
+        Expression* parseCallExpression();
+        Expression* parseLiteralExpression();
+        std::vector<Expression*> parseArguments();
 
         std::optional<lexer::Token> parseAssignmentOperator();
         std::optional<lexer::Token> parseUnaryOperator();

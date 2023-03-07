@@ -14,14 +14,14 @@ using lexer::Token;
 
 
 template <typename R, typename... Args>
-struct parser::Parser::LeftRecursionDecorator<R(Node*, Args...)>
+struct parser::Parser::LeftRecursionDecorator<R(Args...)>
 {
-    std::function<R(Parser*, Node*, Args...)> func;
+    std::function<R(Parser*, Args...)> func;
     Parser* parser;
 
-    LeftRecursionDecorator(std::function<R(Parser*, Node*, Args...)> func) : func(func) {}
+    LeftRecursionDecorator(std::function<R(Parser*, Args...)> func) : func(func) {}
 
-    R operator()(Node* parent, Args... args)
+    R operator()(Args... args)
     {
         auto mark = parser->position;
         void* key = (void*)&func;
@@ -30,8 +30,6 @@ struct parser::Parser::LeftRecursionDecorator<R(Node*, Args...)>
         {
             auto [result, endPosition] = parser->memo[mark][key];
             parser->position = endPosition;
-            if (result != nullptr)
-                result->parent = parent;
             return (R)result;
         }
         else
@@ -44,7 +42,7 @@ struct parser::Parser::LeftRecursionDecorator<R(Node*, Args...)>
             while (true)
             {
                 parser->position = mark;
-                Node* result = func(parser, parent, args...);
+                Node* result = func(parser, args...);
                 endPosition = parser->position;
                 if (endPosition <= lastPosition)
                     break;
@@ -53,59 +51,57 @@ struct parser::Parser::LeftRecursionDecorator<R(Node*, Args...)>
                 lastPosition = endPosition;
             }
 
-            if (lastResult != nullptr)
-                lastResult->parent = parent;
             parser->position = lastPosition;
             return (R)lastResult;
         }
     }
 };
 
-BlockStatement* parser::Parser::parseBlock(Node* parent)
+BlockStatement* parser::Parser::parseBlock()
 {
-    auto blockStatement = new BlockStatement(parent);
-    while (auto statement = parseStatement(blockStatement))
+    auto blockStatement = new BlockStatement();
+    while (auto statement = parseStatement())
     {
         blockStatement->statements.push_back(statement);
     }
     return blockStatement;
 }
 
-Statement* parser::Parser::parseStatement(Node* parent)
+Statement* parser::Parser::parseStatement()
 {
-    SIMPLE_RULE(parseWhileStatement, parent);
-    SIMPLE_RULE(parseBreakStatement, parent);
-    SIMPLE_RULE(parseContinueStatement, parent);
-    SIMPLE_RULE(parseIfStatement, parent);
-    SIMPLE_RULE(parseFunctionDeclaration, parent);
-    SIMPLE_RULE(parseReturnStatement, parent);
-    SIMPLE_RULE(parseExpressionStatement, parent);
+    SIMPLE_RULE(parseWhileStatement);
+    SIMPLE_RULE(parseBreakStatement);
+    SIMPLE_RULE(parseContinueStatement);
+    SIMPLE_RULE(parseIfStatement);
+    SIMPLE_RULE(parseFunctionDeclaration);
+    SIMPLE_RULE(parseReturnStatement);
+    SIMPLE_RULE(parseExpressionStatement);
     return nullptr;
 }
 
-Statement* parser::Parser::parseExpressionStatement(Node* parent)
+Statement* parser::Parser::parseExpressionStatement()
 {
-    auto expressionStatement = new ExpressionStatement(parent);
-    if ((expressionStatement->expression = parseExpression(expressionStatement)))
+    auto expressionStatement = new ExpressionStatement();
+    if ((expressionStatement->expression = parseExpression()))
         return expressionStatement;
 
     delete expressionStatement;
     return nullptr;
 }
 
-Statement* parser::Parser::parseWhileStatement(Node* parent)
+Statement* parser::Parser::parseWhileStatement()
 {
     auto mark = position;
-    auto whileStatement = new WhileStatement(parent);
+    auto whileStatement = new WhileStatement();
     if (auto keyword = matchToken(WHILE))
     {
         whileStatement->keyword = keyword.value();
-        if ((whileStatement->condition = parseRhs(whileStatement)))
+        if ((whileStatement->condition = parseRhs()))
         {
-            auto block = new BlockStatement(whileStatement);
+            auto block = new BlockStatement();
             while (!matchToken(END))
             {
-                if (auto statement = parseStatement(block))
+                if (auto statement = parseStatement())
                 {
                     block->statements.push_back(statement);
                 }
@@ -126,11 +122,11 @@ Statement* parser::Parser::parseWhileStatement(Node* parent)
     return nullptr;
 }
 
-Statement* parser::Parser::parseBreakStatement(Node* parent)
+Statement* parser::Parser::parseBreakStatement()
 {
     if (auto keyword = matchToken(BREAK))
     {
-        auto breakStatement = new BreakStatement(parent);
+        auto breakStatement = new BreakStatement();
         breakStatement->break_ = keyword.value();
         return breakStatement;
     }
@@ -138,11 +134,11 @@ Statement* parser::Parser::parseBreakStatement(Node* parent)
     return nullptr;
 }
 
-Statement* parser::Parser::parseContinueStatement(Node* parent)
+Statement* parser::Parser::parseContinueStatement()
 {
     if (auto keyword = matchToken(CONTINUE))
     {
-        auto continueStatement = new ContinueStatement(parent);
+        auto continueStatement = new ContinueStatement();
         continueStatement->continue_ = keyword.value();
         return continueStatement;
     }
@@ -150,26 +146,26 @@ Statement* parser::Parser::parseContinueStatement(Node* parent)
     return nullptr;
 }
 
-Statement* parser::Parser::parseIfStatement(Node* parent, bool elseIf)
+Statement* parser::Parser::parseIfStatement(bool elseIf)
 {
     auto mark = position;
-    auto ifStatement = new IfStatement(parent);
+    auto ifStatement = new IfStatement();
     if (auto keyword = matchToken(elseIf ? ELSE_IF : IF))
     {
         ifStatement->if_ = keyword.value();
-        if ((ifStatement->condition = parseRhs(ifStatement)))
+        if ((ifStatement->condition = parseRhs()))
         {
-            auto block = new BlockStatement(ifStatement);
+            auto block = new BlockStatement();
             while (!matchToken(END))
             {
-                if (auto elseOrIf = parseElseOrIfStatement(ifStatement))
+                if (auto elseOrIf = parseElseOrIfStatement())
                 {
                     ifStatement->elseOrIf = elseOrIf;
                     break;
                 }
                 else
                 {
-                    if (auto statement = parseStatement(block))
+                    if (auto statement = parseStatement())
                     {
                         block->statements.push_back(statement);
                     }
@@ -189,17 +185,17 @@ Statement* parser::Parser::parseIfStatement(Node* parent, bool elseIf)
     return nullptr;
 }
 
-Statement* parser::Parser::parseElseOrIfStatement(Node* parent)
+Statement* parser::Parser::parseElseOrIfStatement()
 {
     if (peekToken().tokenType == IF || peekToken().tokenType == ELSE_IF)
     {
-        if (auto statement = parseIfStatement(parent, peekToken().tokenType == ELSE_IF))
+        if (auto statement = parseIfStatement(peekToken().tokenType == ELSE_IF))
         {
             return statement;
         }
     }
 
-    if (auto elseStatement = parseElseStatement(parent))
+    if (auto elseStatement = parseElseStatement())
     {
         return elseStatement;
     }
@@ -207,17 +203,17 @@ Statement* parser::Parser::parseElseOrIfStatement(Node* parent)
     return nullptr;
 }
 
-Statement* parser::Parser::parseElseStatement(Node* parent)
+Statement* parser::Parser::parseElseStatement()
 {
     auto mark = position;
-    auto elseStatement = new ElseStatement(parent);
+    auto elseStatement = new ElseStatement();
     if (auto keyword = matchToken(ELSE))
     {
         elseStatement->else_ = keyword.value();
-        auto block = new BlockStatement(elseStatement);
+        auto block = new BlockStatement();
         while (!matchToken(END))
         {
-            if (auto statement = parseStatement(block))
+            if (auto statement = parseStatement())
             {
                 block->statements.push_back(statement);
             }
@@ -237,10 +233,10 @@ Statement* parser::Parser::parseElseStatement(Node* parent)
     return nullptr;
 }
 
-Statement* parser::Parser::parseFunctionDeclaration(Node* parent)
+Statement* parser::Parser::parseFunctionDeclaration()
 {
     auto mark = position;
-    auto fnDeclaration = new FunctionDeclaration(parent);
+    auto fnDeclaration = new FunctionDeclaration();
     if (auto keyword = matchToken(FUNCTION))
     {
         fnDeclaration->keyword = keyword.value();
@@ -250,14 +246,14 @@ Statement* parser::Parser::parseFunctionDeclaration(Node* parent)
             if (auto lpar = matchToken(LPAR))
             {
                 fnDeclaration->lpar = lpar.value();
-                fnDeclaration->parameters = parseParameters(fnDeclaration);
+                fnDeclaration->parameters = parseParameters();
                 if (auto rpar = matchToken(RPAR))
                 {
                     fnDeclaration->rpar = rpar.value();
-                    auto block = new BlockStatement(fnDeclaration);
+                    auto block = new BlockStatement();
                     while (!matchToken(END))
                     {
-                        if (auto statement = parseStatement(block))
+                        if (auto statement = parseStatement())
                         {
                             block->statements.push_back(statement);
                         }
@@ -285,7 +281,7 @@ Statement* parser::Parser::parseFunctionDeclaration(Node* parent)
     return nullptr;
 }
 
-std::vector<Token> parser::Parser::parseParameters(Node* parent)
+std::vector<Token> parser::Parser::parseParameters()
 {
     std::vector<Token> parameters;
 
@@ -309,10 +305,10 @@ std::vector<Token> parser::Parser::parseParameters(Node* parent)
     return parameters;
 }
 
-Statement* parser::Parser::parseReturnStatement(Node* parent)
+Statement* parser::Parser::parseReturnStatement()
 {
     auto mark = position;
-    auto returnStatement = new ReturnStatement(parent);
+    auto returnStatement = new ReturnStatement();
     if (auto keyword = matchToken(RETURN))
     {
         returnStatement->return_ = keyword.value();
@@ -322,7 +318,7 @@ Statement* parser::Parser::parseReturnStatement(Node* parent)
             return returnStatement;
         }
 
-        auto returnValue = parseRhs(returnStatement);
+        auto returnValue = parseRhs();
         returnStatement->returnValue = returnValue == nullptr ?
             std::nullopt : std::optional(returnValue);
         return returnStatement;
@@ -333,28 +329,28 @@ Statement* parser::Parser::parseReturnStatement(Node* parent)
     return nullptr;
 }
 
-Expression* parser::Parser::parseLhs(Node* parent)
+Expression* parser::Parser::parseLhs()
 {
-    SIMPLE_RULE(parseVariableExpression, parent);
+    SIMPLE_RULE(parseVariableExpression);
     return nullptr;
 }
 
-Expression* parser::Parser::parseRhs(Node* parent)
+Expression* parser::Parser::parseRhs()
 {
-    SIMPLE_RULE(parseOperator7, parent);
+    SIMPLE_RULE(parseOperator7);
     return nullptr;
 }
 
-Expression* parser::Parser::_parseOperator7(Node* parent)
+Expression* parser::Parser::_parseOperator7()
 {
     auto mark = position;
-    auto binary = new BinaryExpression(parent);
-    if ((binary->left = parseOperator7(binary)))
+    auto binary = new BinaryExpression();
+    if ((binary->left = parseOperator7()))
     {
         if (auto op = matchToken(OR))
         {
             binary->operator_ = op.value();
-            if ((binary->right = parseOperator6(binary)))
+            if ((binary->right = parseOperator6()))
             {
                 return binary;
             }
@@ -367,7 +363,7 @@ Expression* parser::Parser::_parseOperator7(Node* parent)
     position = mark;
     delete binary;
 
-    if (auto node = parseOperator6(parent))
+    if (auto node = parseOperator6())
     {
         return node;
     }
@@ -375,16 +371,16 @@ Expression* parser::Parser::_parseOperator7(Node* parent)
     return nullptr;
 }
 
-Expression* parser::Parser::_parseOperator6(Node* parent)
+Expression* parser::Parser::_parseOperator6()
 {
     auto mark = position;
-    auto binary = new BinaryExpression(parent);
-    if ((binary->left = parseOperator6(binary)))
+    auto binary = new BinaryExpression();
+    if ((binary->left = parseOperator6()))
     {
         if (auto op = matchToken(AND))
         {
             binary->operator_ = op.value();
-            if ((binary->right = parseOperator5(binary)))
+            if ((binary->right = parseOperator5()))
             {
                 return binary;
             }
@@ -397,7 +393,7 @@ Expression* parser::Parser::_parseOperator6(Node* parent)
     position = mark;
     delete binary;
 
-    if (auto node = parseOperator5(parent))
+    if (auto node = parseOperator5())
     {
         return node;
     }
@@ -405,13 +401,13 @@ Expression* parser::Parser::_parseOperator6(Node* parent)
     return nullptr;
 }
 
-Expression* parser::Parser::_parseOperator5(Node* parent)
+Expression* parser::Parser::_parseOperator5()
 {
     if (auto op = matchToken(NOT))
     {
-        auto unary = new UnaryExpression(parent);
+        auto unary = new UnaryExpression();
         unary->operator_ = op.value();
-        if ((unary->operand = parseOperator5(unary)))
+        if ((unary->operand = parseOperator5()))
         {
             return unary;
         }
@@ -421,7 +417,7 @@ Expression* parser::Parser::_parseOperator5(Node* parent)
         }
     }
 
-    if (auto node = parseOperator4(parent))
+    if (auto node = parseOperator4())
     {
         return node;
     }
@@ -429,11 +425,11 @@ Expression* parser::Parser::_parseOperator5(Node* parent)
     return nullptr;
 }
 
-Expression* parser::Parser::_parseOperator4(Node* parent)
+Expression* parser::Parser::_parseOperator4()
 {
     auto mark = position;
-    auto binary = new BinaryExpression(parent);
-    if ((binary->left = parseOperator4(binary)))
+    auto binary = new BinaryExpression();
+    if ((binary->left = parseOperator4()))
     {
         switch (peekToken().tokenType)
         {
@@ -445,7 +441,7 @@ Expression* parser::Parser::_parseOperator4(Node* parent)
         case NOT_EQUAL:
         {
             binary->operator_ = nextToken();
-            if ((binary->right = parseOperator3(binary)))
+            if ((binary->right = parseOperator3()))
             {
                 return binary;
             }
@@ -461,7 +457,7 @@ Expression* parser::Parser::_parseOperator4(Node* parent)
     position = mark;
     delete binary;
 
-    if (auto node = parseOperator3(parent))
+    if (auto node = parseOperator3())
     {
         return node;
     }
@@ -469,11 +465,11 @@ Expression* parser::Parser::_parseOperator4(Node* parent)
     return nullptr;
 }
 
-Expression* parser::Parser::_parseOperator3(Node* parent)
+Expression* parser::Parser::_parseOperator3()
 {
     auto mark = position;
-    auto binary = new BinaryExpression(parent);
-    if ((binary->left = parseOperator3(binary)))
+    auto binary = new BinaryExpression();
+    if ((binary->left = parseOperator3()))
     {
         switch (peekToken().tokenType)
         {
@@ -481,7 +477,7 @@ Expression* parser::Parser::_parseOperator3(Node* parent)
         case MINUS:
         {
             binary->operator_ = nextToken();
-            if ((binary->right = parseOperator2(binary)))
+            if ((binary->right = parseOperator2()))
             {
                 return binary;
             }
@@ -497,7 +493,7 @@ Expression* parser::Parser::_parseOperator3(Node* parent)
     position = mark;
     delete binary;
 
-    if (auto node = parseOperator2(parent))
+    if (auto node = parseOperator2())
     {
         return node;
     }
@@ -505,11 +501,11 @@ Expression* parser::Parser::_parseOperator3(Node* parent)
     return nullptr;
 }
 
-Expression* parser::Parser::_parseOperator2(Node* parent)
+Expression* parser::Parser::_parseOperator2()
 {
     auto mark = position;
-    auto binary = new BinaryExpression(parent);
-    if ((binary->left = parseOperator2(binary)))
+    auto binary = new BinaryExpression();
+    if ((binary->left = parseOperator2()))
     {
         switch (peekToken().tokenType)
         {
@@ -519,7 +515,7 @@ Expression* parser::Parser::_parseOperator2(Node* parent)
         case BACKSLASH:
         {
             binary->operator_ = nextToken();
-            if ((binary->right = parseOperator1(binary)))
+            if ((binary->right = parseOperator1()))
             {
                 return binary;
             }
@@ -535,7 +531,7 @@ Expression* parser::Parser::_parseOperator2(Node* parent)
     position = mark;
     delete binary;
 
-    if (auto node = parseOperator1(parent))
+    if (auto node = parseOperator1())
     {
         return node;
     }
@@ -543,13 +539,13 @@ Expression* parser::Parser::_parseOperator2(Node* parent)
     return nullptr;
 }
 
-Expression* parser::Parser::parseOperator1(Node* parent)
+Expression* parser::Parser::parseOperator1()
 {
     if (auto op = matchToken(PLUS))
     {
-        auto unary = new UnaryExpression(parent);
+        auto unary = new UnaryExpression();
         unary->operator_ = op.value();
-        if ((unary->operand = parseOperator1(unary)))
+        if ((unary->operand = parseOperator1()))
         {
             return unary;
         }
@@ -561,9 +557,9 @@ Expression* parser::Parser::parseOperator1(Node* parent)
 
     if (auto op = matchToken(MINUS))
     {
-        auto unary = new UnaryExpression(parent);
+        auto unary = new UnaryExpression();
         unary->operator_ = op.value();
-        if ((unary->operand = parseOperator1(unary)))
+        if ((unary->operand = parseOperator1()))
         {
             return unary;
         }
@@ -573,7 +569,7 @@ Expression* parser::Parser::parseOperator1(Node* parent)
         }
     }
 
-    if (auto primary = parsePrimaryExpression(parent))
+    if (auto primary = parsePrimaryExpression())
     {
         return primary;
     }
@@ -581,17 +577,17 @@ Expression* parser::Parser::parseOperator1(Node* parent)
     return nullptr;
 }
 
-Expression* parser::Parser::parseAssignmentExpression(Node* parent)
+Expression* parser::Parser::parseAssignmentExpression()
 {
     auto mark = position;
-    auto assignmentExpression = new AssignmentExpression(parent);
+    auto assignmentExpression = new AssignmentExpression();
     if (auto identifier = matchToken(ID))
     {
         assignmentExpression->id = identifier.value();
         if (auto assignmentOperator = parseAssignmentOperator())
         {
             assignmentExpression->assignment = assignmentOperator.value();
-            if ((assignmentExpression->expression = parseRhs(assignmentExpression)))
+            if ((assignmentExpression->expression = parseRhs()))
             {
                 return assignmentExpression;
             }
@@ -608,31 +604,31 @@ Expression* parser::Parser::parseAssignmentExpression(Node* parent)
     return nullptr;
 }
 
-Expression* parser::Parser::parseExpression(Node* parent)
+Expression* parser::Parser::parseExpression()
 {
-    SIMPLE_RULE(parseAssignmentExpression, parent);
-    SIMPLE_RULE(parsePrimaryExpression, parent);
+    SIMPLE_RULE(parseAssignmentExpression);
+    SIMPLE_RULE(parsePrimaryExpression);
     return nullptr;
 }
 
-Expression* parser::Parser::_parsePrimaryExpression(Node* parent)
+Expression* parser::Parser::_parsePrimaryExpression()
 {
-    SIMPLE_RULE(parseAttributeExpression, parent);
-    SIMPLE_RULE(parseCallExpression, parent);
-    SIMPLE_RULE(parseVariableExpression, parent);
-    SIMPLE_RULE(parseLiteralExpression, parent);
-    SIMPLE_RULE(parseParenthesizedExpression, parent);
+    SIMPLE_RULE(parseAttributeExpression);
+    SIMPLE_RULE(parseCallExpression);
+    SIMPLE_RULE(parseVariableExpression);
+    SIMPLE_RULE(parseLiteralExpression);
+    SIMPLE_RULE(parseParenthesizedExpression);
     return nullptr;
 }
 
-Expression* parser::Parser::parseParenthesizedExpression(Node* parent)
+Expression* parser::Parser::parseParenthesizedExpression()
 {
     auto mark = position;
-    auto parExpression = new ParenthesizedExpression(parent);
+    auto parExpression = new ParenthesizedExpression();
     if (auto lpar = matchToken(LPAR))
     {
         parExpression->lpar = lpar.value();
-        if ((parExpression->expression = parseRhs(parExpression)))
+        if ((parExpression->expression = parseRhs()))
         {
             if (auto rpar = matchToken(RPAR))
             {
@@ -647,11 +643,11 @@ Expression* parser::Parser::parseParenthesizedExpression(Node* parent)
     return nullptr;
 }
 
-Expression* parser::Parser::parseAttributeExpression(Node* parent)
+Expression* parser::Parser::parseAttributeExpression()
 {
     auto mark = position;
-    auto attrExpression = new AttributeExpression(parent);
-    if ((attrExpression->expression = parsePrimaryExpression(attrExpression)))
+    auto attrExpression = new AttributeExpression();
+    if ((attrExpression->expression = parsePrimaryExpression()))
     {
         if (matchToken(DOT))
         {
@@ -668,9 +664,9 @@ Expression* parser::Parser::parseAttributeExpression(Node* parent)
     return nullptr;
 }
 
-Expression* parser::Parser::parseVariableExpression(Node* parent)
+Expression* parser::Parser::parseVariableExpression()
 {
-    auto varExpression = new VariableExpression(parent);
+    auto varExpression = new VariableExpression();
     if (auto identifier = matchToken(ID))
     {
         varExpression->variable = identifier.value();
@@ -681,16 +677,16 @@ Expression* parser::Parser::parseVariableExpression(Node* parent)
     return nullptr;
 }
 
-Expression* parser::Parser::parseCallExpression(Node* parent)
+Expression* parser::Parser::parseCallExpression()
 {
     auto mark = position;
-    auto callExpression = new CallExpression(parent);
-    if ((callExpression->callable = parsePrimaryExpression(callExpression)))
+    auto callExpression = new CallExpression();
+    if ((callExpression->callable = parsePrimaryExpression()))
     {
         if (auto lpar = matchToken(LPAR))
         {
             callExpression->lpar = lpar.value();
-            callExpression->arguments = parseArguments(callExpression);
+            callExpression->arguments = parseArguments();
 
             if (auto rpar = matchToken(RPAR))
             {
@@ -705,9 +701,9 @@ Expression* parser::Parser::parseCallExpression(Node* parent)
     return nullptr;
 }
 
-Expression* parser::Parser::parseLiteralExpression(Node* parent)
+Expression* parser::Parser::parseLiteralExpression()
 {
-    auto literalExpression = new LiteralExpression(parent);
+    auto literalExpression = new LiteralExpression();
 
     if (auto number = matchToken(NUMBER))
     {
@@ -746,13 +742,13 @@ Expression* parser::Parser::parseLiteralExpression(Node* parent)
     return nullptr;
 }
 
-std::vector<Expression*> parser::Parser::parseArguments(Node* parent)
+std::vector<Expression*> parser::Parser::parseArguments()
 {
     std::vector<Expression*> arguments;
 
     while (peekToken().tokenType != RPAR)
     {
-        if (auto rhs = parseRhs(parent))
+        if (auto rhs = parseRhs())
         {
             arguments.push_back(rhs);
         }
@@ -832,7 +828,7 @@ void parser::Parser::throwParserError(std::string message, Token token)
 
 BlockStatement* parser::Parser::parse()
 {
-    auto block = parseBlock(nullptr);
+    auto block = parseBlock();
     if (matchToken(EOF_))
     {
         return block;
