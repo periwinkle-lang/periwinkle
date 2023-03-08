@@ -1,4 +1,9 @@
-﻿#include "utils.h"
+﻿#include <iostream>
+#ifdef _WIN32
+    #include <windows.h>
+#endif
+
+#include "utils.h"
 
 using namespace utils;
 
@@ -89,4 +94,53 @@ size_t utils::utf8Size(const std::string& str)
 std::string utils::indent(int width)
 {
     return std::string(width, ' ');
+}
+
+#ifdef _WIN32
+std::wstring utils::convertUtf8ToWide(const std::string& str)
+{
+    int count = MultiByteToWideChar(CP_UTF8, 0, data(str), (int)str.length(), NULL, 0);
+    std::wstring wstr(count, 0);
+    MultiByteToWideChar(CP_UTF8, 0, data(str), (int)str.length(), data(wstr), count);
+    return wstr;
+}
+
+std::string utils::convertWideToUtf8(const std::wstring& wstr)
+{
+    int count = WideCharToMultiByte(CP_UTF8, 0, data(wstr), (int)wstr.length(), NULL, 0, NULL, NULL);
+    std::string str(count, 0);
+    WideCharToMultiByte(CP_UTF8, 0, data(wstr), -1, data(str), count, NULL, NULL);
+    return str;
+}
+#endif
+
+std::string utils::readline()
+{
+#ifdef _WIN32
+    HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+    const DWORD chunkSize = 256;
+    WCHAR buffer[chunkSize] = { 0 };
+    DWORD charsRead = 0;
+    std::wstring line;
+
+    while (true) {
+        if (!ReadConsoleW(hStdin, buffer, chunkSize, &charsRead, NULL)) {
+            break;
+        }
+
+        line += std::wstring(buffer, charsRead);
+        if (line.back() == L'\n' || line.back() == L'\r') {
+            break;
+        }
+    }
+
+    // Видалення символів переносу рядка з кінця стрічки
+    line.erase(line.find_last_not_of(L"\r\n") + 1);
+
+    return utils::convertWideToUtf8(line);
+#else
+    std::string line;
+    std::getline(std::cin, line);
+    return line;
+#endif
 }

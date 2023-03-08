@@ -3,6 +3,7 @@
 #include "builtins.h"
 #include "null_object.h"
 #include "string_object.h"
+#include "utils.h"
 
 using namespace vm;
 
@@ -36,6 +37,12 @@ static Object* printLnNative(std::span<Object*> args)
     return &P_null;
 }
 
+static Object* readLineNative(std::span<Object*> args)
+{
+    std::string line = utils::readline();
+    return StringObject::create(line);
+}
+
 builtin_t* vm::getBuiltin()
 {
     static builtin_t* builtin;
@@ -46,6 +53,7 @@ builtin_t* vm::getBuiltin()
             {
                 {"друк", NativeFunctionObject::create(1, "друк", printNative)},
                 {"друклн", NativeFunctionObject::create(1, "друклн", printLnNative)},
+                {"зчитати", NativeFunctionObject::create(0, "зчитати", readLineNative)},
             }
         );
     }

@@ -2,38 +2,21 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#ifdef _WIN32
+    #include<windows.h>
+#endif
 
 #include "periwinkle.h"
+#include "utils.h"
 
 using std::string;
 using std::vector;
 using std::wstring;
 
-#ifdef _WIN32
-    #include "windows.h"
-
-wstring convertUtf8ToWide(const string& str)
-{
-    int count = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.length(), NULL, 0);
-    wstring wstr(count, 0);
-    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), (int)str.length(), &wstr[0], count);
-    return wstr;
-}
-
-string convertWideToUtf8(const wstring& wstr)
-{
-    int count = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), (int)wstr.length(), NULL, 0, NULL, NULL);
-    string str(count, 0);
-    WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, &str[0], count, NULL, NULL);
-    return str;
-}
-#endif
-
-
 string readCode(string filename)
 {
 #ifdef _WIN32
-    std::ifstream filestream(convertUtf8ToWide(filename));
+    std::ifstream filestream(utils::convertUtf8ToWide(filename));
 #else
     std::ifstream filestream(filename);
 #endif
@@ -86,7 +69,7 @@ int wmain(int argc, wchar_t* w_argv[])
 	char** argv = new char* [argc];
 	for (int i = 0; i < argc; ++i)
 	{
-		auto utf8String = convertWideToUtf8(wstring(w_argv[i]));
+		auto utf8String = utils::convertWideToUtf8(wstring(w_argv[i]));
 		argv[i] = new char[utf8String.size()];
 		strcpy(argv[i], utf8String.c_str());
 	}

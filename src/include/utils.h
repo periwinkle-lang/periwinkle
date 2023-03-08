@@ -36,6 +36,13 @@ namespace utils
         std::snprintf(buf.get(), size, format.c_str(), args ...);
         return std::string(buf.get(), buf.get() + size - 1); // - 1, щоб видалити '\0'
     }
+
+#ifdef _WIN32
+    std::wstring convertUtf8ToWide(const std::string& str);
+    std::string convertWideToUtf8(const std::wstring& wstr);
+#endif
+
+    std::string readline();
 }
 
 #endif
