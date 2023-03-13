@@ -64,7 +64,8 @@ add_library(periwinkle STATIC
     "src/include/object/real_object.h" "src/periwinkle/object/real_object.cpp"
     "src/include/object/exception_object.h" "src/periwinkle/object/exception_object.cpp"
     "src/include/object/cell_object.h" "src/periwinkle/object/cell_object.cpp"
-    "src/include/object/native_method_object.h" "src/periwinkle/object/native_method_object.cpp")
+    "src/include/object/native_method_object.h" "src/periwinkle/object/native_method_object.cpp"
+    "src/include/object/array_object.h" "src/periwinkle/object/array_object.cpp")
 target_compile_features(periwinkle PUBLIC cxx_std_20)
 
 

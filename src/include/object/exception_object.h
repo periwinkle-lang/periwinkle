@@ -10,6 +10,7 @@ namespace vm
     extern ObjectType TypeErrorObjectType;
     extern ObjectType NotImplementedErrorObjectType;
     extern ObjectType AttributeErrorObjectType;
+    extern ObjectType IndexErrorObjectType;
 
     struct ExceptionObject : Object
     {
@@ -29,6 +30,10 @@ namespace vm
     };
 
     struct AttributeErrorObject : ExceptionObject
+    {
+    };
+
+    struct IndexErrorObject : ExceptionObject
     {
     };
 

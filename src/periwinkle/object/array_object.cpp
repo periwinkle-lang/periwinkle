@@ -1,5 +1,6 @@
 ﻿#include <sstream>
 #include <algorithm>
+#include <utility>
 
 #include "array_object.h"
 #include "string_object.h"
@@ -16,6 +17,13 @@ extern ObjectType objectObjectType;
 #define CHECK_ARRAY(object)                             \
     if (object->objectType->type != ObjectTypes::ARRAY) \
         return &P_NotImplemented;
+
+#define CHECK_INDEX(index, arrayObject)                               \
+    if (std::cmp_greater_equal(index, arrayObject->items.size()))     \
+    {                                                                 \
+        VirtualMachine::currentVm->throwException(                    \
+            &IndexErrorObjectType, "Індекс виходить за межі масиву"); \
+    }
 
 
 static Object* arrayToString(Object* o)
@@ -81,8 +89,8 @@ static Object* arrayInsert(Object* o, std::span<Object*> args)
 {
     auto arrayObject = (ArrayObject*)o;
     auto index = ((IntObject*)args[0])->value;
-    // TODO: перевірка на вихід з масиву
-    arrayObject->items.insert(arrayObject->items.begin() + index, args[2]);
+    CHECK_INDEX(index, arrayObject);
+    arrayObject->items.insert(arrayObject->items.begin() + index, args[1]);
     return &P_null;
 }
 
@@ -90,7 +98,7 @@ static Object* arraySetItem(Object* o, std::span<Object*> args)
 {
     auto arrayObject = (ArrayObject*)o;
     auto index = ((IntObject*)args[0])->value;
-    // TODO: перевірка на вихід з масиву
+    CHECK_INDEX(index, arrayObject);
     arrayObject->items[index] = args[1];
     return &P_null;
 }
@@ -99,7 +107,7 @@ static Object* arrayGetItem(Object* o, std::span<Object*> args)
 {
     auto arrayObject = (ArrayObject*)o;
     auto index = ((IntObject*)args[0])->value;
-    // TODO: перевірка на визід з масиву
+    CHECK_INDEX(index, arrayObject);
     return arrayObject->items[index];
 }
 
