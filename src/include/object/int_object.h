@@ -12,7 +12,7 @@ namespace vm
     {
         i64 value;
 
-        static IntObject* create(int value);
+        static IntObject* create(i64 value);
     };
 }
 

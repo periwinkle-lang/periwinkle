@@ -146,7 +146,7 @@ Object* allocIntObject()
     return (Object*)intObject;
 }
 
-IntObject* vm::IntObject::create(int value)
+IntObject* vm::IntObject::create(i64 value)
 {
     auto intObject = (IntObject*)allocObject(&intObjectType);
     intObject->value = value;
