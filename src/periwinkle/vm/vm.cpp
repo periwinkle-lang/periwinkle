@@ -228,6 +228,7 @@ Object* VirtualMachine::execute()
                     utils::format("Об'єкт \"%s\" не має атрибута \"%s\"",
                         object->objectType->name.c_str(), name.c_str()));
             }
+            PUSH(value);
             break;
         }
         case MAKE_FUNCTION:
