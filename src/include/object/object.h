@@ -16,6 +16,7 @@ namespace vm
         OBJECT,
         FUNCTION,
         NATIVE_FUNCTION,
+        NATIVE_METHOD,
         INTEGER,
         BOOL,
         STRING,

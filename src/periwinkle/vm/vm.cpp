@@ -231,6 +231,40 @@ Object* VirtualMachine::execute()
             PUSH(value);
             break;
         }
+        case LOAD_METHOD:
+        {
+            auto object = POP();
+            auto& name = names[READ()];
+            auto function = Object::getAttr(object, name);
+            if (function == nullptr)
+            {
+                throwException(&AttributeErrorObjectType,
+                    utils::format("Об'єкт \"%s\" не має атрибута \"%s\"",
+                        object->objectType->name.c_str(), name.c_str()));
+            }
+
+            if (function->objectType->type == ObjectTypes::NATIVE_METHOD)
+            {
+                PUSH(object);
+            }
+            else
+            {
+                PUSH(nullptr);
+            }
+
+            PUSH(function);
+            break;
+        }
+        case CALL_METHOD:
+        {
+            auto argc = READ();
+            auto callable = *(sp - argc);
+
+            auto result = Object::call(callable, sp, argc);
+            sp -= argc + 2; // +2 - функція та екземпляр класу
+            PUSH(result);
+            break;
+        }
         case MAKE_FUNCTION:
         {
             auto codeObject = (CodeObject*)POP();

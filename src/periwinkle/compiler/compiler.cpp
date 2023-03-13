@@ -403,14 +403,33 @@ void compiler::Compiler::compileVariableExpression(VariableExpression* expressio
 void compiler::Compiler::compileCallExpression(CallExpression* expression)
 {
     auto argc = (vm::WORD)expression->arguments.size();
-    compileExpression(expression->callable);
+
+    if (expression->callable->kind == NodeKind::ATTRIBUTE_EXPRESSION)
+    {
+        // Якщо викликним виразом є атрибут,
+        // то потрібно отримувати значення за допомогою LOAD_METHOD
+        compileAttributeExpression((AttributeExpression*)expression->callable, true);
+    }
+    else
+    {
+        compileExpression(expression->callable);
+    }
 
     for (auto argument : expression->arguments)
     {
         compileExpression(argument);
     }
 
-    emitOpCode(CALL);
+    // Якщо викликний вираз є атрибутом,
+    // то викликати його треба за допомогою CALL_METHOD
+    if (expression->callable->kind == NodeKind::ATTRIBUTE_EXPRESSION)
+    {
+        emitOpCode(CALL_METHOD);
+    }
+    else
+    {
+        emitOpCode(CALL);
+    }
     emitOperand(argc);
 }
 
@@ -470,11 +489,12 @@ void compiler::Compiler::compileParenthesizedExpression(ParenthesizedExpression*
     compileExpression(expression->expression);
 }
 
-void compiler::Compiler::compileAttributeExpression(AttributeExpression* expression)
+void compiler::Compiler::compileAttributeExpression(
+    AttributeExpression* expression, bool isMethod)
 {
     compileExpression(expression->expression);
     setLineno(expression->attribute.lineno);
-    emitOpCode(GET_ATTR);
+    emitOpCode(isMethod ? LOAD_METHOD : GET_ATTR);
     emitOperand(nameIdx(expression->attribute.text));
 }
 

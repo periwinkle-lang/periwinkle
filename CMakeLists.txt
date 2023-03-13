@@ -60,10 +60,11 @@ add_library(periwinkle STATIC
     "src/include/parser/statement.h"
     "src/include/plogger.h"
     "src/periwinkle/vm/builtins.cpp" "src/include/vm/builtins.h"
-     
     "src/periwinkle/periwinkle.cpp" "src/include/periwinkle.h"
     "src/include/object/real_object.h" "src/periwinkle/object/real_object.cpp"
-    "src/include/object/exception_object.h" "src/periwinkle/object/exception_object.cpp" "src/include/object/cell_object.h" "src/periwinkle/object/cell_object.cpp")
+    "src/include/object/exception_object.h" "src/periwinkle/object/exception_object.cpp"
+    "src/include/object/cell_object.h" "src/periwinkle/object/cell_object.cpp"
+    "src/include/object/native_method_object.h" "src/periwinkle/object/native_method_object.cpp"  )
 target_compile_features(periwinkle PUBLIC cxx_std_20)
 
 

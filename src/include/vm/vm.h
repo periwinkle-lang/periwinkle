@@ -35,6 +35,8 @@ namespace vm
         LOAD_CONST, LOAD_GLOBAL, STORE_GLOBAL, LOAD_LOCAL, STORE_LOCAL,
         GET_CELL, LOAD_CELL, STORE_CELL, GET_ATTR,
 
+        LOAD_METHOD, CALL_METHOD,
+
         MAKE_FUNCTION,
 
         HALT, // Завершення роботи віртуальної машини

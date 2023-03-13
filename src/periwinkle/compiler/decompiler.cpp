@@ -35,6 +35,8 @@ int compiler::Decompiler::opCodeLenArguments(OpCode code)
     case GET_ATTR:
     case CALL:
     case COMPARE:
+    case LOAD_METHOD:
+    case CALL_METHOD:
         return 1;
     default:
         return 0;
@@ -116,7 +118,8 @@ std::string compiler::Decompiler::decompile(vm::CodeObject* codeObject)
                     codeObjects.push_back((vm::CodeObject*)argumentAsObject);
                 }
             }
-            else if (op == STORE_GLOBAL || op == LOAD_GLOBAL || op == GET_ATTR)
+            else if (op == STORE_GLOBAL || op == LOAD_GLOBAL
+                || op == GET_ATTR  || op == LOAD_METHOD)
             {
                 auto& name = codeObject->names[argument];
                 out << "(" << name << ")";
