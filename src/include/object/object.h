@@ -24,6 +24,7 @@ namespace vm
         NULL_,
         EXCEPTION,
         CELL,
+        ARRAY,
     };
 
     enum class ObjectCompOperator

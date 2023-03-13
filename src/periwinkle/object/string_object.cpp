@@ -1,8 +1,10 @@
 ﻿#include "string_object.h"
-#include "native_function_object.h"
 #include "exception_object.h"
 #include "null_object.h"
 #include "bool_object.h"
+#include "native_method_object.h"
+#include "int_object.h"
+#include "utils.h"
 
 using namespace vm;
 
@@ -63,6 +65,12 @@ static Object* strAdd(Object* o1, Object* o2)
     TO_STRING(o1, a);
     TO_STRING(o2, b);
     return StringObject::create(a + b);
+}
+
+static Object* stringSize(Object* s, std::span<Object*> args)
+{
+    auto strObject = (StringObject*)s;
+    return IntObject::create(utils::utf8Size(strObject->value));
 }
 
 Object* allocStringObject();

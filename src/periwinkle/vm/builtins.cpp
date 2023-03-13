@@ -4,6 +4,7 @@
 #include "null_object.h"
 #include "string_object.h"
 #include "utils.h"
+#include "array_object.h"
 
 using namespace vm;
 
@@ -27,6 +28,11 @@ static Object* readLineNative(std::span<Object*> args)
     return StringObject::create(line);
 }
 
+static Object* createArray(std::span<Object*> args)
+{
+    return ArrayObject::create();
+}
+
 builtin_t* vm::getBuiltin()
 {
     static builtin_t* builtin;
@@ -38,6 +44,7 @@ builtin_t* vm::getBuiltin()
                 {"друк", NativeFunctionObject::create(1, "друк", printNative)},
                 {"друклн", NativeFunctionObject::create(1, "друклн", printLnNative)},
                 {"зчитати", NativeFunctionObject::create(0, "зчитати", readLineNative)},
+                {"Масив", NativeFunctionObject::create(0, "Масив", createArray)},
             }
         );
     }
