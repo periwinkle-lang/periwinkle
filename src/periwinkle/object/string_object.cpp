@@ -52,6 +52,11 @@ static Object* strComparison(Object* o1, Object* o2, ObjectCompOperator op)
     return P_BOOL(result);
 }
 
+static Object* strToString(Object* o)
+{
+    return o;
+}
+
 static Object* strAdd(Object* o1, Object* o2)
 {
     std::string a, b;
@@ -72,6 +77,7 @@ namespace vm
         .alloc = &allocStringObject,
         .operators =
         {
+            .toString = strToString,
             .add = strAdd,
         },
         .comparison = strComparison,

@@ -9,30 +9,14 @@ using namespace vm;
 
 static Object* printNative(std::span<Object*> args)
 {
-    StringObject* result;
-    if (args[0]->objectType->type != ObjectTypes::STRING)
-    {
-        result = (StringObject*)Object::toString(args[0]);
-    }
-    else
-    {
-        result = (StringObject*)args[0];
-    }
+    auto result = (StringObject*)Object::toString(args[0]);
     std::cout << result->value << std::flush;
     return &P_null;
 }
 
 static Object* printLnNative(std::span<Object*> args)
 {
-    StringObject* result;
-    if (args[0]->objectType->type != ObjectTypes::STRING)
-    {
-        result = (StringObject*)Object::toString(args[0]);
-    }
-    else
-    {
-        result = (StringObject*)args[0];
-    }
+    auto result = (StringObject*)Object::toString(args[0]);
     std::cout << result->value << std::endl;
     return &P_null;
 }
