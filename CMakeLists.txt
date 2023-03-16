@@ -72,7 +72,7 @@ target_compile_features(periwinkle PUBLIC cxx_std_20)
 # Виконуваний файл
 add_executable(periwinkle-bin "src/periwinkle/main.cpp")
 target_compile_features(periwinkle-bin PUBLIC cxx_std_20)
-set_target_properties(periwinkle-bin PROPERTIES OUTPUT_NAME periwinkle)
+set_target_properties(periwinkle-bin PROPERTIES OUTPUT_NAME барвінок)
 
 
 # Додавання бібліотек до виконуваного файлу
