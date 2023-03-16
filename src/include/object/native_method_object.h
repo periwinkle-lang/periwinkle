@@ -6,6 +6,10 @@
 #include "object.h"
 #include "vm.h"
 
+#define OBJECT_METHOD(name, arity, method) \
+    {name,                                 \
+     new vm::NativeMethodObject{&vm::nativeMethodObjectType, arity + 1, name, method}}
+
 namespace vm
 {
     extern ObjectType nativeMethodObjectType;

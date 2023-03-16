@@ -91,7 +91,7 @@ namespace vm
         .comparison = strComparison,
         .attributes =
         {
-            {"довжина", NativeMethodObject::create(0, "довжина", stringSize)},
+            OBJECT_METHOD("довжина", 0, stringSize),
         },
     };
 }
