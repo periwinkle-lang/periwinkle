@@ -59,7 +59,7 @@ void VirtualMachine::throwException(ObjectType* exception, std::string message, 
     {
         lineno = GET_LINENO(ip - 1);
     }
-    std::cerr << "На стрічці " << lineno << " знадено помилку" << std::endl;
+    std::cerr << "На стрічці " << lineno << " знайдено помилку" << std::endl;
     std::cerr << exception->name << ": " << message << std::endl;
     exit(1);
 }
