@@ -65,7 +65,7 @@ Object* fnCall(Object* callable, Object**& sp, WORD argc)
             {
                 arrayPush(variadicParameter, { sp - i + 1, 1 }, nullptr);
             }
-            sp -= variadicCount - 1;
+            sp -= variadicCount;
         }
         *(++sp) = variadicParameter;
     }
