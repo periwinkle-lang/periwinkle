@@ -294,6 +294,12 @@ std::pair<
     {
         if (variadicParameter = parseVariadicParameter())
         {
+            if (peekToken().tokenType != RPAR)
+            {
+                throwParserError(
+                    "Варіативний параметр має стояти в кінці списку параметрів функції",
+                    peekToken());
+            }
             break;
         }
 
