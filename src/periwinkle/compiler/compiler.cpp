@@ -228,6 +228,8 @@ void compiler::Compiler::compileFunctionDeclaration(parser::FunctionDeclaration*
     }
 
     codeObject->arity = statement->parameters.size();
+    if (statement->variadicParameter)
+        codeObject->isVariadic = true;
     compileBlock(statement->block);
     emitOpCode(LOAD_CONST);
     emitOperand(nullConstIdx());

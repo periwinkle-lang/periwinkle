@@ -168,6 +168,11 @@ void ScopeAnalyzer::_analyze(parser::Node* node, Scope* parent)
             fnScope->addLocal(parameter.text);
         }
 
+        if (fnDeclaration->variadicParameter)
+        {
+            fnScope->addLocal(fnDeclaration->variadicParameter.value().text);
+        }
+
         _analyze(fnDeclaration->block, fnScope);
         break;
     }

@@ -85,6 +85,7 @@ namespace parser
         lexer::Token id;
         lexer::Token lpar;
         std::vector<lexer::Token> parameters;
+        std::optional<lexer::Token> variadicParameter;
         lexer::Token rpar;
         BlockStatement* block;
 

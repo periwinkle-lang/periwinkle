@@ -1,9 +1,11 @@
 ﻿#include "function_object.h"
 #include "utils.h"
 #include "vm.h"
-
 #include "string_object.h"
 #include "int_object.h"
+#include "array_object.h"
+#include "native_method_object.h"
+
 using namespace vm;
 
 static Frame* frameFromFunctionObject(FunctionObject* fn)
@@ -13,7 +15,7 @@ static Frame* frameFromFunctionObject(FunctionObject* fn)
     newFrame->previous = currentFrame;
     newFrame->codeObject = fn->code;
     newFrame->globals = currentFrame->globals;
-    newFrame->bp = currentFrame->sp - fn->code->arity;
+    newFrame->bp = currentFrame->sp - fn->code->arity - (int)fn->code->isVariadic;
     newFrame->freevars = newFrame->bp + fn->code->locals.size();
     newFrame->sp = newFrame->freevars + fn->code->cells.size() + fn->code->freevars.size();
 
@@ -38,10 +40,36 @@ static Frame* frameFromFunctionObject(FunctionObject* fn)
     return newFrame;
 }
 
-Object* fnCall(Object* callable, Object** sp, WORD argc)
+Object* fnCall(Object* callable, Object**& sp, WORD argc)
 {
     auto fn = (FunctionObject*)callable;
-    if (fn->code->arity != argc)
+    ArrayObject* variadicParameter = nullptr;
+    if (fn->code->isVariadic)
+    {
+        if (fn->code->arity > argc)
+        {
+            VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
+                utils::format(
+                    "Функція \"%s\" очікує мінімум %u аргументів, натомість передано %u",
+                    fn->code->name.c_str(), fn->code->arity, argc)
+            );
+        }
+
+        variadicParameter = ArrayObject::create();
+
+        if (auto variadicCount = argc - fn->code->arity; variadicCount > 0)
+        {
+            static auto arrayPush =
+                ((NativeMethodObject*)arrayObjectType.attributes["додати"])->method;
+            for (WORD i = variadicCount; i > 0 ; --i)
+            {
+                arrayPush(variadicParameter, { sp - i + 1, 1 }, nullptr);
+            }
+            sp -= variadicCount - 1;
+        }
+        *(++sp) = variadicParameter;
+    }
+    else if (fn->code->arity != argc)
     {
         VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
             utils::format("Функція \"%s\" очікує %u аргументів, натомість передано %u",
@@ -53,6 +81,8 @@ Object* fnCall(Object* callable, Object** sp, WORD argc)
     auto newVM = VirtualMachine(frame);
     auto result = newVM.execute();
     delete frame;
+    if (variadicParameter != nullptr) delete variadicParameter;
+    sp -= fn->code->arity + 1 + (int)fn->code->isVariadic;
     VirtualMachine::currentVm = prevVm;
     return result;
 }

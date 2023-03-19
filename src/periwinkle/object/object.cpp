@@ -148,7 +148,7 @@ Object* vm::Object::compare(Object* o1, Object* o2, ObjectCompOperator op)
     return result;
 }
 
-Object* vm::Object::call(Object* callable, Object** sp, WORD argc)
+Object* vm::Object::call(Object* callable, Object**& sp, WORD argc)
 {
     auto callOp = GET_OPERATOR(callable, call);
     if (callOp == nullptr)

@@ -15,7 +15,8 @@ namespace vm
     struct CodeObject : Object
     {
         std::string name;
-        WORD arity=0;
+        WORD arity=0; // Не враховує варіативний аргумент
+        bool isVariadic=false;
         std::vector<WORD> code;
         std::vector<Object*> constants;
         std::vector<std::string> names; // Імена змінних

@@ -47,7 +47,10 @@ namespace parser
         Statement* parseElseOrIfStatement();
         Statement* parseElseStatement();
         Statement* parseFunctionDeclaration();
-        std::vector <lexer::Token> parseParameters();
+        std::pair<
+            std::vector<lexer::Token>,
+            std::optional<lexer::Token> > parseParameters();
+        std::optional<lexer::Token> parseVariadicParameter();
         Statement* parseReturnStatement();
 
         Expression* parseExpression();

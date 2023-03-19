@@ -246,7 +246,9 @@ Statement* parser::Parser::parseFunctionDeclaration()
             if (auto lpar = matchToken(LPAR))
             {
                 fnDeclaration->lpar = lpar.value();
-                fnDeclaration->parameters = parseParameters();
+                auto [parameters, variadicParameter] = parseParameters();
+                fnDeclaration->parameters = parameters;
+                fnDeclaration->variadicParameter = variadicParameter;
                 if (auto rpar = matchToken(RPAR))
                 {
                     fnDeclaration->rpar = rpar.value();
@@ -281,12 +283,20 @@ Statement* parser::Parser::parseFunctionDeclaration()
     return nullptr;
 }
 
-std::vector<Token> parser::Parser::parseParameters()
+std::pair<
+    std::vector<lexer::Token>,
+    std::optional<lexer::Token> > parser::Parser::parseParameters()
 {
     std::vector<Token> parameters;
+    std::optional<lexer::Token> variadicParameter = std::nullopt;
 
     while (peekToken().tokenType != RPAR)
     {
+        if (variadicParameter = parseVariadicParameter())
+        {
+            break;
+        }
+
         if (auto identifier = matchToken(ID))
         {
             parameters.push_back(identifier.value());
@@ -302,7 +312,22 @@ std::vector<Token> parser::Parser::parseParameters()
         }
     }
 
-    return parameters;
+    return {parameters, variadicParameter};
+}
+
+std::optional<lexer::Token> parser::Parser::parseVariadicParameter()
+{
+    auto mark = position;
+    if (auto identifier = matchToken(ID))
+    {
+        if (matchToken(ELLIPSIS))
+        {
+            return std::optional(identifier);
+        }
+    }
+
+    position = mark;
+    return std::nullopt;
 }
 
 Statement* parser::Parser::parseReturnStatement()

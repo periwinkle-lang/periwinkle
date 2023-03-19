@@ -151,7 +151,6 @@ Object* VirtualMachine::execute()
             auto callable = *(sp - argc);
 
             auto result = Object::call(callable, sp, argc);
-            sp -= argc + 1;
             PUSH(result);
             break;
         }

@@ -8,6 +8,8 @@
 #include "utils.h"
 #include "pconfig.h"
 
+#include "string_object.h"
+
 using namespace periwinkle;
 
 int periwinkle::Periwinkle::getVersionAsInt()

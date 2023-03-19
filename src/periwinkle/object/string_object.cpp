@@ -67,7 +67,7 @@ static Object* strAdd(Object* o1, Object* o2)
     return StringObject::create(a + b);
 }
 
-static Object* stringSize(Object* s, std::span<Object*> args)
+static Object* stringSize(Object* s, std::span<Object*> args, ArrayObject* va)
 {
     auto strObject = (StringObject*)s;
     return IntObject::create(utils::utf8Size(strObject->value));
@@ -91,7 +91,7 @@ namespace vm
         .comparison = strComparison,
         .attributes =
         {
-            OBJECT_METHOD("довжина", 0, stringSize),
+            OBJECT_METHOD("довжина", 0, false, stringSize),
         },
     };
 }

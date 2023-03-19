@@ -72,20 +72,20 @@ static Object* arrayAdd(Object* o1, Object* o2)
     return newArrayObject;
 }
 
-static Object* arrayLength(Object* o, std::span<Object*> args)
+static Object* arrayLength(Object* o, std::span<Object*> args, ArrayObject* va)
 {
     auto arrayObject = (ArrayObject*)o;
     return IntObject::create(arrayObject->items.size());
 }
 
-static Object* arrayPush(Object* o, std::span<Object*> args)
+static Object* arrayPush(Object* o, std::span<Object*> args, ArrayObject* va)
 {
     auto arrayObject = (ArrayObject*)o;
     arrayObject->items.push_back(args[0]);
     return &P_null;
 }
 
-static Object* arrayInsert(Object* o, std::span<Object*> args)
+static Object* arrayInsert(Object* o, std::span<Object*> args, ArrayObject* va)
 {
     auto arrayObject = (ArrayObject*)o;
     auto index = ((IntObject*)args[0])->value;
@@ -94,7 +94,7 @@ static Object* arrayInsert(Object* o, std::span<Object*> args)
     return &P_null;
 }
 
-static Object* arraySetItem(Object* o, std::span<Object*> args)
+static Object* arraySetItem(Object* o, std::span<Object*> args, ArrayObject* va)
 {
     auto arrayObject = (ArrayObject*)o;
     auto index = ((IntObject*)args[0])->value;
@@ -103,7 +103,7 @@ static Object* arraySetItem(Object* o, std::span<Object*> args)
     return &P_null;
 }
 
-static Object* arrayGetItem(Object* o, std::span<Object*> args)
+static Object* arrayGetItem(Object* o, std::span<Object*> args, ArrayObject* va)
 {
     auto arrayObject = (ArrayObject*)o;
     auto index = ((IntObject*)args[0])->value;
@@ -111,7 +111,7 @@ static Object* arrayGetItem(Object* o, std::span<Object*> args)
     return arrayObject->items[index];
 }
 
-static Object* arrayFindItem(Object* o, std::span<Object*> args)
+static Object* arrayFindItem(Object* o, std::span<Object*> args, ArrayObject* va)
 {
     auto arrayObject = (ArrayObject*)o;
 
@@ -130,14 +130,14 @@ static Object* arrayFindItem(Object* o, std::span<Object*> args)
     return IntObject::create(index);
 }
 
-static Object* arrayClear(Object* o, std::span<Object*> args)
+static Object* arrayClear(Object* o, std::span<Object*> args, ArrayObject* va)
 {
     auto arrayObject = (ArrayObject*)o;
     arrayObject->items.clear();
     return &P_null;
 }
 
-static Object* arrayCount(Object* o, std::span<Object*> args)
+static Object* arrayCount(Object* o, std::span<Object*> args, ArrayObject* va)
 {
     auto arrayObject = (ArrayObject*)o;
     auto count = std::count_if(
@@ -149,7 +149,7 @@ static Object* arrayCount(Object* o, std::span<Object*> args)
     return IntObject::create(count);
 }
 
-static Object* arrayCopy(Object* o, std::span<Object*> args)
+static Object* arrayCopy(Object* o, std::span<Object*> args, ArrayObject* va)
 {
     auto arrayObject = (ArrayObject*)o;
     auto newArrayObject = ArrayObject::create();
@@ -157,7 +157,7 @@ static Object* arrayCopy(Object* o, std::span<Object*> args)
     return newArrayObject;
 }
 
-static Object* arrayRemove(Object* o, std::span<Object*> args)
+static Object* arrayRemove(Object* o, std::span<Object*> args, ArrayObject* va)
 {
     auto arrayObject = (ArrayObject*)o;
 
@@ -176,7 +176,7 @@ static Object* arrayRemove(Object* o, std::span<Object*> args)
     return &P_false;
 }
 
-static Object* arrayRemoveAll(Object* o, std::span<Object*> args)
+static Object* arrayRemoveAll(Object* o, std::span<Object*> args, ArrayObject* va)
 {
     auto arrayObject = (ArrayObject*)o;
     auto erased = std::erase_if(
@@ -188,7 +188,7 @@ static Object* arrayRemoveAll(Object* o, std::span<Object*> args)
     return P_BOOL(erased);
 }
 
-static Object* arrayReverse(Object* o, std::span<Object*> args)
+static Object* arrayReverse(Object* o, std::span<Object*> args, ArrayObject* va)
 {
     auto arrayObject = (ArrayObject*)o;
     std::reverse(arrayObject->items.begin(), arrayObject->items.end());
@@ -213,18 +213,18 @@ namespace vm
         },
         .attributes =
         {
-            OBJECT_METHOD("довжина",    0, arrayLength),
-            OBJECT_METHOD("додати",     1, arrayPush),
-            OBJECT_METHOD("вставити",   2, arrayInsert),
-            OBJECT_METHOD("встановити", 2, arraySetItem),
-            OBJECT_METHOD("отримати",   1, arrayGetItem),
-            OBJECT_METHOD("знайти",     1, arrayFindItem),
-            OBJECT_METHOD("очистити",   0, arrayClear),
-            OBJECT_METHOD("кількість",  1, arrayCount),
-            OBJECT_METHOD("копія",      0, arrayCopy),
-            OBJECT_METHOD("видалити",   1, arrayRemove),
-            OBJECT_METHOD("видалитиВсі",1, arrayRemoveAll),
-            OBJECT_METHOD("обернути",   0, arrayReverse),
+            OBJECT_METHOD("довжина",    0, false, arrayLength),
+            OBJECT_METHOD("додати",     1, false, arrayPush),
+            OBJECT_METHOD("вставити",   2, false, arrayInsert),
+            OBJECT_METHOD("встановити", 2, false, arraySetItem),
+            OBJECT_METHOD("отримати",   1, false, arrayGetItem),
+            OBJECT_METHOD("знайти",     1, false, arrayFindItem),
+            OBJECT_METHOD("очистити",   0, false, arrayClear),
+            OBJECT_METHOD("кількість",  1, false, arrayCount),
+            OBJECT_METHOD("копія",      0, false, arrayCopy),
+            OBJECT_METHOD("видалити",   1, false, arrayRemove),
+            OBJECT_METHOD("видалитиВсі",1, false, arrayRemoveAll),
+            OBJECT_METHOD("обернути",   0, false, arrayReverse),
         },
     };
 }
