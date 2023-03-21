@@ -739,14 +739,32 @@ Expression* parser::Parser::parseLiteralExpression()
     if (auto number = matchToken(NUMBER))
     {
         literalExpression->literalToken = number.value();
-        literalExpression->value = std::stoll(number.value().text);
+        try
+        {
+            literalExpression->value = std::stoll(number.value().text);
+        }
+        catch (const std::out_of_range& e)
+        {
+            throwParserError(
+                "Число не входить в діапазон можливих значень числа",
+                literalExpression->literalToken);
+        }
         return literalExpression;
     }
 
     if (auto real = matchToken(REAL))
     {
         literalExpression->literalToken = real.value();
-        literalExpression->value = std::stod(real.value().text);
+        try
+        {
+            literalExpression->value = std::stod(real.value().text);
+        }
+        catch (const std::out_of_range& e)
+        {
+            throwParserError(
+                "Число не входить в діапазон можливих значень дійсних чисел",
+                literalExpression->literalToken);
+        }
         return literalExpression;
     }
 
