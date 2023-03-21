@@ -10,6 +10,7 @@ namespace vm
 {
     struct Object;
     struct TypeObject;
+    struct NativeMethodObject;
 
     enum class ObjectTypes
     {
@@ -116,8 +117,8 @@ namespace vm
         std::string name;
         ObjectTypes type;
         Object* (*alloc)(void); // Створення нового екземпляра
-        void (*constructor)(Object* object, Object* args[]); // Ініціалізація екземпляра
-        void (*destructor)(Object* object);
+        NativeMethodObject* constructor; // Ініціалізація екземпляра
+        NativeMethodObject* descructor;
         ObjectOperators operators;
         comparisonFunction comparison;
         // Зберігає методи та поля

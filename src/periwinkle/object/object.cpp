@@ -5,8 +5,30 @@
 #include "exception_object.h"
 #include "vm.h"
 #include "utils.h"
+#include "string_object.h"
 
 using namespace vm;
+
+static Object* typeCall(TypeObject* type, Object**& sp, WORD argc)
+{
+    if (type->constructor == nullptr)
+    {
+        VirtualMachine::currentVm->throwException(
+            &TypeErrorObjectType,
+            utils::format("Неможливо створити екземпляр з типом \"%s\"",
+                type->name.c_str())
+        );
+    }
+
+    auto instance = Object::call((Object*)type->constructor, sp, argc);
+    return instance;
+}
+
+static Object* typeToString(TypeObject* type)
+{
+    auto str = StringObject::create(utils::format("<Тип %s>", type->name.c_str()));
+    return str;
+}
 
 namespace vm
 {
@@ -20,9 +42,14 @@ namespace vm
 
     TypeObject typeObjectType =
     {
-        .base = &objectObjectType,
+        .base = nullptr,
         .name = "Тип",
         .type = ObjectTypes::TYPE,
+        .operators =
+        {
+            .call = (callFunction)typeCall,
+            .toString = (unaryFunction)typeToString,
+        },
     };
 }
 
