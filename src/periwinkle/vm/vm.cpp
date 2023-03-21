@@ -261,7 +261,6 @@ Object* VirtualMachine::execute()
             auto callable = *(sp - argc);
 
             auto result = Object::call(callable, sp, argc);
-            sp -= argc + 2; // +2 - функція та екземпляр класу
             PUSH(result);
             break;
         }
