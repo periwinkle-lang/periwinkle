@@ -7,6 +7,9 @@
 #include "utils.h"
 #include "array_object.h"
 
+#define BUILTIN_FUNCTION(name, arity, isVariadic, func) \
+    {name, NativeFunctionObject::create(arity, isVariadic, name, func)}
+
 using namespace vm;
 
 static std::string joinObjectString(
@@ -62,10 +65,10 @@ builtin_t* vm::getBuiltin()
         builtin = new builtin_t();
         builtin->insert(
         {
-            {"друк", NativeFunctionObject::create(0, true, "друк", printNative)},
-            {"друклн", NativeFunctionObject::create(0, true, "друклн", printLnNative)},
-            {"зчитати", NativeFunctionObject::create(0, false, "зчитати", readLineNative)},
-            {"Масив", NativeFunctionObject::create(0, true, "Масив", createArray)},
+            BUILTIN_FUNCTION("друк", 0, true, printNative),
+            BUILTIN_FUNCTION("друкр", 0, true, printLnNative),
+            BUILTIN_FUNCTION("зчитати", 0, false, readLineNative),
+            BUILTIN_FUNCTION("Масив", 0, true, createArray),
         }
         );
     }
