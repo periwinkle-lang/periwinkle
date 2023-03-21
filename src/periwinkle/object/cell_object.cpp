@@ -6,7 +6,7 @@ Object* allocCellObject();
 
 namespace vm
 {
-    ObjectType cellObjectType =
+    TypeObject cellObjectType =
     {
         .base = nullptr,
         .name = "Cell",

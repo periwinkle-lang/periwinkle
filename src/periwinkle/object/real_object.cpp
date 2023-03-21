@@ -11,7 +11,6 @@
 #include "bool_object.h"
 
 using namespace vm;
-extern ObjectType objectObjectType;
 
 static bool tryConvertToDouble(Object* o, double& d)
 {
@@ -124,10 +123,10 @@ Object* allocRealObject();
 
 namespace vm
 {
-    ObjectType realObjectType =
+    TypeObject realObjectType =
     {
         .base = &objectObjectType,
-        .name = "Real",
+        .name = "Дійсне",
         .type = ObjectTypes::REAL,
         .alloc = &allocRealObject,
         .operators =

@@ -5,7 +5,6 @@
 #include "exception_object.h"
 
 using namespace vm;
-extern ObjectType objectObjectType;
 
 #define TO_BOOL(object, b)                             \
     if (object->objectType->type != ObjectTypes::BOOL) \
@@ -56,10 +55,10 @@ Object* allocBoolObject();
 
 namespace vm
 {
-    ObjectType boolObjectType =
+    TypeObject boolObjectType =
     {
         .base = &objectObjectType,
-        .name = "Bool",
+        .name = "Логічний",
         .type = ObjectTypes::BOOL,
         .alloc = &allocBoolObject,
         .operators =

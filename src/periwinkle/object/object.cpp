@@ -10,20 +10,28 @@ using namespace vm;
 
 namespace vm
 {
-    ObjectType objectObjectType =
+    TypeObject objectObjectType =
     {
-        .base = nullptr, // Object - базовий тип для всіх типів, і тому ні від кого не наслідується
-        .name = "Object",
+        // Object - базовий тип для всіх типів, і тому ні від кого не наслідується
+        .base = nullptr,
+        .name = "Обєкт",
         .type = ObjectTypes::OBJECT,
+    };
+
+    TypeObject typeObjectType =
+    {
+        .base = &objectObjectType,
+        .name = "Тип",
+        .type = ObjectTypes::TYPE,
     };
 }
 
-Object* vm::allocObject(ObjectType const *objectType)
+Object* vm::allocObject(TypeObject const* objectType)
 {
     return objectType->alloc();
 }
 
-std::string vm::objectTypeToString(const ObjectType *type)
+std::string vm::objectTypeToString(const TypeObject* type)
 {
     return type->name;
 }

@@ -3,7 +3,6 @@
 #include "native_function_object.h"
 
 using namespace vm;
-extern ObjectType objectObjectType;
 
 static Object* nullToString(Object* a)
 {
@@ -14,10 +13,10 @@ Object* allocNullObject();
 
 namespace vm
 {
-    ObjectType nullObjectType =
+    TypeObject nullObjectType =
     {
         .base = &objectObjectType,
-        .name = "Null",
+        .name = "Нич",
         .type = ObjectTypes::NULL_,
         .alloc = &allocNullObject,
         .operators =

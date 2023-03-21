@@ -9,11 +9,13 @@
 namespace vm
 {
     struct Object;
+    struct TypeObject;
 
     enum class ObjectTypes
     {
-        CODE,
         OBJECT,
+        TYPE,
+        CODE,
         FUNCTION,
         NATIVE_FUNCTION,
         NATIVE_METHOD,
@@ -55,25 +57,12 @@ namespace vm
          unaryFunction neg; // Заперечення
     };
 
-    struct ObjectType
-    {
-        ObjectType* base; // Батьківський тип
-        std::string name;
-        ObjectTypes type;
-        Object* (*alloc)(void); // Створення нового екземпляра
-        void (*constructor)(Object* object, Object* args[]); // Ініціалізація екземпляра
-        void (*destructor)(Object* object);
-        ObjectOperators operators;
-        comparisonFunction comparison;
-        // Зберігає методи та поля
-        std::unordered_map<std::string, Object*> attributes;
-    };
-
-    extern ObjectType objectObjectType;
+    extern TypeObject typeObjectType;
+    extern TypeObject objectObjectType;
 
     struct Object
     {
-        ObjectType* objectType;
+        TypeObject* objectType;
 
         // Викликає об'єкт
         static Object* call(Object* callable, Object**& sp, u64 argc);
@@ -121,8 +110,22 @@ namespace vm
         static Object* getAttr(Object* o, const std::string& name);
     };
 
-    Object* allocObject(ObjectType const *objectType);
-    inline std::string objectTypeToString(const ObjectType *type);
+    struct TypeObject : Object
+    {
+        TypeObject* base; // Батьківський тип
+        std::string name;
+        ObjectTypes type;
+        Object* (*alloc)(void); // Створення нового екземпляра
+        void (*constructor)(Object* object, Object* args[]); // Ініціалізація екземпляра
+        void (*destructor)(Object* object);
+        ObjectOperators operators;
+        comparisonFunction comparison;
+        // Зберігає методи та поля
+        std::unordered_map<std::string, Object*> attributes;
+    };
+
+    Object* allocObject(TypeObject const *objectType);
+    inline std::string objectTypeToString(const TypeObject* type);
 }
 
 #endif

@@ -5,7 +5,7 @@
 
 namespace vm
 {
-    extern ObjectType cellObjectType;
+    extern TypeObject cellObjectType;
 
     // Допоміжний об'єкт для зберігання вільних змінних в замиканнях
     struct CellObject : Object

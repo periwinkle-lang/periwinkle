@@ -2,7 +2,6 @@
 #include "utils.h"
 
 using namespace vm;
-extern ObjectType objectObjectType;
 
 Object* nativeMethodCall(Object* callable, Object**& sp, WORD argc)
 {
@@ -61,10 +60,10 @@ Object* allocNativeMethodObject();
 
 namespace vm
 {
-    ObjectType nativeMethodObjectType =
+    TypeObject nativeMethodObjectType =
     {
         .base = &objectObjectType,
-        .name = "Нативний метод",
+        .name = "НативнийМетод",
         .type = ObjectTypes::NATIVE_METHOD,
         .alloc = &allocNativeMethodObject,
         .operators =

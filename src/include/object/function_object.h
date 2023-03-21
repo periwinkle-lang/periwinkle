@@ -9,7 +9,7 @@
 
 namespace vm
 {
-    extern ObjectType functionObjectType;
+    extern TypeObject functionObjectType;
 
     struct FunctionObject : Object
     {

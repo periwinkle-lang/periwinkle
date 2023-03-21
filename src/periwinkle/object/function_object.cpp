@@ -91,10 +91,10 @@ Object* allocFunction();
 
 namespace vm
 {
-    ObjectType functionObjectType =
+    TypeObject functionObjectType =
     {
         .base = &objectObjectType,
-        .name = "Function",
+        .name = "Функція",
         .type = ObjectTypes::FUNCTION,
         .alloc = &allocFunction,
         .operators =

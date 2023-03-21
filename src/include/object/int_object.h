@@ -6,7 +6,7 @@
 
 namespace vm
 {
-    extern ObjectType intObjectType;
+    extern TypeObject intObjectType;
 
     struct IntObject : Object
     {

@@ -8,7 +8,6 @@
 #include "exception_object.h"
 
 using namespace vm;
-extern ObjectType objectObjectType;
 
 #define CHECK_INT(object)                                 \
     if (object->objectType->type != ObjectTypes::INTEGER) \
@@ -114,10 +113,10 @@ Object* allocIntObject();
 
 namespace vm
 {
-    ObjectType intObjectType =
+    TypeObject intObjectType =
     {
         .base = &objectObjectType,
-        .name = "Integer",
+        .name = "Число",
         .type = ObjectTypes::INTEGER,
         .alloc = &allocIntObject,
         .operators =

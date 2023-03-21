@@ -9,7 +9,7 @@
 
 namespace vm
 {
-    extern ObjectType nativeFunctionObjectType;
+    extern TypeObject nativeFunctionObjectType;
     // Функція приймає масив об'єктів та повертає посилання на результат
     using nativeFunction = Object*(*)(std::span<Object*>, ArrayObject*);
 

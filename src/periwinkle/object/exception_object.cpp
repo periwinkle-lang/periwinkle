@@ -2,12 +2,11 @@
 #include "string_object.h"
 
 using namespace vm;
-extern ObjectType objectObjectType;
 
 #define EXCEPTION_EXTEND(baseType, exc, excName, excOperators) \
     Object* alloc##exc##Object();                       \
                                                         \
-    ObjectType exc##ObjectType =                        \
+    TypeObject exc##ObjectType =                        \
     {                                                   \
         .base = &baseType,                              \
         .name = excName,                                \
@@ -33,7 +32,7 @@ Object* allocExceptionObject();
 
 namespace vm
 {
-    ObjectType ExceptionObjectType =
+    TypeObject ExceptionObjectType =
     {
         .base = &objectObjectType,
         .name = "Виняток",

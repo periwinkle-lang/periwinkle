@@ -4,7 +4,6 @@
 #include "native_method_object.h"
 
 using namespace vm;
-extern ObjectType objectObjectType;
 
 Object* nativeCall(Object* callable, Object**& sp, WORD argc)
 {
@@ -49,10 +48,10 @@ Object* allocNativeFunction();
 
 namespace vm
 {
-    ObjectType nativeFunctionObjectType =
+    TypeObject nativeFunctionObjectType =
     {
         .base = &objectObjectType,
-        .name = "NativeFunction",
+        .name = "НативнаФункція",
         .type = ObjectTypes::NATIVE_FUNCTION,
         .alloc = &allocNativeFunction,
         .operators =

@@ -53,7 +53,8 @@ case OpCode::name:                                      \
     break;                                              \
 }
 
-void VirtualMachine::throwException(ObjectType* exception, std::string message, WORD lineno)
+void VirtualMachine::throwException(
+    TypeObject * exception, std::string message, WORD lineno)
 {
     if (!lineno)
     {

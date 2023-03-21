@@ -5,7 +5,7 @@
 
 namespace vm
 {
-    extern ObjectType stringObjectType;
+    extern TypeObject stringObjectType;
 
     struct StringObject : Object
     {

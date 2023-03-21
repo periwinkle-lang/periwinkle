@@ -6,10 +6,10 @@ Object* allocCodeObject();
 
 namespace vm
 {
-    ObjectType codeObjectType =
+    TypeObject codeObjectType =
     {
         .base = nullptr,
-        .name = "CodeObject",
+        .name = "ОбєктКоду",
         .type = ObjectTypes::CODE,
         .alloc = &allocCodeObject,
     };

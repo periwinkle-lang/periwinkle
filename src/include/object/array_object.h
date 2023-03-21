@@ -7,7 +7,7 @@
 
 namespace vm
 {
-    extern ObjectType arrayObjectType;
+    extern TypeObject arrayObjectType;
 
     struct ArrayObject : Object
     {

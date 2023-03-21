@@ -9,7 +9,7 @@ namespace vm
     {
     };
 
-    extern ObjectType nullObjectType;
+    extern TypeObject nullObjectType;
     extern NullObject P_null;
 }
 

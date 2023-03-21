@@ -8,7 +8,7 @@
 
 namespace vm
 {
-    extern ObjectType boolObjectType;
+    extern TypeObject boolObjectType;
 
     struct BoolObject : Object
     {

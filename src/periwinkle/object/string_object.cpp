@@ -77,10 +77,10 @@ Object* allocStringObject();
 
 namespace vm
 {
-    ObjectType stringObjectType =
+    TypeObject stringObjectType =
     {
         .base = &objectObjectType,
-        .name = "String",
+        .name = "Стрічка",
         .type = ObjectTypes::STRING,
         .alloc = &allocStringObject,
         .operators =

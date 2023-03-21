@@ -5,12 +5,12 @@
 
 namespace vm
 {
-    extern ObjectType realObjectType;
+    extern TypeObject realObjectType;
 
     struct RealObject : Object
     {
         double value;
-        
+
         static RealObject* create(double value);
     };
 }

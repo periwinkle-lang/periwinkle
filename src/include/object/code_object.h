@@ -10,7 +10,7 @@
 
 namespace vm
 {
-    extern ObjectType codeObjectType;
+    extern TypeObject codeObjectType;
 
     struct CodeObject : Object
     {

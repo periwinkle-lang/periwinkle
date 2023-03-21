@@ -11,7 +11,6 @@
 #include "native_method_object.h"
 
 using namespace vm;
-extern ObjectType objectObjectType;
 
 
 #define CHECK_ARRAY(object)                             \
@@ -199,7 +198,7 @@ Object* allocArrayObject();
 
 namespace vm
 {
-    ObjectType arrayObjectType =
+    TypeObject arrayObjectType =
     {
         .base = &objectObjectType,
         .name = "Масив",

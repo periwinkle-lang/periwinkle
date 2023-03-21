@@ -71,7 +71,7 @@ namespace vm
         Object**& freevars;
 
     public:
-        void throwException(ObjectType* exception, std::string message, WORD lineno=0);
+        void throwException(TypeObject* exception, std::string message, WORD lineno=0);
         Object* execute();
         Frame* getFrame() const;
 

@@ -5,12 +5,12 @@
 
 namespace vm
 {
-    extern ObjectType ExceptionObjectType;
-    extern ObjectType NameErrorObjectType;
-    extern ObjectType TypeErrorObjectType;
-    extern ObjectType NotImplementedErrorObjectType;
-    extern ObjectType AttributeErrorObjectType;
-    extern ObjectType IndexErrorObjectType;
+    extern TypeObject ExceptionObjectType;
+    extern TypeObject NameErrorObjectType;
+    extern TypeObject TypeErrorObjectType;
+    extern TypeObject NotImplementedErrorObjectType;
+    extern TypeObject AttributeErrorObjectType;
+    extern TypeObject IndexErrorObjectType;
 
     struct ExceptionObject : Object
     {
