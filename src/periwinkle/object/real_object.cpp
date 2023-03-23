@@ -132,7 +132,7 @@ namespace vm
     TypeObject realObjectType =
     {
         .base = &objectObjectType,
-        .name = "Дійсне",
+        .name = "Дійсний",
         .type = ObjectTypes::REAL,
         .alloc = &allocRealObject,
         .constructor = new NATIVE_METHOD("конструктор", 1, false, realInit),

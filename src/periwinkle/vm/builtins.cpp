@@ -68,7 +68,7 @@ builtin_t* vm::getBuiltin()
             {"Число", &intObjectType},
             {"Логічний", &boolObjectType},
             {"Стрічка", &stringObjectType},
-            {"Дійсне", &realObjectType},
+            {"Дійсний", &realObjectType},
             {"Масив", &arrayObjectType},
         }
         );
