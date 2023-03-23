@@ -4,11 +4,11 @@
 #include <iostream>
 #include <unordered_map>
 
-#include "native_function_object.h"
+#include "object.h"
 
 namespace vm
 {
-    using builtin_t = std::unordered_map<std::string, NativeFunctionObject*>;
+    using builtin_t = std::unordered_map<std::string, Object*>;
     builtin_t* getBuiltin();
 }
 

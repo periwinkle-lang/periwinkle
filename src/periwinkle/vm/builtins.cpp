@@ -6,6 +6,10 @@
 #include "string_object.h"
 #include "utils.h"
 #include "array_object.h"
+#include "native_function_object.h"
+#include "int_object.h"
+#include "bool_object.h"
+#include "real_object.h"
 
 #define BUILTIN_FUNCTION(name, arity, isVariadic, func) \
     {name, NativeFunctionObject::create(arity, isVariadic, name, func)}
@@ -50,13 +54,6 @@ static Object* readLineNative(std::span<Object*> args, ArrayObject* va)
     return StringObject::create(line);
 }
 
-static Object* createArray(std::span<Object*> args, ArrayObject* va)
-{
-    auto a = ArrayObject::create();
-    a->items = va->items;
-    return a;
-}
-
 builtin_t* vm::getBuiltin()
 {
     static builtin_t* builtin;
@@ -68,7 +65,11 @@ builtin_t* vm::getBuiltin()
             BUILTIN_FUNCTION("друк", 0, true, printNative),
             BUILTIN_FUNCTION("друкр", 0, true, printLnNative),
             BUILTIN_FUNCTION("зчитати", 0, false, readLineNative),
-            BUILTIN_FUNCTION("Масив", 0, true, createArray),
+            {"Число", &intObjectType},
+            {"Логічний", &boolObjectType},
+            {"Стрічка", &stringObjectType},
+            {"Дійсне", &realObjectType},
+            {"Масив", &arrayObjectType},
         }
         );
     }

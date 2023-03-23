@@ -3,6 +3,7 @@
 #include "int_object.h"
 #include "real_object.h"
 #include "exception_object.h"
+#include "native_method_object.h"
 
 using namespace vm;
 
@@ -28,6 +29,11 @@ static Object* boolComparison(Object* o1, Object* o2, ObjectCompOperator op)
     }
 
     return P_BOOL(result);
+}
+
+static Object* boolInit(Object* o, std::span<Object*> args, ArrayObject* va)
+{
+    return Object::toBool(args[0]);
 }
 
 static Object* boolToString(Object* a)
@@ -61,6 +67,7 @@ namespace vm
         .name = "Логічний",
         .type = ObjectTypes::BOOL,
         .alloc = &allocBoolObject,
+        .constructor = new NATIVE_METHOD("конструктор", 1, false, boolInit),
         .operators =
         {
             .toString = boolToString,

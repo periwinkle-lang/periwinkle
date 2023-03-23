@@ -33,6 +33,11 @@ static bool tryConvertToString(Object * o, std::string& str)
             return &P_NotImplemented;                    \
     }
 
+static Object* strInit(Object* o, std::span<Object*> args, ArrayObject* va)
+{
+    return Object::toString(args[0]);
+}
+
 static Object* strComparison(Object* o1, Object* o2, ObjectCompOperator op)
 {
     std::string a, b;
@@ -83,6 +88,7 @@ namespace vm
         .name = "Стрічка",
         .type = ObjectTypes::STRING,
         .alloc = &allocStringObject,
+        .constructor = new NATIVE_METHOD("конструктор", 1, false, strInit),
         .operators =
         {
             .toString = strToString,

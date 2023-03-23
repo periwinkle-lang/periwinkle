@@ -6,6 +6,7 @@
 #include "vm.h"
 #include "utils.h"
 #include "string_object.h"
+#include "native_method_object.h"
 
 using namespace vm;
 
@@ -20,7 +21,8 @@ static Object* typeCall(TypeObject* type, Object**& sp, WORD argc)
         );
     }
 
-    auto instance = Object::call((Object*)type->constructor, sp, argc);
+    auto instance = callNativeMethod(nullptr, type->constructor, {sp - argc + 1, argc});
+    sp -= argc + 1;
     return instance;
 }
 

@@ -25,6 +25,13 @@ using namespace vm;
     }
 
 
+static Object* arrayInit(Object* o, std::span<Object*> args, ArrayObject* va)
+{
+    auto arrayObject = ArrayObject::create();
+    arrayObject->items = va->items;
+    return arrayObject;
+}
+
 static Object* arrayToString(Object* o)
 {
     auto arrayObject = (ArrayObject*)o;
@@ -204,6 +211,7 @@ namespace vm
         .name = "Масив",
         .type = ObjectTypes::ARRAY,
         .alloc = &allocArrayObject,
+        .constructor = new NATIVE_METHOD("конструктор", 0, true, arrayInit),
         .operators =
         {
             .toString = arrayToString,

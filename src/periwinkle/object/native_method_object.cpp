@@ -5,53 +5,16 @@ using namespace vm;
 
 Object* nativeMethodCall(Object* callable, Object**& sp, WORD argc)
 {
-    auto nativeMethod = (NativeMethodObject*)callable;
     auto firstArg = sp - argc + 1;
-    auto instance = *(firstArg - 2); // Екземпляр об'єкта, в якого викликається метод.
+    auto instance = *(firstArg - 2);
 
     // Якщо перед методом на стеці немає екземпляра,
     // то тоді він повинен передаватися через аргументи.
-    WORD actualArgc = instance == nullptr ? argc : argc + 1;
+    WORD actualArgc = instance == nullptr ? argc - 1 : argc;
 
-    if (nativeMethod->isVariadic)
-    {
-        if (nativeMethod->arity > actualArgc)
-        {
-            VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
-                utils::format(
-                    "Функція \"%s\" очікує мінімум %u аргументів,"
-                    "натомість було передано %u",
-                    nativeMethod->name.c_str(), nativeMethod->arity, argc));
-        }
-    }
-    else if (nativeMethod->arity != actualArgc)
-    {
-        VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
-            utils::format(
-                "Функція \"%s\" очікує %u аргументів, натомість було передано %u",
-                nativeMethod->name.c_str(), nativeMethod->arity, argc));
-    }
-
-    if (instance == nullptr)
-    {
-        instance = *firstArg; // Береться екземпляр об'єта з аргументів.
-        firstArg++; // Пропускається екземпляр.
-    }
-
-    auto variadicParameter = ArrayObject::create();
-    if (auto variadicCount = argc - nativeMethod->arity; variadicCount > 0)
-    {
-        static auto arrayPush =
-            ((NativeMethodObject*)arrayObjectType.attributes["додати"])->method;
-        for (WORD i = variadicCount; i > 0; --i)
-        {
-            arrayPush(variadicParameter, { sp - i + 1, 1 }, nullptr);
-        }
-    }
-
-    auto result = nativeMethod->method(
-        instance, {firstArg, nativeMethod->arity - 1}, variadicParameter);
-    delete variadicParameter;
+    auto result = callNativeMethod(
+        instance == nullptr ? *firstArg : instance,
+        (NativeMethodObject*)callable, { sp - actualArgc + 1, actualArgc });
     sp -= argc + 2; // +2, екземпляр класу та метод
     return result;
 }
@@ -90,4 +53,45 @@ NativeMethodObject* vm::NativeMethodObject::create(
     nativeMethodFunction->name = name;
     nativeMethodFunction->method = method;
     return nativeMethodFunction;
+}
+
+Object* vm::callNativeMethod(
+    Object* instance, NativeMethodObject* method, std::span<Object*> args)
+{
+    auto argc = args.size() + 1; // +1 для екземпляра
+
+    if (method->isVariadic)
+    {
+        if (method->arity > argc)
+        {
+            VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
+                utils::format(
+                    "Функція \"%s\" очікує мінімум %u аргументів,"
+                    "натомість було передано %u",
+                    method->name.c_str(), method->arity, argc));
+        }
+    }
+    else if (method->arity != argc)
+    {
+        VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
+            utils::format(
+                "Функція \"%s\" очікує %u аргументів, натомість було передано %u",
+                method->name.c_str(), method->arity, argc));
+    }
+
+    auto variadicParameter = ArrayObject::create();
+    if (auto variadicCount = argc - method->arity; variadicCount > 0)
+    {
+        static auto arrayPush =
+            ((NativeMethodObject*)arrayObjectType.attributes["додати"])->method;
+        for (WORD i = 0; i < variadicCount; ++i)
+        {
+            arrayPush(variadicParameter, { data(args) + i, 1}, nullptr);
+        }
+    }
+
+    auto result = method->method(
+        instance, { data(args), method->arity - 1 }, variadicParameter);
+    delete variadicParameter;
+    return result;
 }

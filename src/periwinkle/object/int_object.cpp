@@ -6,6 +6,7 @@
 #include "bool_object.h"
 #include "real_object.h"
 #include "exception_object.h"
+#include "native_method_object.h"
 
 using namespace vm;
 
@@ -26,6 +27,11 @@ static Object* name(Object* a, Object* b)     \
     auto arg2 = (IntObject*)b;                \
     auto result = arg1->value op arg2->value; \
     return IntObject::create(result);         \
+}
+
+static Object* intInit(Object* o, std::span<Object*> args, ArrayObject* va)
+{
+    return Object::toInteger(args[0]);
 }
 
 static Object* intComparison(Object* o1, Object* o2, ObjectCompOperator op)
@@ -119,6 +125,7 @@ namespace vm
         .name = "Число",
         .type = ObjectTypes::INTEGER,
         .alloc = &allocIntObject,
+        .constructor = new NATIVE_METHOD("конструктор", 1, false, intInit),
         .operators =
         {
             .toString = intToString,

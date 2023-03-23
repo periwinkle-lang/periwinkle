@@ -63,7 +63,7 @@ namespace vm
 
     struct Object
     {
-        TypeObject* objectType;
+        TypeObject* objectType = &typeObjectType;
 
         // Викликає об'єкт
         static Object* call(Object* callable, Object**& sp, u64 argc);

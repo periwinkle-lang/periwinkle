@@ -9,6 +9,7 @@
 #include "int_object.h"
 #include "exception_object.h"
 #include "bool_object.h"
+#include "native_method_object.h"
 
 using namespace vm;
 
@@ -39,6 +40,11 @@ static Object* name(Object* o1, Object* o2)     \
     TO_DOUBLE(o2, b);                           \
     double result = a op b;                     \
     return RealObject::create(result);          \
+}
+
+static Object* realInit(Object* o, std::span<Object*> args, ArrayObject* va)
+{
+    return Object::toReal(args[0]);
 }
 
 static Object* realComparison(Object* o1, Object* o2, ObjectCompOperator op)
@@ -129,6 +135,7 @@ namespace vm
         .name = "Дійсне",
         .type = ObjectTypes::REAL,
         .alloc = &allocRealObject,
+        .constructor = new NATIVE_METHOD("конструктор", 1, false, realInit),
         .operators =
         {
             .toString = realToString,
