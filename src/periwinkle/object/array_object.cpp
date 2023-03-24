@@ -9,6 +9,7 @@
 #include "int_object.h"
 #include "null_object.h"
 #include "native_method_object.h"
+#include "end_iteration_object.h"
 
 using namespace vm;
 
@@ -76,6 +77,12 @@ static Object* arrayAdd(Object* o1, Object* o2)
         arrayObject2->items.end());
 
     return newArrayObject;
+}
+
+static Object* arrayGetIter(ArrayObject* o)
+{
+    auto iterator = ArrayIterObject::create(o->items);
+    return iterator;
 }
 
 static Object* arrayLength(Object* o, std::span<Object*> args, ArrayObject* va)
@@ -201,7 +208,17 @@ static Object* arrayReverse(Object* o, std::span<Object*> args, ArrayObject* va)
     return &P_null;
 }
 
+static Object* arrayIterNext(ArrayIterObject* o, std::span<Object*> args, ArrayObject* va)
+{
+    if (o->position < o->length)
+    {
+        return o->iterable[o->position++];
+    }
+    return &P_endIter;
+}
+
 Object* allocArrayObject();
+Object* allocArrayIterObject();
 
 namespace vm
 {
@@ -217,6 +234,7 @@ namespace vm
             .toString = arrayToString,
             .toBool = arrayToBool,
             .add = arrayAdd,
+            .getIter = (unaryFunction)arrayGetIter,
         },
         .attributes =
         {
@@ -234,6 +252,18 @@ namespace vm
             OBJECT_METHOD("обернути",   0, false, arrayReverse),
         },
     };
+
+    TypeObject arrayIterObjectType =
+    {
+        .base = &objectObjectType,
+        .name = "ІтераторМасиву",
+        .type = ObjectTypes::ARRAY_ITERATOR,
+        .alloc = &allocArrayIterObject,
+        .attributes =
+        {
+            OBJECT_METHOD("наступний", 0, false, (nativeMethod)arrayIterNext),
+        },
+    };
 }
 
 Object* allocArrayObject()
@@ -243,8 +273,22 @@ Object* allocArrayObject()
     return (Object*)arrayObject;
 }
 
+Object* allocArrayIterObject()
+{
+    auto arrayIterObject = new ArrayIterObject{ {.objectType = &arrayIterObjectType} };
+    return (Object*)arrayIterObject;
+}
+
 ArrayObject* vm::ArrayObject::create()
 {
     auto arrayObject = (ArrayObject*)allocObject(&arrayObjectType);
     return arrayObject;
+}
+
+ArrayIterObject* vm::ArrayIterObject::create(const std::vector<Object*> iterable)
+{
+    auto arrayIterObject = (ArrayIterObject*)allocObject(&arrayIterObjectType);
+    arrayIterObject->iterable = iterable;
+    arrayIterObject->length = iterable.size();
+    return arrayIterObject;
 }

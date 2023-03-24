@@ -166,13 +166,14 @@ Object* vm::Object::compare(Object* o1, Object* o2, ObjectCompOperator op)
     auto result = callCompareOperator(o1, o2, op);
     if (result == &P_NotImplemented)
     {
-
         std::string opName;
         using enum ObjectCompOperator;
         switch (op)
         {
-        case EQ: opName = "=="; break;
-        case NE: opName = "!="; break;
+        // Якщо оператор порівння нереалізовано, то вони порівнюються за посиланням.
+        case EQ: return P_BOOL(o1 == o2); break;
+        case NE: return P_BOOL(o1 != o2); break;
+
         case GT: opName = "більше"; break;
         case GE: opName = "більше="; break;
         case LT: opName = "менше"; break;
@@ -212,6 +213,7 @@ BINARY_OPERATOR(floorDiv, \\)
 BINARY_OPERATOR(mod, %)
 UNARY_OPERATOR(pos, +)
 UNARY_OPERATOR(neg, -)
+UNARY_OPERATOR(getIter, getIter)
 
 Object* vm::Object::getAttr(Object* o, const std::string& name)
 {

@@ -20,6 +20,9 @@ namespace utils
     // Повертає кількість символів в utf8 стрічці
     size_t utf8Size(const std::string& str);
 
+    // Повертає utf8 символ по індексу
+    std::string utf8At(const std::string& str, size_t index);
+
     // Відступ на задану ширину, заповнює відступ пробілами.
     // Наприклад:
     //     std::cout << "id =" << indent(10) << "10";

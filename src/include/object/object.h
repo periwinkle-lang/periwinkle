@@ -22,12 +22,13 @@ namespace vm
         NATIVE_METHOD,
         INTEGER,
         BOOL,
-        STRING,
+        STRING, STRING_ITERATOR,
         REAL,
         NULL_,
         EXCEPTION,
         CELL,
-        ARRAY,
+        ARRAY, ARRAY_ITERATOR,
+        END_ITERATION,
     };
 
     enum class ObjectCompOperator
@@ -56,6 +57,7 @@ namespace vm
          binaryFunction mod;
          unaryFunction pos; // Унарний оператор +
          unaryFunction neg; // Заперечення
+         unaryFunction getIter; // Повертає ітератор
     };
 
     extern TypeObject typeObjectType;
@@ -107,6 +109,8 @@ namespace vm
         // Викликає операцію унарного - для об'єкта
         static Object* neg(Object* o);
 
+        // Повертає ітератор об'єкта
+        static Object* getIter(Object* o);
 
         static Object* getAttr(Object* o, const std::string& name);
     };

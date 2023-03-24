@@ -5,13 +5,22 @@
 
 namespace vm
 {
-    extern TypeObject stringObjectType;
+    extern TypeObject stringObjectType, stringIterObjectType;
 
     struct StringObject : Object
     {
         std::string value;
 
         static StringObject* create(std::string value);
+    };
+
+    struct StringIterObject : Object
+    {
+        size_t position;
+        size_t length;
+        std::string iterable;
+
+        static StringIterObject* create(const std::string& iterable);
     };
 }
 

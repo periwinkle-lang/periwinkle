@@ -76,19 +76,35 @@ void utils::replaceTabToSpace(std::string& str)
     }
 }
 
+static int getUtf8CharLen(char c)
+{
+    auto uc = (unsigned char)c;
+    if (uc <= 127) return 1;
+    else if ((uc & 0xE0) == 0xC0) return 2;
+    else if ((uc & 0xF0) == 0xE0) return 3;
+    else if ((uc & 0xF8) == 0xF0) return 4;
+    return -1;
+}
+
 size_t utils::utf8Size(const std::string& str)
 {
     size_t i, q;
-    for (q = 0, i = 0; i < str.length(); i++, q++)
+    for (q = 0, i = 0; i < str.length(); q++)
     {
-        auto c = (unsigned char)str[i];
-        if (c <= 127) continue;
-        else if ((c & 0xE0) == 0xC0) i += 1;
-        else if ((c & 0xF0) == 0xE0) i += 2;
-        else if ((c & 0xF8) == 0xF0) i += 3;
-        else return 0; // Неправильний utf8
+        i += getUtf8CharLen(str[i]);
     }
     return q;
+}
+
+std::string utils::utf8At(const std::string& str, size_t index)
+{
+    size_t i, q;
+    for (q = 0, i = 0; q < index; q++)
+    {
+        auto len = getUtf8CharLen(str[i]);
+        i += len;
+    }
+    return str.substr(i, getUtf8CharLen(str[i]));
 }
 
 std::string utils::indent(int width)

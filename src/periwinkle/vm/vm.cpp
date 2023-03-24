@@ -90,6 +90,7 @@ Object* VirtualMachine::execute()
         }
         UNARY_OP(POS, pos)
         UNARY_OP(NEG, neg)
+        UNARY_OP(GET_ITER, getIter)
         BINARY_OP(ADD, add)
         BINARY_OP(SUB, sub)
         BINARY_OP(MUL, mul)

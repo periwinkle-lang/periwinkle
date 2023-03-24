@@ -10,9 +10,13 @@
 #include "int_object.h"
 #include "bool_object.h"
 #include "real_object.h"
+#include "end_iteration_object.h"
 
 #define BUILTIN_FUNCTION(name, arity, isVariadic, func) \
     {name, NativeFunctionObject::create(arity, isVariadic, name, func)}
+
+#define BUILTIN_TYPE(type) \
+    {type.name, &type}
 
 using namespace vm;
 
@@ -54,6 +58,11 @@ static Object* readLineNative(std::span<Object*> args, ArrayObject* va)
     return StringObject::create(line);
 }
 
+static Object* getIterator(std::span<Object*> args, ArrayObject* va)
+{
+    return Object::getIter(args[0]);
+}
+
 builtin_t* vm::getBuiltin()
 {
     static builtin_t* builtin;
@@ -65,11 +74,15 @@ builtin_t* vm::getBuiltin()
             BUILTIN_FUNCTION("друк", 0, true, printNative),
             BUILTIN_FUNCTION("друкр", 0, true, printLnNative),
             BUILTIN_FUNCTION("зчитати", 0, false, readLineNative),
-            {"Число", &intObjectType},
-            {"Логічний", &boolObjectType},
-            {"Стрічка", &stringObjectType},
-            {"Дійсний", &realObjectType},
-            {"Масив", &arrayObjectType},
+            BUILTIN_FUNCTION("ітератор", 1, false, getIterator),
+
+            BUILTIN_TYPE(intObjectType),
+            BUILTIN_TYPE(boolObjectType),
+            BUILTIN_TYPE(stringObjectType),
+            BUILTIN_TYPE(realObjectType),
+            BUILTIN_TYPE(arrayObjectType),
+
+            {"КінецьІтерації", &P_endIter},
         }
         );
     }

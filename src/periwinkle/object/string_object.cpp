@@ -4,6 +4,7 @@
 #include "bool_object.h"
 #include "native_method_object.h"
 #include "int_object.h"
+#include "end_iteration_object.h"
 #include "utils.h"
 
 using namespace vm;
@@ -72,13 +73,29 @@ static Object* strAdd(Object* o1, Object* o2)
     return StringObject::create(a + b);
 }
 
+static Object* strGetIter(StringObject* o)
+{
+    auto iterator = StringIterObject::create(o->value);
+    return iterator;
+}
+
 static Object* stringSize(Object* s, std::span<Object*> args, ArrayObject* va)
 {
     auto strObject = (StringObject*)s;
     return IntObject::create(utils::utf8Size(strObject->value));
 }
 
+static Object* strIterNext(StringIterObject* s, std::span<Object*> args, ArrayObject* va)
+{
+    if (s->position < s->length)
+    {
+        return StringObject::create(utils::utf8At(s->iterable, s->position++));
+    }
+    return &P_endIter;
+}
+
 Object* allocStringObject();
+Object* allocStringIterObject();
 
 namespace vm
 {
@@ -93,11 +110,24 @@ namespace vm
         {
             .toString = strToString,
             .add = strAdd,
+            .getIter = (unaryFunction)strGetIter,
         },
         .comparison = strComparison,
         .attributes =
         {
             OBJECT_METHOD("довжина", 0, false, stringSize),
+        },
+    };
+
+    TypeObject stringIterObjectType =
+    {
+        .base = &objectObjectType,
+        .name = "ІтераторСтрічки",
+        .type = ObjectTypes::STRING_ITERATOR,
+        .alloc = &allocStringIterObject,
+        .attributes =
+        {
+            OBJECT_METHOD("наступний", 0, false, (nativeMethod)strIterNext),
         },
     };
 }
@@ -109,9 +139,23 @@ Object* allocStringObject()
     return (Object*)stringObject;
 }
 
+Object* allocStringIterObject()
+{
+    auto strIterObject = new StringIterObject{ {.objectType = &stringIterObjectType} };
+    return (Object*)strIterObject;
+}
+
 StringObject* vm::StringObject::create(std::string value)
 {
     auto stringObject = (StringObject*)allocObject(&stringObjectType);
     stringObject->value = value;
     return stringObject;
+}
+
+StringIterObject* vm::StringIterObject::create(const std::string& iterable)
+{
+    auto strIterObject = (StringIterObject*)allocObject(&stringIterObjectType);
+    strIterObject->iterable = iterable;
+    strIterObject->length = utils::utf8Size(iterable);
+    return strIterObject;
 }
