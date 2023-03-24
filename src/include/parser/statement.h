@@ -109,6 +109,18 @@ namespace parser
             }
         }
     };
+
+    struct ForEachStatement : Statement
+    {
+        lexer::Token forEach;
+        lexer::Token variable;
+        lexer::Token eachFrom; // Для "з"
+        Expression* expression;
+        BlockStatement* block;
+
+        ForEachStatement()
+            : Statement(NodeKind::FOR_EACH_STATEMET) {};
+    };
 }
 
 #endif

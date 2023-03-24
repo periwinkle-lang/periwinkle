@@ -7,6 +7,8 @@
 #include "function_object.h"
 #include "null_object.h"
 #include "cell_object.h"
+#include "native_method_object.h"
+#include "end_iteration_object.h"
 #include "builtins.h"
 #include "plogger.h"
 #include "utils.h"
@@ -160,6 +162,32 @@ Object* VirtualMachine::execute()
         {
             auto returnValue = POP();
             return returnValue;
+        }
+        case FOR_EACH:
+        {
+            auto iterator = PEEK();
+            auto nextMethod =
+                (NativeMethodObject*)Object::getAttr(iterator, "наступний");
+            if (nextMethod == nullptr)
+            {
+                throwException(
+                    &TypeErrorObjectType,
+                    utils::format("Тип \"%s\" не є ітератором",
+                        iterator->objectType->name.c_str()));
+            }
+
+            auto nextElement = callNativeMethod(iterator, nextMethod, {});
+            if (nextElement != &P_endIter)
+            {
+                PUSH(nextElement);
+                ip++; // Пропуск аргументу опкоду
+            }
+            else
+            {
+                sp--; // Видалення зі стека ітератора
+                JUMP(); // Завершення циклу
+            }
+            break;
         }
         case LOAD_CONST:
         {

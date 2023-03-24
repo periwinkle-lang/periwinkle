@@ -12,7 +12,7 @@ namespace compiler
 {
     enum class CompilerStateType
     {
-        WHILE, FUNCTION
+        LOOP, FUNCTION
     };
 
     struct CompilerState
@@ -40,6 +40,7 @@ namespace compiler
         void compileIfStatement(parser::IfStatement* statement);
         void compileFunctionDeclaration(parser::FunctionDeclaration* statement);
         void compileReturnStatement(parser::ReturnStatement* statement);
+        void compileForEachStatement(parser::ForEachStatement* statement);
 
         void compileExpression(parser::Expression* expression);
         void compileAssignmentExpression(parser::AssignmentExpression* expression);

@@ -52,6 +52,7 @@ namespace parser
             std::optional<lexer::Token> > parseParameters();
         std::optional<lexer::Token> parseVariadicParameter();
         Statement* parseReturnStatement();
+        Statement* parseForEachStatement();
 
         Expression* parseExpression();
         Expression* parseLhs();

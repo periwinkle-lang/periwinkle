@@ -70,6 +70,7 @@ BlockStatement* parser::Parser::parseBlock()
 Statement* parser::Parser::parseStatement()
 {
     SIMPLE_RULE(parseWhileStatement);
+    SIMPLE_RULE(parseForEachStatement);
     SIMPLE_RULE(parseBreakStatement);
     SIMPLE_RULE(parseContinueStatement);
     SIMPLE_RULE(parseIfStatement);
@@ -357,6 +358,48 @@ Statement* parser::Parser::parseReturnStatement()
 
     position = mark;
     delete returnStatement;
+    return nullptr;
+}
+
+Statement* parser::Parser::parseForEachStatement()
+{
+    auto mark = position;
+    auto forEachStatement = new ForEachStatement();
+    if (auto keyword = matchToken(EACH))
+    {
+        forEachStatement->forEach = keyword.value();
+        if (auto variable = matchToken(ID))
+        {
+            forEachStatement->variable = variable.value();
+            if (auto eachFrom = matchToken(EACH_FROM))
+            {
+                forEachStatement->eachFrom = eachFrom.value();
+                if ((forEachStatement->expression = parseRhs()))
+                {
+                    auto block = new BlockStatement();
+                    while (!matchToken(END))
+                    {
+                        if (auto statement = parseStatement())
+                        {
+                            block->statements.push_back(statement);
+                        }
+                        else
+                        {
+                            throwParserError(
+                                "Інструкція \"кожній\" повинна закінчуватись на"
+                                "ключове слово \"кінець\"",
+                                forEachStatement->forEach);
+                        }
+                    }
+                    forEachStatement->block = block;
+                    return forEachStatement;
+                }
+            }
+        }
+    }
+
+    position = mark;
+    delete forEachStatement;
     return nullptr;
 }
 

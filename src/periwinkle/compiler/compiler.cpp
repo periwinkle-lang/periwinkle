@@ -42,7 +42,7 @@ using enum parser::NodeKind;
 #define SCOPE_POP() scopeStack.pop_back()
 #define SCOPE_BACK() scopeStack.back()
 
-struct WhileState : CompilerState
+struct LoopState : CompilerState
 {
     vm::WORD startIp; // Початок циклу
     // Адреси, що будуть будуть змінені на адресу кінці циклу
@@ -54,8 +54,8 @@ struct FunctionState : CompilerState
     vm::CodeObject* codeObject;
 };
 
-#define PUSH_WHILE_STATE(startIp) \
-    stateStack.push_back(new WhileState{{CompilerStateType::WHILE}, startIp})
+#define PUSH_LOOP_STATE(startIp) \
+    stateStack.push_back(new LoopState{{CompilerStateType::LOOP}, startIp})
 
 #define PUSH_FUNCTION_STATE(codeObject) \
     stateStack.push_back(new FunctionState{{CompilerStateType::FUNCTION}, codeObject})
@@ -111,6 +111,9 @@ void compiler::Compiler::compileStatement(Statement* statement)
     case RETURN_STATEMENT:
         compileReturnStatement((ReturnStatement*)statement);
         break;
+    case FOR_EACH_STATEMET:
+        compileForEachStatement((ForEachStatement*)statement);
+        break;
     default:
         plog::fatal << "Неможливо обробити вузол \""
             << parser::stringEnum::enumToString(statement->kind) << "\"";
@@ -128,12 +131,12 @@ void compiler::Compiler::compileWhileStatement(WhileStatement* statement)
     compileExpression(statement->condition);
     emitOpCode(JMP_IF_FALSE);
     auto endWhileBlock = emitOperand(0);
-    PUSH_WHILE_STATE(startWhileAddress);
+    PUSH_LOOP_STATE(startWhileAddress);
     compileBlock(statement->block);
     emitOpCode(JMP);
     emitOperand(startWhileAddress);
     patchJumpAddress(endWhileBlock, getOffset());
-    for (auto address : STATE_BACK(WhileState)->addressesForPatchWithEndBlock)
+    for (auto address : STATE_BACK(LoopState)->addressesForPatchWithEndBlock)
     {
         patchJumpAddress(address, getOffset());
     }
@@ -142,7 +145,7 @@ void compiler::Compiler::compileWhileStatement(WhileStatement* statement)
 
 void compiler::Compiler::compileBreakStatement(BreakStatement* statement)
 {
-    auto state = (WhileState*)unwindStateStack(CompilerStateType::WHILE);
+    auto state = (LoopState*)unwindStateStack(CompilerStateType::LOOP);
     if (state)
     {
         setLineno(statement->break_.lineno);
@@ -158,7 +161,7 @@ void compiler::Compiler::compileBreakStatement(BreakStatement* statement)
 
 void compiler::Compiler::compileContinueStatement(ContinueStatement* statement)
 {
-    auto state = (WhileState*)unwindStateStack(CompilerStateType::WHILE);
+    auto state = (LoopState*)unwindStateStack(CompilerStateType::LOOP);
     if (state)
     {
         setLineno(statement->continue_.lineno);
@@ -282,6 +285,28 @@ void compiler::Compiler::compileReturnStatement(parser::ReturnStatement* stateme
     {
         throwCompileError("Оператор \"повернути\" знаходиться поза функцією!", statement->return_);
     }
+}
+
+void compiler::Compiler::compileForEachStatement(ForEachStatement* statement)
+{
+    compileExpression(statement->expression);
+    setLineno(statement->forEach.lineno);
+    emitOpCode(GET_ITER);
+    auto startForEachAddress = getOffset();
+    emitOpCode(FOR_EACH);
+    auto endForEachBlock = emitOperand(0);
+    setLineno(statement->variable.lineno);
+    compileNameSet(statement->variable.text);
+    PUSH_LOOP_STATE(startForEachAddress);
+    compileBlock(statement->block);
+    emitOpCode(JMP);
+    emitOperand(startForEachAddress);
+    patchJumpAddress(endForEachBlock, getOffset());
+    for (auto address : STATE_BACK(LoopState)->addressesForPatchWithEndBlock)
+    {
+        patchJumpAddress(address, getOffset());
+    }
+    STATE_POP();
 }
 
 void compiler::Compiler::compileExpression(Expression* expression)

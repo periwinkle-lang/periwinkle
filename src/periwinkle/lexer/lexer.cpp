@@ -66,6 +66,8 @@ const static std::vector<std::pair<TokenType, regex>> tokenTypesRegexList
     {TokenType::ELSE,            uregex("^інакше" WB)},
     {TokenType::FUNCTION,        uregex("^функція" WB)},
     {TokenType::RETURN,          uregex("^повернути" WB)},
+    {TokenType::EACH,            uregex("^кожній" WB)},
+    {TokenType::EACH_FROM,       uregex("^з" WB)},
 
     {TokenType::ID,              uregex("^[а-яА-ЯїієґЇІЄҐ_][а-яА-ЯїієґЇІЄҐ0-9_]*")},
     {TokenType::LPAR,            uregex("^\\(")},

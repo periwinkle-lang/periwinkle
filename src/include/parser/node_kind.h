@@ -17,6 +17,7 @@ namespace parser
         ELSE_STATEMENT,
         FUNCTION_STATEMENT,
         RETURN_STATEMENT,
+        FOR_EACH_STATEMET,
 
         // Expression
         ASSIGNMENT_EXPRESSION,

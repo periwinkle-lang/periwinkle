@@ -37,6 +37,7 @@ int compiler::Decompiler::opCodeLenArguments(OpCode code)
     case COMPARE:
     case LOAD_METHOD:
     case CALL_METHOD:
+    case FOR_EACH:
         return 1;
     default:
         return 0;

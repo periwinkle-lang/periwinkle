@@ -29,7 +29,7 @@ namespace vm
         AND, OR, NOT,
 
         // Операції контролю потоку виконання
-        JMP, JMP_IF_TRUE, JMP_IF_FALSE, CALL, RETURN,
+        JMP, JMP_IF_TRUE, JMP_IF_FALSE, CALL, RETURN, FOR_EACH,
 
         // Операції для роботи з пам'яттю
         LOAD_CONST, LOAD_GLOBAL, STORE_GLOBAL, LOAD_LOCAL, STORE_LOCAL,

@@ -185,6 +185,13 @@ void ScopeAnalyzer::_analyze(parser::Node* node, Scope* parent)
         }
         break;
     }
+    case FOR_EACH_STATEMET:
+    {
+        auto forEach = (parser::ForEachStatement*)node;
+        parent->addLocal(forEach->variable.text);
+        _analyze(forEach->block, parent);
+        break;
+    }
     case ASSIGNMENT_EXPRESSION:
     {
         auto assignmentExpression = (parser::AssignmentExpression*)node;
