@@ -4,31 +4,20 @@
 using namespace vm;
 
 #define EXCEPTION_EXTEND(baseType, exc, excName, excOperators) \
-    Object* alloc##exc##Object();                       \
-                                                        \
     TypeObject exc##ObjectType =                        \
     {                                                   \
         .base = &baseType,                              \
         .name = excName,                                \
         .type = ObjectTypes::EXCEPTION,                 \
-        .alloc = &alloc##exc##Object,                   \
+        .alloc = DEFAULT_ALLOC(exc##Object),            \
         .operators = excOperators,                      \
-    };                                                  \
-                                                        \
-    Object* alloc##exc##Object()                        \
-    {                                                   \
-        auto exceptionObject = new exc##Object;         \
-        exceptionObject->objectType = &exc##ObjectType; \
-        return (Object*)exceptionObject;                \
-    }
+    };
 
 static Object* exceptionToString(Object* a)
 {
     auto exception = (ExceptionObject*)a;
     return StringObject::create(exception->message);
 }
-
-Object* allocExceptionObject();
 
 namespace vm
 {
@@ -37,7 +26,7 @@ namespace vm
         .base = &objectObjectType,
         .name = "Виняток",
         .type = ObjectTypes::EXCEPTION,
-        .alloc = &allocExceptionObject,
+        .alloc = DEFAULT_ALLOC(ExceptionObject),
         .operators =
         {
             .toString = exceptionToString,
@@ -60,11 +49,4 @@ namespace vm
         { .toString = exceptionToString });
 
     NotImplementedErrorObject P_NotImplemented{ {{.objectType = &NotImplementedErrorObjectType}} };
-}
-
-Object* allocExceptionObject()
-{
-    auto exceptionObject = new ExceptionObject;
-    exceptionObject->objectType = &ExceptionObjectType;
-    return (Object*)exceptionObject;
 }

@@ -2,8 +2,6 @@
 
 using namespace vm;
 
-Object* allocCodeObject();
-
 namespace vm
 {
     TypeObject codeObjectType =
@@ -11,15 +9,8 @@ namespace vm
         .base = nullptr,
         .name = "ОбєктКоду",
         .type = ObjectTypes::CODE,
-        .alloc = &allocCodeObject,
+        .alloc = DEFAULT_ALLOC(CodeObject),
     };
-}
-
-Object* allocCodeObject()
-{
-    auto codeObject = new CodeObject;
-    codeObject->objectType = &codeObjectType;
-    return codeObject;
 }
 
 CodeObject* vm::CodeObject::create(std::string name)

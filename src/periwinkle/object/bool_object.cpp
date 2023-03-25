@@ -57,8 +57,6 @@ static Object* boolToBool(Object* a)
     return a;
 }
 
-Object* allocBoolObject();
-
 namespace vm
 {
     TypeObject boolObjectType =
@@ -66,7 +64,7 @@ namespace vm
         .base = &objectObjectType,
         .name = "Логічний",
         .type = ObjectTypes::BOOL,
-        .alloc = &allocBoolObject,
+        .alloc = DEFAULT_ALLOC(BoolObject),
         .constructor = new NATIVE_METHOD("конструктор", 1, false, boolInit),
         .operators =
         {
@@ -80,11 +78,4 @@ namespace vm
 
     BoolObject P_true  { {.objectType = &boolObjectType}, true  };
     BoolObject P_false { {.objectType = &boolObjectType}, false };
-}
-
-Object* allocBoolObject()
-{
-    auto boolObject = new BoolObject;
-    boolObject->objectType = &boolObjectType;
-    return (Object*)boolObject;
 }

@@ -55,9 +55,11 @@ namespace vm
     };
 }
 
-Object* vm::allocObject(TypeObject const* objectType)
+Object* vm::allocObject(TypeObject* objectType)
 {
-    return objectType->alloc();
+    auto o = objectType->alloc();
+    o->objectType = objectType;
+    return o;
 }
 
 std::string vm::objectTypeToString(const TypeObject* type)

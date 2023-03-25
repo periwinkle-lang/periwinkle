@@ -125,8 +125,6 @@ static Object* realNeg(Object* a)
     return RealObject::create(-arg->value);
 }
 
-Object* allocRealObject();
-
 namespace vm
 {
     TypeObject realObjectType =
@@ -134,7 +132,7 @@ namespace vm
         .base = &objectObjectType,
         .name = "Дійсний",
         .type = ObjectTypes::REAL,
-        .alloc = &allocRealObject,
+        .alloc = DEFAULT_ALLOC(RealObject),
         .constructor = new NATIVE_METHOD("конструктор", 1, false, realInit),
         .operators =
         {
@@ -152,13 +150,6 @@ namespace vm
         },
         .comparison = realComparison,
     };
-}
-
-Object* allocRealObject()
-{
-    auto realObject = new RealObject;
-    realObject->objectType = &realObjectType;
-    return (Object*)realObject;
 }
 
 RealObject* vm::RealObject::create(double value)

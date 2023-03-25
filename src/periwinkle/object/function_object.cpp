@@ -87,8 +87,6 @@ Object* fnCall(Object* callable, Object**& sp, WORD argc)
     return result;
 }
 
-Object* allocFunction();
-
 namespace vm
 {
     TypeObject functionObjectType =
@@ -96,19 +94,12 @@ namespace vm
         .base = &objectObjectType,
         .name = "Функція",
         .type = ObjectTypes::FUNCTION,
-        .alloc = &allocFunction,
+        .alloc = DEFAULT_ALLOC(FunctionObject),
         .operators =
         {
             .call = fnCall,
         },
     };
-}
-
-Object* allocFunction()
-{
-    auto functionObject = new FunctionObject;
-    functionObject->objectType = &functionObjectType;
-    return (Object*)functionObject;
 }
 
 FunctionObject* vm::FunctionObject::create(CodeObject* code)

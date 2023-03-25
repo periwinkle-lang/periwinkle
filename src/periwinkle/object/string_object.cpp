@@ -94,9 +94,6 @@ static Object* strIterNext(StringIterObject* s, std::span<Object*> args, ArrayOb
     return &P_endIter;
 }
 
-Object* allocStringObject();
-Object* allocStringIterObject();
-
 namespace vm
 {
     TypeObject stringObjectType =
@@ -104,7 +101,7 @@ namespace vm
         .base = &objectObjectType,
         .name = "Стрічка",
         .type = ObjectTypes::STRING,
-        .alloc = &allocStringObject,
+        .alloc = DEFAULT_ALLOC(StringObject),
         .constructor = new NATIVE_METHOD("конструктор", 1, false, strInit),
         .operators =
         {
@@ -124,25 +121,12 @@ namespace vm
         .base = &objectObjectType,
         .name = "ІтераторСтрічки",
         .type = ObjectTypes::STRING_ITERATOR,
-        .alloc = &allocStringIterObject,
+        .alloc = DEFAULT_ALLOC(StringIterObject),
         .attributes =
         {
             OBJECT_METHOD("наступний", 0, false, (nativeMethod)strIterNext),
         },
     };
-}
-
-Object* allocStringObject()
-{
-    auto stringObject = new StringObject;
-    stringObject->objectType = &stringObjectType;
-    return (Object*)stringObject;
-}
-
-Object* allocStringIterObject()
-{
-    auto strIterObject = new StringIterObject{ {.objectType = &stringIterObjectType} };
-    return (Object*)strIterObject;
 }
 
 StringObject* vm::StringObject::create(std::string value)

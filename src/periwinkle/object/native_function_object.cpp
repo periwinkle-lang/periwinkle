@@ -44,8 +44,6 @@ Object* nativeCall(Object* callable, Object**& sp, WORD argc)
    return result;
 }
 
-Object* allocNativeFunction();
-
 namespace vm
 {
     TypeObject nativeFunctionObjectType =
@@ -53,19 +51,12 @@ namespace vm
         .base = &objectObjectType,
         .name = "НативнаФункція",
         .type = ObjectTypes::NATIVE_FUNCTION,
-        .alloc = &allocNativeFunction,
+        .alloc = DEFAULT_ALLOC(NativeFunctionObject),
         .operators =
         {
             .call = nativeCall,
         },
     };
-}
-
-Object* allocNativeFunction()
-{
-    auto nativeFunctionObject = new NativeFunctionObject;
-    nativeFunctionObject->objectType = &nativeFunctionObjectType;
-    return (Object*)nativeFunctionObject;
 }
 
 NativeFunctionObject* vm::NativeFunctionObject::create(

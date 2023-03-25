@@ -9,8 +9,6 @@ static Object* nullToString(Object* a)
     return StringObject::create("нич");
 }
 
-Object* allocNullObject();
-
 namespace vm
 {
     TypeObject nullObjectType =
@@ -18,7 +16,7 @@ namespace vm
         .base = &objectObjectType,
         .name = "Нич",
         .type = ObjectTypes::NULL_,
-        .alloc = &allocNullObject,
+        .alloc = DEFAULT_ALLOC(NullObject),
         .operators =
         {
             .toString = nullToString,
@@ -26,11 +24,4 @@ namespace vm
     };
 
     NullObject P_null { {.objectType = &nullObjectType} };
-}
-
-Object* allocNullObject()
-{
-    auto nullObject = new NullObject;
-    nullObject->objectType = &nullObjectType;
-    return (Object*)nullObject;
 }

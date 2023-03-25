@@ -6,6 +6,13 @@
 
 #include "types.h"
 
+#define DEFAULT_ALLOC(object)          \
+    []()                               \
+    {                                  \
+        auto newObject = new object;   \
+        return (vm::Object*)newObject; \
+    }
+
 namespace vm
 {
     struct Object;
@@ -129,7 +136,7 @@ namespace vm
         std::unordered_map<std::string, Object*> attributes;
     };
 
-    Object* allocObject(TypeObject const *objectType);
+    Object* allocObject(TypeObject* objectType);
     inline std::string objectTypeToString(const TypeObject* type);
 }
 

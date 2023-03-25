@@ -217,9 +217,6 @@ static Object* arrayIterNext(ArrayIterObject* o, std::span<Object*> args, ArrayO
     return &P_endIter;
 }
 
-Object* allocArrayObject();
-Object* allocArrayIterObject();
-
 namespace vm
 {
     TypeObject arrayObjectType =
@@ -227,7 +224,7 @@ namespace vm
         .base = &objectObjectType,
         .name = "Масив",
         .type = ObjectTypes::ARRAY,
-        .alloc = &allocArrayObject,
+        .alloc = DEFAULT_ALLOC(ArrayObject),
         .constructor = new NATIVE_METHOD("конструктор", 0, true, arrayInit),
         .operators =
         {
@@ -258,25 +255,12 @@ namespace vm
         .base = &objectObjectType,
         .name = "ІтераторМасиву",
         .type = ObjectTypes::ARRAY_ITERATOR,
-        .alloc = &allocArrayIterObject,
+        .alloc = DEFAULT_ALLOC(ArrayIterObject),
         .attributes =
         {
             OBJECT_METHOD("наступний", 0, false, (nativeMethod)arrayIterNext),
         },
     };
-}
-
-Object* allocArrayObject()
-{
-    auto arrayObject = new ArrayObject;
-    arrayObject->objectType = &arrayObjectType;
-    return (Object*)arrayObject;
-}
-
-Object* allocArrayIterObject()
-{
-    auto arrayIterObject = new ArrayIterObject{ {.objectType = &arrayIterObjectType} };
-    return (Object*)arrayIterObject;
 }
 
 ArrayObject* vm::ArrayObject::create()

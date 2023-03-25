@@ -9,8 +9,6 @@ static Object* endIterToString(Object* a)
     return StringObject::create(endIterObjectType.name);
 }
 
-Object* allocendIterObject();
-
 namespace vm
 {
     TypeObject endIterObjectType =
@@ -18,7 +16,7 @@ namespace vm
         .base = &objectObjectType,
         .name = "КінецьІтерації",
         .type = ObjectTypes::END_ITERATION,
-        .alloc = &allocendIterObject,
+        .alloc = DEFAULT_ALLOC(EndIterObject),
         .operators =
         {
             .toString = endIterToString,
@@ -26,11 +24,4 @@ namespace vm
     };
 
     EndIterObject P_endIter{ {.objectType = &endIterObjectType} };
-}
-
-Object* allocendIterObject()
-{
-    auto endIterObject = new EndIterObject;
-    endIterObject->objectType = &endIterObjectType;
-    return (Object*)endIterObject;
 }

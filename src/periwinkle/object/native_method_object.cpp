@@ -19,8 +19,6 @@ Object* nativeMethodCall(Object* callable, Object**& sp, WORD argc)
     return result;
 }
 
-Object* allocNativeMethodObject();
-
 namespace vm
 {
     TypeObject nativeMethodObjectType =
@@ -28,19 +26,12 @@ namespace vm
         .base = &objectObjectType,
         .name = "НативнийМетод",
         .type = ObjectTypes::NATIVE_METHOD,
-        .alloc = &allocNativeMethodObject,
+        .alloc = DEFAULT_ALLOC(NativeMethodObject),
         .operators =
         {
             .call = nativeMethodCall,
         },
     };
-}
-
-Object* allocNativeMethodObject()
-{
-    auto nativeMethodObject = new NativeMethodObject;
-    nativeMethodObject->objectType = &nativeMethodObjectType;
-    return (Object*)nativeMethodObject;
 }
 
 NativeMethodObject* vm::NativeMethodObject::create(

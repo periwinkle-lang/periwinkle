@@ -2,8 +2,6 @@
 
 using namespace vm;
 
-Object* allocCellObject();
-
 namespace vm
 {
     TypeObject cellObjectType =
@@ -11,15 +9,8 @@ namespace vm
         .base = nullptr,
         .name = "Cell",
         .type = ObjectTypes::CELL,
-        .alloc = &allocCellObject,
+        .alloc = DEFAULT_ALLOC(CellObject),
     };
-}
-
-Object* allocCellObject()
-{
-    auto cellObject = new CellObject;
-    cellObject->objectType = &cellObjectType;
-    return (Object*)cellObject;
 }
 
 CellObject* vm::CellObject::create(Object* value)

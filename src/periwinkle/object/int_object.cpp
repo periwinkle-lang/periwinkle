@@ -115,8 +115,6 @@ static Object* intPos(Object* a)
     return (IntObject*)a;
 }
 
-Object* allocIntObject();
-
 namespace vm
 {
     TypeObject intObjectType =
@@ -124,7 +122,7 @@ namespace vm
         .base = &objectObjectType,
         .name = "Число",
         .type = ObjectTypes::INTEGER,
-        .alloc = &allocIntObject,
+        .alloc = DEFAULT_ALLOC(IntObject),
         .constructor = new NATIVE_METHOD("конструктор", 1, false, intInit),
         .operators =
         {
@@ -143,13 +141,6 @@ namespace vm
         },
         .comparison = intComparison,
     };
-}
-
-Object* allocIntObject()
-{
-    auto intObject = new IntObject;
-    intObject->objectType = &intObjectType;
-    return (Object*)intObject;
 }
 
 IntObject* vm::IntObject::create(i64 value)
