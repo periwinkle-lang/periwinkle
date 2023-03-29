@@ -39,7 +39,7 @@ string usage(string programName)
 {
     std::stringstream ss;
     ss << "Барвінок " << periwinkle::Periwinkle::getVersionAsString() << std::endl;
-    ss << "Використання: " << programName << " [опції] <файл.бр | файл.барвінок>" << std::endl;
+    ss << "Використання: " << programName << " [опції] <файл>" << std::endl;
     ss << "Опції:" << std::endl;
     ss << "\t" << "-д, --допомога     Виводить це повідомлення." << std::endl;
 #ifdef DEBUG
@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
             continue;
         }
 #endif
-        else if ((token.ends_with(".бр") || token.ends_with(".барвінок")) && !token.starts_with("-"))
+        else if (!token.starts_with("-"))
         {
             for (int j = 0; j < (int)tokens.size(); ++j)
             {
