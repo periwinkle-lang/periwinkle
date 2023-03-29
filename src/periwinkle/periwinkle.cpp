@@ -47,7 +47,9 @@ void periwinkle::Periwinkle::printTokens()
     for (auto& token : tokens)
     {
         std::cout << std::left << std::setw(15) << lexer::stringEnum::enumToString(token.tokenType) << " \""
-            << (token.tokenType == lexer::TokenType::STRING ? utils::escapeString(token.text) : token.text)
+            << (token.tokenType == lexer::TokenType::STRING
+                || token.tokenType == lexer::TokenType::SHEBANG
+                ? utils::escapeString(token.text) : token.text)
             << "\"" << std::endl;
     }
 }

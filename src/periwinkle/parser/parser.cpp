@@ -920,6 +920,9 @@ void parser::Parser::throwParserError(std::string message, Token token)
 
 BlockStatement* parser::Parser::parse()
 {
+    // Пропуск шебанг стрічки
+    matchToken(SHEBANG);
+
     auto block = parseBlock();
     if (matchToken(EOF_))
     {

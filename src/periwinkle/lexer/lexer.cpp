@@ -75,6 +75,7 @@ const static std::vector<std::pair<TokenType, regex>> tokenTypesRegexList
     {TokenType::COMMA,           uregex("^,")},
     {TokenType::ELLIPSIS,        uregex("^[.]{3}")},
     {TokenType::DOT,             uregex("^\\.")},
+    {TokenType::SHEBANG,         uregex("^#!.*\\n")},
     {TokenType::SEMICOLON,       uregex("^;")},
 };
 
