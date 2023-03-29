@@ -91,8 +91,19 @@ void compiler::Compiler::compileStatement(Statement* statement)
         compileBlock((BlockStatement*)statement);
         break;
     case EXPRESSION_STATEMENT:
-        compileExpressionStatement((ExpressionStatement*)statement);
+    {
+        auto expStatement = (ExpressionStatement*)statement;
+        compileExpressionStatement(expStatement);
+
+        // Очищення стека, якщо значення виразу нікуди не присвоюється.
+        // Окрім виразу присвоєння значення змінній,
+        // так як він не залишає нічого на стеку після себе
+        if (expStatement->expression->kind != ASSIGNMENT_EXPRESSION)
+        {
+            emitOpCode(POP);
+        }
         break;
+    }
     case WHILE_STATEMENT:
         compileWhileStatement((WhileStatement*)statement);
         break;
