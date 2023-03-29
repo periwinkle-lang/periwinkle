@@ -507,6 +507,7 @@ Expression* parser::Parser::_parseOperator4()
     {
         switch (peekToken().tokenType)
         {
+        case IS:
         case LESS:
         case LESS_EQUAL:
         case GREATER:

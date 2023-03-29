@@ -50,6 +50,7 @@ const static std::vector<std::pair<TokenType, regex>> tokenTypesRegexList
     {TokenType::STAR,            uregex("^\\*")},
     {TokenType::PERCENT,         uregex("^%")},
     {TokenType::BACKSLASH,       uregex("^\\\\")},
+    {TokenType::IS,              uregex("^є")},
     {TokenType::GREATER,         uregex("^більше" WB)},
     {TokenType::LESS,            uregex("^менше" WB)},
     {TokenType::AND,             uregex("^та" WB)},

@@ -488,6 +488,7 @@ void compiler::Compiler::compileBinaryExpression(BinaryExpression* expression)
     case lexer::TokenType::BACKSLASH: emitOpCode(FLOOR_DIV); break;
     case lexer::TokenType::AND: emitOpCode(AND); break;
     case lexer::TokenType::OR: emitOpCode(OR); break;
+    case lexer::TokenType::IS: emitOpCode(IS); break;
     case lexer::TokenType::EQUAL_EQUAL:
         emitOpCode(COMPARE); emitOperand((vm::WORD)EQ); break;
     case lexer::TokenType::NOT_EQUAL:

@@ -99,6 +99,13 @@ Object* VirtualMachine::execute()
         BINARY_OP(DIV, div)
         BINARY_OP(MOD, mod)
         BINARY_OP(FLOOR_DIV, floorDiv)
+        case IS:
+        {
+            auto o1 = POP();
+            auto o2 = POP();
+            PUSH(P_BOOL(o1 == o2));
+            break;
+        }
         case COMPARE:
         {
             auto arg1 = POP();
