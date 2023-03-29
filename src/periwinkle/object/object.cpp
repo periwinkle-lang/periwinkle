@@ -149,6 +149,18 @@ static Object* callCompareOperator(Object* o1, Object* o2, ObjectCompOperator op
         return op_(o);                                                        \
     }
 
+#define UNARY_OPERATOR_WITH_MESSAGE(op_name, message)                       \
+    Object* vm::Object::op_name(Object* o)                                  \
+    {                                                                       \
+        auto op_ = GET_OPERATOR(o, op_name);                                \
+        if (op_ == nullptr)                                                 \
+        {                                                                   \
+            VirtualMachine::currentVm->throwException(&TypeErrorObjectType, \
+                utils::format(message, o->objectType->name.c_str()));       \
+        }                                                                   \
+        return op_(o);                                                      \
+    }
+
 #define BINARY_OPERATOR(op_name, op)                                               \
     Object* vm::Object::op_name(Object* o1, Object* o2)                            \
     {                                                                              \
@@ -203,10 +215,10 @@ Object* vm::Object::call(Object* callable, Object**& sp, WORD argc)
     return result;
 }
 
-UNARY_OPERATOR(toString, toString)
-UNARY_OPERATOR(toInteger, toInteger)
-UNARY_OPERATOR(toReal, toReal)
-UNARY_OPERATOR(toBool, toBool)
+UNARY_OPERATOR_WITH_MESSAGE(toString, "Неможливо конвертувати об'єкту типу \"%s\" в стрічку")
+UNARY_OPERATOR_WITH_MESSAGE(toInteger, "Неможливо конвертувати об'єкт типу \"%s\" в число")
+UNARY_OPERATOR_WITH_MESSAGE(toReal, "Неможливо конвертувати об'єкт типу \"%s\" в дійсне число")
+UNARY_OPERATOR_WITH_MESSAGE(toBool, "Неможливо конвертувати об'єкт типу \"%s\" в логічний тип")
 BINARY_OPERATOR(add, +)
 BINARY_OPERATOR(sub, -)
 BINARY_OPERATOR(mul, *)
@@ -215,7 +227,7 @@ BINARY_OPERATOR(floorDiv, \\)
 BINARY_OPERATOR(mod, %)
 UNARY_OPERATOR(pos, +)
 UNARY_OPERATOR(neg, -)
-UNARY_OPERATOR(getIter, getIter)
+UNARY_OPERATOR_WITH_MESSAGE(getIter, "Для об'єкта типу \"%s\" неможливо отримати ітератор")
 
 Object* vm::Object::getAttr(Object* o, const std::string& name)
 {
