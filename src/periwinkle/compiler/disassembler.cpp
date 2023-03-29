@@ -3,7 +3,7 @@
 #include <sstream>
 #include <iomanip>
 
-#include "decompiler.h"
+#include "disassembler.h"
 #include "types.h"
 #include "utils.h"
 #include "native_function_object.h"
@@ -17,7 +17,7 @@ using namespace compiler;
 using vm::OpCode;
 using enum vm::OpCode;
 
-int compiler::Decompiler::opCodeLenArguments(OpCode code)
+int compiler::Disassembler::opCodeLenArguments(OpCode code)
 {
     switch (code)
     {
@@ -44,7 +44,7 @@ int compiler::Decompiler::opCodeLenArguments(OpCode code)
     }
 }
 
-std::string compiler::Decompiler::getValueAsString(vm::Object* object)
+std::string compiler::Disassembler::getValueAsString(vm::Object* object)
 {
     using enum vm::ObjectTypes;
     switch (object->objectType->type)
@@ -79,11 +79,11 @@ std::string compiler::Decompiler::getValueAsString(vm::Object* object)
 
     }
     default:
-        plog::fatal << "Нереалізовано для типу: \"" << object->objectType->name << "\"";
+        plog::fatal << "Не реалізовано для типу: \"" << object->objectType->name << "\"";
     }
 }
 
-std::string compiler::Decompiler::decompile(vm::CodeObject* codeObject)
+std::string compiler::Disassembler::disassemble(vm::CodeObject* codeObject)
 {
     std::stringstream out;
     vm::WORD lineno = 0;
@@ -167,8 +167,8 @@ std::string compiler::Decompiler::decompile(vm::CodeObject* codeObject)
     for (auto value : codeObjects)
     {
         out << std::endl;
-        out << "Decompile " << getValueAsString(value) << ":" << std::endl;
-        out << decompile(value);
+        out << "Disassemble " << getValueAsString(value) << ":" << std::endl;
+        out << disassemble(value);
     }
 
     return out.str();

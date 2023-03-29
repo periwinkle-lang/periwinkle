@@ -38,7 +38,7 @@ void periwinkle::Periwinkle::execute()
 #ifdef DEBUG
 
 #include <iomanip>
-#include "decompiler.h"
+#include "disassembler.h"
 
 void periwinkle::Periwinkle::printTokens()
 {
@@ -59,8 +59,8 @@ void periwinkle::Periwinkle::printDisassemble()
     lexer::Lexer lex(code);
     parser::Parser parser(lex.tokenize(), code);
     compiler::Compiler comp(parser.parse(), code);
-    compiler::Decompiler decompiler;
-    std::cout << decompiler.decompile(comp.compile()->codeObject);
+    compiler::Disassembler disassembler;
+    std::cout << disassembler.disassemble(comp.compile()->codeObject);
 }
 #endif
 

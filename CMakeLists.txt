@@ -52,7 +52,7 @@ add_library(periwinkle STATIC
     "src/periwinkle/lexer/lexer.cpp" "src/include/lexer/lexer.h"
     "src/periwinkle/compiler/scope.cpp" "src/include/compiler/scope.h"
     "src/periwinkle/compiler/compiler.cpp" "src/include/compiler/compiler.h"
-    "src/periwinkle/compiler/decompiler.cpp" "src/include/compiler/decompiler.h"
+    "src/periwinkle/compiler/disassembler.cpp" "src/include/compiler/disassembler.h"
     "src/periwinkle/parser/parser.cpp" "src/include/parser/parser.h"
     "src/include/parser/expression.h"
     "src/include/parser/node.h"
