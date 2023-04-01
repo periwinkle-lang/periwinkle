@@ -133,7 +133,7 @@ namespace vm
         .name = "Дійсний",
         .type = ObjectTypes::REAL,
         .alloc = DEFAULT_ALLOC(RealObject),
-        .constructor = new NATIVE_METHOD("конструктор", 1, false, realInit),
+        .constructor = new NATIVE_METHOD("конструктор", 1, false, realInit, realObjectType),
         .operators =
         {
             .toString = realToString,

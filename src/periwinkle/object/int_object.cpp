@@ -123,7 +123,7 @@ namespace vm
         .name = "Число",
         .type = ObjectTypes::INTEGER,
         .alloc = DEFAULT_ALLOC(IntObject),
-        .constructor = new NATIVE_METHOD("конструктор", 1, false, intInit),
+        .constructor = new NATIVE_METHOD("конструктор", 1, false, intInit, intObjectType),
         .operators =
         {
             .toString = intToString,

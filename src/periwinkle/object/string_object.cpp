@@ -102,7 +102,7 @@ namespace vm
         .name = "Стрічка",
         .type = ObjectTypes::STRING,
         .alloc = DEFAULT_ALLOC(StringObject),
-        .constructor = new NATIVE_METHOD("конструктор", 1, false, strInit),
+        .constructor = new NATIVE_METHOD("конструктор", 1, false, strInit, stringObjectType),
         .operators =
         {
             .toString = strToString,
@@ -112,7 +112,7 @@ namespace vm
         .comparison = strComparison,
         .attributes =
         {
-            OBJECT_METHOD("довжина", 0, false, stringSize),
+            OBJECT_METHOD("довжина", 0, false, stringSize, stringObjectType),
         },
     };
 
@@ -124,7 +124,7 @@ namespace vm
         .alloc = DEFAULT_ALLOC(StringIterObject),
         .attributes =
         {
-            OBJECT_METHOD("наступний", 0, false, (nativeMethod)strIterNext),
+            OBJECT_METHOD("наступний", 0, false, (nativeMethod)strIterNext, stringIterObjectType),
         },
     };
 }

@@ -36,6 +36,7 @@ namespace vm
         CELL,
         ARRAY, ARRAY_ITERATOR,
         END_ITERATION,
+        METHOD_WITH_INSTANCE,
     };
 
     enum class ObjectCompOperator

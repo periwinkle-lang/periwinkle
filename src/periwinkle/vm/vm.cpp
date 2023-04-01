@@ -9,6 +9,7 @@
 #include "cell_object.h"
 #include "native_method_object.h"
 #include "end_iteration_object.h"
+#include "method_with_instance_object.h"
 #include "builtins.h"
 #include "plogger.h"
 #include "utils.h"
@@ -281,14 +282,13 @@ Object* VirtualMachine::execute()
 
             if (function->objectType->type == ObjectTypes::NATIVE_METHOD)
             {
-                PUSH(object);
+                PUSH(MethodWithInstanceObject::create(object, function));
             }
             else
             {
-                PUSH(nullptr);
+                PUSH(function);
             }
 
-            PUSH(function);
             break;
         }
         case CALL_METHOD:
@@ -296,7 +296,19 @@ Object* VirtualMachine::execute()
             auto argc = READ();
             auto callable = *(sp - argc);
 
-            auto result = Object::call(callable, sp, argc);
+            Object* result;
+            if (callable->objectType->type == ObjectTypes::METHOD_WITH_INSTANCE)
+            {
+                auto methodWithInstance = (MethodWithInstanceObject*)callable;
+                result = callNativeMethod(
+                    methodWithInstance->instance,
+                    (NativeMethodObject*)methodWithInstance->callable,
+                    { sp - argc + 1, argc });
+            }
+            else
+            {
+                result = Object::call(callable, sp, argc);
+            }
             PUSH(result);
             break;
         }

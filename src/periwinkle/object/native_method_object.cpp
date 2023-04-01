@@ -3,19 +3,21 @@
 
 using namespace vm;
 
-Object* nativeMethodCall(Object* callable, Object**& sp, WORD argc)
+static Object* nativeMethodCall(NativeMethodObject* callable, Object**& sp, WORD argc)
 {
     auto firstArg = sp - argc + 1;
-    auto instance = *(firstArg - 2);
 
-    // Якщо перед методом на стеці немає екземпляра,
-    // то тоді він повинен передаватися через аргументи.
-    WORD actualArgc = instance == nullptr ? argc - 1 : argc;
+    if ((*firstArg)->objectType != callable->classType)
+    {
+        VirtualMachine::currentVm->throwException(
+            &TypeErrorObjectType,
+            "Першим аргументом має бути переданий екземпляр класу,"
+            " до якого відноситься метод");
+    }
 
-    auto result = callNativeMethod(
-        instance == nullptr ? *firstArg : instance,
-        (NativeMethodObject*)callable, { sp - actualArgc + 1, actualArgc });
-    sp -= argc + 2; // +2, екземпляр класу та метод
+    std::span<Object*> args{ firstArg + 1, argc - 1 };
+    auto result = callNativeMethod(*firstArg, callable, args);
+    sp -= argc + 1; // +1 для методу
     return result;
 }
 
@@ -29,21 +31,23 @@ namespace vm
         .alloc = DEFAULT_ALLOC(NativeMethodObject),
         .operators =
         {
-            .call = nativeMethodCall,
+            .call = (callFunction)nativeMethodCall,
         },
     };
 }
 
 NativeMethodObject* vm::NativeMethodObject::create(
-    WORD arity, bool isVariadic, std::string name, nativeMethod method)
+    WORD arity, bool isVariadic, std::string name,
+    nativeMethod method, TypeObject* classType)
 {
-    auto nativeMethodFunction =
+    auto nativeMethod =
         (NativeMethodObject*)allocObject(&nativeMethodObjectType);
-    nativeMethodFunction->arity = arity + 1; // + 1 для екземляра класу
-    nativeMethodFunction->isVariadic = isVariadic;
-    nativeMethodFunction->name = name;
-    nativeMethodFunction->method = method;
-    return nativeMethodFunction;
+    nativeMethod->arity = arity + 1; // + 1 для екземляра класу
+    nativeMethod->isVariadic = isVariadic;
+    nativeMethod->name = name;
+    nativeMethod->method = method;
+    nativeMethod->classType = classType;
+    return nativeMethod;
 }
 
 Object* vm::callNativeMethod(

@@ -245,7 +245,7 @@ namespace vm
         .name = "Масив",
         .type = ObjectTypes::ARRAY,
         .alloc = DEFAULT_ALLOC(ArrayObject),
-        .constructor = new NATIVE_METHOD("конструктор", 0, true, arrayInit),
+        .constructor = new NATIVE_METHOD("конструктор", 0, true, arrayInit, arrayObjectType),
         .operators =
         {
             .toString = arrayToString,
@@ -255,18 +255,18 @@ namespace vm
         },
         .attributes =
         {
-            OBJECT_METHOD("довжина",    0, false, arrayLength),
-            OBJECT_METHOD("додати",     1, false, arrayPush),
-            OBJECT_METHOD("вставити",   2, false, arrayInsert),
-            OBJECT_METHOD("встановити", 2, false, arraySetItem),
-            OBJECT_METHOD("отримати",   1, false, arrayGetItem),
-            OBJECT_METHOD("знайти",     1, false, arrayFindItem),
-            OBJECT_METHOD("очистити",   0, false, arrayClear),
-            OBJECT_METHOD("кількість",  1, false, arrayCount),
-            OBJECT_METHOD("копія",      0, false, arrayCopy),
-            OBJECT_METHOD("видалити",   1, false, arrayRemove),
-            OBJECT_METHOD("видалитиВсі",1, false, arrayRemoveAll),
-            OBJECT_METHOD("обернути",   0, false, arrayReverse),
+            OBJECT_METHOD("довжина",    0, false, arrayLength,    arrayObjectType),
+            OBJECT_METHOD("додати",     1, false, arrayPush,      arrayObjectType),
+            OBJECT_METHOD("вставити",   2, false, arrayInsert,    arrayObjectType),
+            OBJECT_METHOD("встановити", 2, false, arraySetItem,   arrayObjectType),
+            OBJECT_METHOD("отримати",   1, false, arrayGetItem,   arrayObjectType),
+            OBJECT_METHOD("знайти",     1, false, arrayFindItem,  arrayObjectType),
+            OBJECT_METHOD("очистити",   0, false, arrayClear,     arrayObjectType),
+            OBJECT_METHOD("кількість",  1, false, arrayCount,     arrayObjectType),
+            OBJECT_METHOD("копія",      0, false, arrayCopy,      arrayObjectType),
+            OBJECT_METHOD("видалити",   1, false, arrayRemove,    arrayObjectType),
+            OBJECT_METHOD("видалитиВсі",1, false, arrayRemoveAll, arrayObjectType),
+            OBJECT_METHOD("обернути",   0, false, arrayReverse,   arrayObjectType),
         },
     };
 
@@ -278,7 +278,7 @@ namespace vm
         .alloc = DEFAULT_ALLOC(ArrayIterObject),
         .attributes =
         {
-            OBJECT_METHOD("наступний", 0, false, (nativeMethod)arrayIterNext),
+            OBJECT_METHOD("наступний", 0, false, (nativeMethod)arrayIterNext, arrayIterObjectType),
         },
     };
 }

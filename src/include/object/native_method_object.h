@@ -7,12 +7,12 @@
 #include "vm.h"
 #include "array_object.h"
 
-#define NATIVE_METHOD(name, arity, variadic, method)               \
+#define NATIVE_METHOD(name, arity, variadic, method, classType)    \
     vm::NativeMethodObject{&vm::nativeMethodObjectType, arity + 1, \
-                           variadic, name, method}
+                           variadic, name, method, &classType}
 
-#define OBJECT_METHOD(name, arity, variadic, method) \
-    {name, new NATIVE_METHOD(name, arity, variadic, method)}
+#define OBJECT_METHOD(name, arity, variadic, method, classType) \
+    {name, new NATIVE_METHOD(name, arity, variadic, method, classType)}
 
 namespace vm
 {
@@ -25,9 +25,11 @@ namespace vm
         bool isVariadic;
         std::string name;
         nativeMethod method;
+        TypeObject* classType;
 
         static NativeMethodObject* create(
-            WORD arity, bool isVariadic, std::string name, nativeMethod method);
+            WORD arity, bool isVariadic, std::string name,
+            nativeMethod method, TypeObject* classType);
     };
 
     Object* callNativeMethod(

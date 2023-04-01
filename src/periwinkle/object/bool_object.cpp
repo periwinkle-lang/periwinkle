@@ -65,7 +65,7 @@ namespace vm
         .name = "Логічний",
         .type = ObjectTypes::BOOL,
         .alloc = DEFAULT_ALLOC(BoolObject),
-        .constructor = new NATIVE_METHOD("конструктор", 1, false, boolInit),
+        .constructor = new NATIVE_METHOD("конструктор", 1, false, boolInit, boolObjectType),
         .operators =
         {
             .toString = boolToString,
