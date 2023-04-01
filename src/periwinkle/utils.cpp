@@ -197,7 +197,7 @@ std::string utils::utf32to8(const std::u32string& s)
     for (auto c32 : s)
     {
         std::size_t size = char32to8(out, c32);
-        result += std::string_view{ out, size };
+        result.append(out, size);
     }
 
     return result;

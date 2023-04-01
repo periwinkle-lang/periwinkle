@@ -12,7 +12,7 @@
                            variadic, name, method, &classType}
 
 #define OBJECT_METHOD(name, arity, variadic, method, classType) \
-    {name, new NATIVE_METHOD(name, arity, variadic, method, classType)}
+    {name, new NATIVE_METHOD(name, arity, variadic, (nativeMethod)method, classType)}
 
 namespace vm
 {

@@ -304,6 +304,7 @@ Object* VirtualMachine::execute()
                     methodWithInstance->instance,
                     (NativeMethodObject*)methodWithInstance->callable,
                     { sp - argc + 1, argc });
+                sp -= argc + 1; // Метод
             }
             else
             {

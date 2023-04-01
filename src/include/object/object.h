@@ -13,6 +13,9 @@
         return (vm::Object*)newObject; \
     }
 
+#define METHOD_TEMPLATE(name, object) \
+    static Object* name(object* o, std::span<Object*> args, ArrayObject* va)
+
 namespace vm
 {
     struct Object;

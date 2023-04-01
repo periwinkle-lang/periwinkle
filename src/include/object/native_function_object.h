@@ -7,6 +7,13 @@
 #include "vm.h"
 #include "array_object.h"
 
+#define NATIVE_FUNCTION(name, arity, variadic, func)               \
+    vm::NativeFunctionObject{&vm::nativeFunctionObjectType, arity, \
+                           variadic, name, func}
+
+#define OBJECT_STATIC_METHOD(name, arity, variadic, func) \
+    {name, new NATIVE_FUNCTION(name, arity, variadic, (nativeFunction)func)}
+
 namespace vm
 {
     extern TypeObject nativeFunctionObjectType;

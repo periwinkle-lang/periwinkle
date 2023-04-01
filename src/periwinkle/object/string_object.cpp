@@ -1,4 +1,6 @@
-﻿#include "string_object.h"
+﻿#include <numeric>
+
+#include "string_object.h"
 #include "exception_object.h"
 #include "null_object.h"
 #include "bool_object.h"
@@ -6,6 +8,8 @@
 #include "int_object.h"
 #include "end_iteration_object.h"
 #include "utils.h"
+#include "argument_parser.h"
+#include "native_function_object.h"
 
 using namespace vm;
 
@@ -32,6 +36,14 @@ static bool tryConvertToString(Object* o, std::u32string& str)
         if (object == &P_null                            \
             || tryConvertToString(object, str) == false) \
             return &P_NotImplemented;                    \
+    }
+
+#define CHECK_INDEX(index, strObject)                                  \
+    if (std::cmp_greater_equal(index, strObject->value.size())         \
+        || index < 0)                                                  \
+    {                                                                  \
+        VirtualMachine::currentVm->throwException(                     \
+            &IndexErrorObjectType, "Індекс виходить за межі стрічки"); \
     }
 
 static Object* strInit(Object* o, std::span<Object*> args, ArrayObject* va)
@@ -79,10 +91,287 @@ static Object* strGetIter(StringObject* o)
     return iterator;
 }
 
-static Object* stringSize(Object* s, std::span<Object*> args, ArrayObject* va)
+METHOD_TEMPLATE(removeEnd, StringObject)
 {
-    auto strObject = (StringObject*)s;
-    return IntObject::create(strObject->value.size());
+    StringObject* end;
+    static ArgParser argParser{
+        {&end, stringObjectType, "закінчення"}
+    };
+    argParser.parse(args);
+
+    auto strSize = o->value.size(), endSize = end->value.size();
+    if (endSize && o->value.ends_with(end->value))
+    {
+        return StringObject::create(o->value.substr(0, strSize - endSize));
+    }
+
+    return StringObject::create(o->value);
+}
+
+METHOD_TEMPLATE(removePrefix, StringObject)
+{
+    StringObject* prefix;
+    static ArgParser argParser{
+        {&prefix, stringObjectType, "префікс"},
+    };
+    argParser.parse(args);
+
+    auto prefixSize = prefix->value.size();
+    if (prefixSize && o->value.starts_with(prefix->value))
+    {
+        return StringObject::create(o->value.substr(prefixSize));
+    }
+
+    return StringObject::create(o->value);
+}
+
+METHOD_TEMPLATE(strInsert, StringObject)
+{
+    IntObject* index;
+    StringObject* str;
+    static ArgParser argParser{
+        {&index, intObjectType, "індекс"},
+        {&str, stringObjectType, "значення"},
+    };
+    argParser.parse(args);
+
+    CHECK_INDEX(index->value, str);
+    auto newStr = o->value;
+    return StringObject::create(newStr.insert(index->value, str->value));
+}
+
+METHOD_TEMPLATE(strSet, StringObject)
+{
+    IntObject* index;
+    StringObject* str;
+    static ArgParser argParser{
+        {&index, intObjectType, "індекс"},
+        {&str, stringObjectType, "значення"},
+    };
+    argParser.parse(args);
+
+    CHECK_INDEX(index->value, str);
+    auto newStr = o->value;
+    return StringObject::create(newStr.replace(
+        index->value, 1, str->value));
+}
+
+METHOD_TEMPLATE(strSize, StringObject)
+{
+    return IntObject::create(o->value.size());
+}
+
+METHOD_TEMPLATE(strEndsWith, StringObject)
+{
+    StringObject* value;
+    static ArgParser argParser{
+        {&value, stringObjectType, "значення"},
+    };
+    argParser.parse(args);
+
+    return P_BOOL(value->value.size() && o->value.ends_with(value->value));
+}
+
+METHOD_TEMPLATE(strReplace, StringObject)
+{
+    StringObject *what, *with;
+    static ArgParser argParser{
+        {&what, stringObjectType, "що"},
+        {&with, stringObjectType, "чим"},
+    };
+    argParser.parse(args);
+
+    auto newStr = o->value;
+    auto whatSize = what->value.size(), withSize = with->value.size();
+    size_t pos = 0;
+
+    while ((pos = newStr.find(what->value, pos)) != std::string::npos)
+    {
+        newStr.replace(pos, whatSize, with->value);
+        pos += withSize;
+    }
+
+    return StringObject::create(newStr);
+}
+
+Object* strJoin(std::span<Object*> args, ArrayObject* va)
+{
+    StringObject* separator;
+    ArrayObject* objects;
+    static ArgParser argParser{
+        {&separator, stringObjectType, "роздільник"},
+        {&objects, arrayObjectType, "обєкти"},
+    };
+    argParser.parse(args);
+
+    auto& items = objects->items;
+
+    if (items.size())
+    {
+        auto& str = ((StringObject*)Object::toString(objects->items[0]))->value;
+        std::u32string result = std::accumulate(
+            ++items.begin(), items.end(), str,
+            [separator](const std::u32string& a, Object* o)
+            {
+                auto& str = ((StringObject*)Object::toString(o))->value;
+                return a + separator->value + str;
+            });
+        return StringObject::create(result);
+    }
+
+    return StringObject::create(U"");
+}
+
+METHOD_TEMPLATE(strFind, StringObject)
+{
+    StringObject* value;
+    static ArgParser argParser{
+        {&value, stringObjectType, "значення"},
+    };
+    argParser.parse(args);
+
+    auto pos = o->value.find(value->value);
+    return IntObject::create(pos == std::string::npos ? -1 : pos);
+}
+
+METHOD_TEMPLATE(strCopy, StringObject)
+{
+    return StringObject::create(o->value);
+}
+
+METHOD_TEMPLATE(strCount, StringObject)
+{
+    StringObject* value;
+    static ArgParser argParser{
+        {&value, stringObjectType, "значення"},
+    };
+    argParser.parse(args);
+
+    size_t pos = 0, count = 0;
+
+    while ((pos = o->value.find(value->value, pos)) != std::string::npos)
+    {
+        pos += value->value.size();
+        ++count;
+    }
+
+    return IntObject::create(count);
+}
+
+METHOD_TEMPLATE(strContains, StringObject)
+{
+    StringObject* value;
+    static ArgParser argParser{
+        {&value, stringObjectType, "значення"},
+    };
+    argParser.parse(args);
+
+    auto pos = o->value.find(value->value);
+    return P_BOOL(pos != std::string::npos);
+}
+
+METHOD_TEMPLATE(strGet, StringObject)
+{
+    IntObject* index;
+    static ArgParser argParser{
+        {&index, intObjectType, "індекс"},
+    };
+    argParser.parse(args);
+
+    CHECK_INDEX(index->value, o);
+    return StringObject::create(std::u32string{ o->value[index->value] });
+}
+
+METHOD_TEMPLATE(strStartsWith, StringObject)
+{
+    StringObject* value;
+    static ArgParser argParser{
+        {&value, stringObjectType, "значення"},
+    };
+    argParser.parse(args);
+
+    return P_BOOL(o->value.size() && o->value.starts_with(value->value));
+}
+
+METHOD_TEMPLATE(strTrim, StringObject)
+{
+    auto start = o->value.begin();
+    auto end = o->value.end();
+
+    while (start != end && std::isspace(*start))
+    {
+        start++;
+    }
+
+    while (end != start && std::isspace(*(end - 1)))
+    {
+        end--;
+    }
+
+    return StringObject::create(std::u32string{ start, end });
+}
+
+METHOD_TEMPLATE(strLeftTrim, StringObject)
+{
+    auto start = o->value.begin();
+    auto end = o->value.end();
+
+    while (start != end && std::isspace(*start))
+    {
+        start++;
+    }
+
+    return StringObject::create(std::u32string{ start, end });
+}
+
+METHOD_TEMPLATE(strRightTrim, StringObject)
+{
+    auto start = o->value.begin();
+    auto end = o->value.end();
+
+    while (end != start && std::isspace(*(end - 1)))
+    {
+        end--;
+    }
+
+    return StringObject::create(std::u32string{ start, end });
+}
+
+METHOD_TEMPLATE(strSubstr, StringObject)
+{
+    IntObject *start, *count;
+    static ArgParser argParser{
+        {&start, intObjectType, "початок"},
+        {&count, intObjectType, "кількість"},
+    };
+    argParser.parse(args);
+
+    CHECK_INDEX(start->value, o);
+    CHECK_INDEX(start->value + count->value - (count->value == 0 ? 0 : 1), o);
+    return StringObject::create(o->value.substr(start->value, count->value));
+}
+
+METHOD_TEMPLATE(strSplit, StringObject)
+{
+    StringObject* delimiter;
+    static ArgParser argParser{
+        {&delimiter, stringObjectType, "роздільник"},
+    };
+    argParser.parse(args);
+
+   auto strs = ArrayObject::create();
+    size_t start = 0, end = o->value.find(delimiter->value);
+
+    while (end != std::string::npos) {
+        auto s = o->value.substr(start, end - start);
+        strs->items.push_back(StringObject::create(s));
+        start = end + delimiter->value.size();
+        end = o->value.find(delimiter->value, start);
+    }
+
+    strs->items.push_back(StringObject::create(o->value.substr(start)));
+
+    return strs;
 }
 
 static Object* strIterNext(StringIterObject* s, std::span<Object*> args, ArrayObject* va)
@@ -112,7 +401,25 @@ namespace vm
         .comparison = strComparison,
         .attributes =
         {
-            OBJECT_METHOD("довжина", 0, false, stringSize, stringObjectType),
+            OBJECT_METHOD("видалитиЗакінчення", 1, false, removeEnd,     stringObjectType),
+            OBJECT_METHOD("видалитиПрефікс",    1, false, removePrefix,  stringObjectType),
+            OBJECT_METHOD("вставити",           2, false, strInsert,     stringObjectType),
+            OBJECT_METHOD("встановити",         2, false, strSet,        stringObjectType),
+            OBJECT_METHOD("довжина",            0, false, strSize,       stringObjectType),
+            OBJECT_METHOD("закінчуєтьсяНа",     1, false, strEndsWith,   stringObjectType),
+            OBJECT_METHOD("замінити",           2, false, strReplace,    stringObjectType),
+            OBJECT_METHOD("знайти",             1, false, strFind,       stringObjectType),
+            OBJECT_METHOD("копія",              0, false, strCopy,       stringObjectType),
+            OBJECT_METHOD("кількість",          1, false, strCount,      stringObjectType),
+            OBJECT_METHOD("містить",            1, false, strContains,   stringObjectType),
+            OBJECT_METHOD("отримати",           1, false, strGet,        stringObjectType),
+            OBJECT_METHOD("починаєтьсяНа",      1, false, strStartsWith, stringObjectType),
+            OBJECT_METHOD("причепурити",        0, false, strTrim,       stringObjectType),
+            OBJECT_METHOD("причепуритиЗліва",   0, false, strLeftTrim,   stringObjectType),
+            OBJECT_METHOD("причепуритиСправа",  0, false, strRightTrim,  stringObjectType),
+            OBJECT_METHOD("підстрічка",         2, false, strSubstr,     stringObjectType),
+            OBJECT_METHOD("розділити",          1, false, strSplit,      stringObjectType),
+            OBJECT_STATIC_METHOD("зліпити",     2, false, strJoin),
         },
     };
 
