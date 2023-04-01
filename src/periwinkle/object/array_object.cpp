@@ -157,6 +157,22 @@ METHOD_TEMPLATE(arrayPush, ArrayObject)
     return &P_null;
 }
 
+METHOD_TEMPLATE(arrayReplace, ArrayObject)
+{
+    size_t replaceCount = 0;
+
+    for (auto it = o->items.begin(); it != o->items.end(); ++it)
+    {
+        if (((BoolObject*)Object::compare(*it, args[0], ObjectCompOperator::EQ))->value)
+        {
+            *it = args[1];
+            ++replaceCount;
+        }
+    }
+
+    return P_BOOL(replaceCount);
+}
+
 METHOD_TEMPLATE(arrayFindItem, ArrayObject)
 {
     auto it = std::find_if(
@@ -192,6 +208,24 @@ METHOD_TEMPLATE(arrayCount, ArrayObject)
     return IntObject::create(count);
 }
 
+METHOD_TEMPLATE(arrayContains, ArrayObject)
+{
+    auto it = std::find_if(
+        o->items.begin(),
+        o->items.end(),
+        [&args](Object* obj) { return ((BoolObject*)Object::compare(
+            obj, args[0], ObjectCompOperator::EQ))->value; }
+    );
+
+    i64 index = -1;
+    if (it != o->items.end())
+    {
+        index = it - o->items.begin();
+    }
+
+    return P_BOOL(index != -1);
+}
+
 METHOD_TEMPLATE(arrayReverse, ArrayObject)
 {
     std::reverse(o->items.begin(), o->items.end());
@@ -214,6 +248,23 @@ METHOD_TEMPLATE(arrayClear, ArrayObject)
 {
     o->items.clear();
     return &P_null;
+}
+
+METHOD_TEMPLATE(arraySubarray, ArrayObject)
+{
+    IntObject *start, *count;
+    static ArgParser argParser{
+        {&start, intObjectType, "початок"},
+        {&count, intObjectType, "кількість"},
+    };
+    argParser.parse(args);
+
+    CHECK_INDEX(start->value, o);
+    CHECK_INDEX(start->value + count->value - (count->value == 0 ? 0 : 1), o);
+    auto subArray = ArrayObject::create();
+    subArray->items = std::vector<Object*>{
+        o->items.begin() + start->value, o->items.begin() + count->value };
+    return subArray;
 }
 
 METHOD_TEMPLATE(arrayIterNext, ArrayIterObject)
@@ -249,12 +300,15 @@ namespace vm
             OBJECT_METHOD("встановити", 2, false, arraySetItem,   arrayObjectType),
             OBJECT_METHOD("довжина",    0, false, arraySize,      arrayObjectType),
             OBJECT_METHOD("додати",     1, false, arrayPush,      arrayObjectType),
+            OBJECT_METHOD("замінити",   2, false, arrayReplace,   arrayObjectType),
             OBJECT_METHOD("знайти",     1, false, arrayFindItem,  arrayObjectType),
             OBJECT_METHOD("копія",      0, false, arrayCopy,      arrayObjectType),
             OBJECT_METHOD("кількість",  1, false, arrayCount,     arrayObjectType),
+            OBJECT_METHOD("містить",    1, false, arrayContains,  arrayObjectType),
             OBJECT_METHOD("обернути",   0, false, arrayReverse,   arrayObjectType),
             OBJECT_METHOD("отримати",   1, false, arrayGetItem,   arrayObjectType),
             OBJECT_METHOD("очистити",   0, false, arrayClear,     arrayObjectType),
+            OBJECT_METHOD("підмасив",   2, false, arraySubarray,  arrayObjectType),
         },
     };
 
