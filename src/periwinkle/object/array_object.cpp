@@ -86,20 +86,35 @@ static Object* arrayGetIter(ArrayObject* o)
     return iterator;
 }
 
-static Object* arrayLength(Object* o, std::span<Object*> args, ArrayObject* va)
+METHOD_TEMPLATE(arrayRemove, ArrayObject)
 {
-    auto arrayObject = (ArrayObject*)o;
-    return IntObject::create(arrayObject->items.size());
+    auto it = std::find_if(
+        o->items.begin(),
+        o->items.end(),
+        [&args](Object* o) { return ((BoolObject*)Object::compare(
+            o, args[0], ObjectCompOperator::EQ))->value; }
+    );
+
+    if (it != o->items.end())
+    {
+        o->items.erase(it);
+        return &P_true;
+    }
+    return &P_false;
 }
 
-static Object* arrayPush(Object* o, std::span<Object*> args, ArrayObject* va)
+METHOD_TEMPLATE(arrayRemoveAll, ArrayObject)
 {
-    auto arrayObject = (ArrayObject*)o;
-    arrayObject->items.push_back(args[0]);
-    return &P_null;
+    auto erased = std::erase_if(
+        o->items,
+        [&args](Object* o) { return ((BoolObject*)Object::compare(
+            o, args[0], ObjectCompOperator::EQ))->value; }
+    );
+
+    return P_BOOL(erased);
 }
 
-static Object* arrayInsert(Object* o, std::span<Object*> args, ArrayObject* va)
+METHOD_TEMPLATE(arrayInsert, ArrayObject)
 {
     IntObject* index;
     Object* element;
@@ -115,7 +130,7 @@ static Object* arrayInsert(Object* o, std::span<Object*> args, ArrayObject* va)
     return &P_null;
 }
 
-static Object* arraySetItem(Object* o, std::span<Object*> args, ArrayObject* va)
+METHOD_TEMPLATE(arraySetItem, ArrayObject)
 {
     IntObject* index;
     Object* element;
@@ -131,7 +146,59 @@ static Object* arraySetItem(Object* o, std::span<Object*> args, ArrayObject* va)
     return &P_null;
 }
 
-static Object* arrayGetItem(Object* o, std::span<Object*> args, ArrayObject* va)
+METHOD_TEMPLATE(arraySize, ArrayObject)
+{
+    return IntObject::create(o->items.size());
+}
+
+METHOD_TEMPLATE(arrayPush, ArrayObject)
+{
+    o->items.push_back(args[0]);
+    return &P_null;
+}
+
+METHOD_TEMPLATE(arrayFindItem, ArrayObject)
+{
+    auto it = std::find_if(
+        o->items.begin(),
+        o->items.end(),
+        [&args](Object* obj) { return ((BoolObject*)Object::compare(
+            obj, args[0], ObjectCompOperator::EQ))->value; }
+    );
+
+    size_t index = -1;
+    if (it != o->items.end())
+    {
+        index = it - o->items.begin();
+    }
+    return IntObject::create(index);
+}
+
+METHOD_TEMPLATE(arrayCopy, ArrayObject)
+{
+    auto newArrayObject = ArrayObject::create();
+    newArrayObject->items = o->items;
+    return newArrayObject;
+}
+
+METHOD_TEMPLATE(arrayCount, ArrayObject)
+{
+    auto count = std::count_if(
+        o->items.begin(),
+        o->items.end(),
+        [&args](Object* obj) { return ((BoolObject*)Object::compare(
+            obj, args[0], ObjectCompOperator::EQ))->value; }
+    );
+    return IntObject::create(count);
+}
+
+METHOD_TEMPLATE(arrayReverse, ArrayObject)
+{
+    std::reverse(o->items.begin(), o->items.end());
+    return &P_null;
+}
+
+METHOD_TEMPLATE(arrayGetItem, ArrayObject)
 {
     IntObject* index;
     static ArgParser argParser{
@@ -139,96 +206,17 @@ static Object* arrayGetItem(Object* o, std::span<Object*> args, ArrayObject* va)
     };
     argParser.parse(args);
 
-    auto arrayObject = (ArrayObject*)o;
-    CHECK_INDEX(index->value, arrayObject);
-    return arrayObject->items[index->value];
+    CHECK_INDEX(index->value, o);
+    return o->items[index->value];
 }
 
-static Object* arrayFindItem(Object* o, std::span<Object*> args, ArrayObject* va)
+METHOD_TEMPLATE(arrayClear, ArrayObject)
 {
-    auto arrayObject = (ArrayObject*)o;
-
-    auto it = std::find_if(
-        arrayObject->items.begin(),
-        arrayObject->items.end(),
-        [&args](Object* o) { return ((BoolObject*)Object::compare(
-            o, args[0], ObjectCompOperator::EQ))->value; }
-    );
-
-    size_t index = -1;
-    if (it != arrayObject->items.end())
-    {
-        index = it - arrayObject->items.begin();
-    }
-    return IntObject::create(index);
-}
-
-static Object* arrayClear(Object* o, std::span<Object*> args, ArrayObject* va)
-{
-    auto arrayObject = (ArrayObject*)o;
-    arrayObject->items.clear();
+    o->items.clear();
     return &P_null;
 }
 
-static Object* arrayCount(Object* o, std::span<Object*> args, ArrayObject* va)
-{
-    auto arrayObject = (ArrayObject*)o;
-    auto count = std::count_if(
-        arrayObject->items.begin(),
-        arrayObject->items.end(),
-        [&args](Object* o) { return ((BoolObject*)Object::compare(
-            o, args[0], ObjectCompOperator::EQ))->value; }
-    );
-    return IntObject::create(count);
-}
-
-static Object* arrayCopy(Object* o, std::span<Object*> args, ArrayObject* va)
-{
-    auto arrayObject = (ArrayObject*)o;
-    auto newArrayObject = ArrayObject::create();
-    newArrayObject->items = arrayObject->items;
-    return newArrayObject;
-}
-
-static Object* arrayRemove(Object* o, std::span<Object*> args, ArrayObject* va)
-{
-    auto arrayObject = (ArrayObject*)o;
-
-    auto it = std::find_if(
-        arrayObject->items.begin(),
-        arrayObject->items.end(),
-        [&args](Object* o) { return ((BoolObject*)Object::compare(
-            o, args[0], ObjectCompOperator::EQ))->value; }
-    );
-
-    if (it != arrayObject->items.end())
-    {
-        arrayObject->items.erase(it);
-        return &P_true;
-    }
-    return &P_false;
-}
-
-static Object* arrayRemoveAll(Object* o, std::span<Object*> args, ArrayObject* va)
-{
-    auto arrayObject = (ArrayObject*)o;
-    auto erased = std::erase_if(
-        arrayObject->items,
-        [&args](Object* o) { return ((BoolObject*)Object::compare(
-            o, args[0], ObjectCompOperator::EQ))->value; }
-    );
-
-    return P_BOOL(erased);
-}
-
-static Object* arrayReverse(Object* o, std::span<Object*> args, ArrayObject* va)
-{
-    auto arrayObject = (ArrayObject*)o;
-    std::reverse(arrayObject->items.begin(), arrayObject->items.end());
-    return &P_null;
-}
-
-static Object* arrayIterNext(ArrayIterObject* o, std::span<Object*> args, ArrayObject* va)
+METHOD_TEMPLATE(arrayIterNext, ArrayIterObject)
 {
     if (o->position < o->length)
     {
@@ -255,18 +243,18 @@ namespace vm
         },
         .attributes =
         {
-            OBJECT_METHOD("довжина",    0, false, arrayLength,    arrayObjectType),
-            OBJECT_METHOD("додати",     1, false, arrayPush,      arrayObjectType),
-            OBJECT_METHOD("вставити",   2, false, arrayInsert,    arrayObjectType),
-            OBJECT_METHOD("встановити", 2, false, arraySetItem,   arrayObjectType),
-            OBJECT_METHOD("отримати",   1, false, arrayGetItem,   arrayObjectType),
-            OBJECT_METHOD("знайти",     1, false, arrayFindItem,  arrayObjectType),
-            OBJECT_METHOD("очистити",   0, false, arrayClear,     arrayObjectType),
-            OBJECT_METHOD("кількість",  1, false, arrayCount,     arrayObjectType),
-            OBJECT_METHOD("копія",      0, false, arrayCopy,      arrayObjectType),
             OBJECT_METHOD("видалити",   1, false, arrayRemove,    arrayObjectType),
             OBJECT_METHOD("видалитиВсі",1, false, arrayRemoveAll, arrayObjectType),
+            OBJECT_METHOD("вставити",   2, false, arrayInsert,    arrayObjectType),
+            OBJECT_METHOD("встановити", 2, false, arraySetItem,   arrayObjectType),
+            OBJECT_METHOD("довжина",    0, false, arraySize,      arrayObjectType),
+            OBJECT_METHOD("додати",     1, false, arrayPush,      arrayObjectType),
+            OBJECT_METHOD("знайти",     1, false, arrayFindItem,  arrayObjectType),
+            OBJECT_METHOD("копія",      0, false, arrayCopy,      arrayObjectType),
+            OBJECT_METHOD("кількість",  1, false, arrayCount,     arrayObjectType),
             OBJECT_METHOD("обернути",   0, false, arrayReverse,   arrayObjectType),
+            OBJECT_METHOD("отримати",   1, false, arrayGetItem,   arrayObjectType),
+            OBJECT_METHOD("очистити",   0, false, arrayClear,     arrayObjectType),
         },
     };
 
@@ -278,7 +266,7 @@ namespace vm
         .alloc = DEFAULT_ALLOC(ArrayIterObject),
         .attributes =
         {
-            OBJECT_METHOD("наступний", 0, false, (nativeMethod)arrayIterNext, arrayIterObjectType),
+            OBJECT_METHOD("наступний", 0, false, arrayIterNext, arrayIterObjectType),
         },
     };
 }

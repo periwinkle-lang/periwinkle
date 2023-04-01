@@ -374,11 +374,11 @@ METHOD_TEMPLATE(strSplit, StringObject)
     return strs;
 }
 
-static Object* strIterNext(StringIterObject* s, std::span<Object*> args, ArrayObject* va)
+METHOD_TEMPLATE(strIterNext, StringIterObject)
 {
-    if (s->position < s->length)
+    if (o->position < o->length)
     {
-        return StringObject::create(std::u32string{ s->iterable[s->position++] });
+        return StringObject::create(std::u32string{ o->iterable[o->position++] });
     }
     return &P_endIter;
 }
@@ -431,7 +431,7 @@ namespace vm
         .alloc = DEFAULT_ALLOC(StringIterObject),
         .attributes =
         {
-            OBJECT_METHOD("наступний", 0, false, (nativeMethod)strIterNext, stringIterObjectType),
+            OBJECT_METHOD("наступний", 0, false, strIterNext, stringIterObjectType),
         },
     };
 }
