@@ -137,7 +137,7 @@ namespace vm
     };
 
     Object* allocObject(TypeObject* objectType);
-    inline std::string objectTypeToString(const TypeObject* type);
+    bool isInstance(const Object* o, const TypeObject& type);
 }
 
 #endif

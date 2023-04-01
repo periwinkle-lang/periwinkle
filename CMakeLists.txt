@@ -66,7 +66,8 @@ add_library(periwinkle STATIC
     "src/include/object/cell_object.h" "src/periwinkle/object/cell_object.cpp"
     "src/include/object/native_method_object.h" "src/periwinkle/object/native_method_object.cpp"
     "src/include/object/array_object.h" "src/periwinkle/object/array_object.cpp"
-    "src/include/object/end_iteration_object.h" "src/periwinkle/object/end_iteration_object.cpp")
+    "src/include/object/end_iteration_object.h" "src/periwinkle/object/end_iteration_object.cpp"
+    "src/include/vm/argument_parser.h" "src/periwinkle/vm/argument_parser.cpp")
 target_compile_features(periwinkle PUBLIC cxx_std_20)
 
 

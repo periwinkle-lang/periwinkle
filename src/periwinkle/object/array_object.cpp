@@ -10,6 +10,7 @@
 #include "null_object.h"
 #include "native_method_object.h"
 #include "end_iteration_object.h"
+#include "argument_parser.h"
 
 using namespace vm;
 
@@ -100,28 +101,47 @@ static Object* arrayPush(Object* o, std::span<Object*> args, ArrayObject* va)
 
 static Object* arrayInsert(Object* o, std::span<Object*> args, ArrayObject* va)
 {
+    IntObject* index;
+    Object* element;
+    static ArgParser argParser{
+        {&index, intObjectType, "індекс"},
+        {&element, objectObjectType, "елемент"},
+    };
+    argParser.parse(args);
+
     auto arrayObject = (ArrayObject*)o;
-    auto index = ((IntObject*)args[0])->value;
-    CHECK_INDEX(index, arrayObject);
-    arrayObject->items.insert(arrayObject->items.begin() + index, args[1]);
+    CHECK_INDEX(index->value, arrayObject);
+    arrayObject->items.insert(arrayObject->items.begin() + index->value, element);
     return &P_null;
 }
 
 static Object* arraySetItem(Object* o, std::span<Object*> args, ArrayObject* va)
 {
+    IntObject* index;
+    Object* element;
+    static ArgParser argParser{
+        {&index, intObjectType, "індекс"},
+        {&element, objectObjectType, "елемент"},
+    };
+    argParser.parse(args);
+
     auto arrayObject = (ArrayObject*)o;
-    auto index = ((IntObject*)args[0])->value;
-    CHECK_INDEX(index, arrayObject);
-    arrayObject->items[index] = args[1];
+    CHECK_INDEX(index->value, arrayObject);
+    arrayObject->items[index->value] = element;
     return &P_null;
 }
 
 static Object* arrayGetItem(Object* o, std::span<Object*> args, ArrayObject* va)
 {
+    IntObject* index;
+    static ArgParser argParser{
+        {&index, intObjectType, "індекс"},
+    };
+    argParser.parse(args);
+
     auto arrayObject = (ArrayObject*)o;
-    auto index = ((IntObject*)args[0])->value;
-    CHECK_INDEX(index, arrayObject);
-    return arrayObject->items[index];
+    CHECK_INDEX(index->value, arrayObject);
+    return arrayObject->items[index->value];
 }
 
 static Object* arrayFindItem(Object* o, std::span<Object*> args, ArrayObject* va)

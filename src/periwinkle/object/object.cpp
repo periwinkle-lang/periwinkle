@@ -62,9 +62,22 @@ Object* vm::allocObject(TypeObject* objectType)
     return o;
 }
 
-std::string vm::objectTypeToString(const TypeObject* type)
+bool vm::isInstance(const Object* o, const TypeObject& type)
 {
-    return type->name;
+    auto oType = o->objectType;
+    for (;;)
+    {
+        if (oType == &type)
+        {
+            return true;
+        }
+        else if (oType->base == nullptr)
+        {
+            return false;
+        }
+
+        oType = oType->base;
+    }
 }
 
 #define GET_OPERATOR(object, op) (object)->objectType->operators.op
