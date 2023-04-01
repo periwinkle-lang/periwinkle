@@ -20,35 +20,35 @@
 
 using namespace vm;
 
-static std::string joinObjectString(
-    const std::string& sep, const std::vector<Object*>& objects)
+static std::u32string joinObjectString(
+    const std::u32string& sep, const std::vector<Object*>& objects)
 {
     if (objects.size())
     {
         auto& str = ((StringObject*)Object::toString(objects[0]))->value;
-        std::string result = std::accumulate(
+        std::u32string result = std::accumulate(
             ++objects.begin(), objects.end(), str,
-            [sep](const std::string& a, Object* o)
+            [sep](const std::u32string& a, Object* o)
             {
                 auto& str = ((StringObject*)Object::toString(o))->value;
                 return a + sep + str;
             });
         return result;
     }
-    return "";
+    return U"";
 }
 
 static Object* printNative(std::span<Object*> args, ArrayObject* va)
 {
-    auto str = joinObjectString(" ", va->items);
-    std::cout << str << std::flush;
+    auto str = joinObjectString(U" ", va->items);
+    std::cout << utils::utf32to8(str) << std::flush;
     return &P_null;
 }
 
 static Object* printLnNative(std::span<Object*> args, ArrayObject* va)
 {
-    auto str = joinObjectString(" ", va->items);
-    std::cout << str << std::endl;
+    auto str = joinObjectString(U" ", va->items);
+    std::cout << utils::utf32to8(str) << std::endl;
     return &P_null;
 }
 

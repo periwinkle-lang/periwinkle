@@ -39,7 +39,7 @@ static Object* boolInit(Object* o, std::span<Object*> args, ArrayObject* va)
 static Object* boolToString(Object* a)
 {
     auto arg = (BoolObject*)a;
-    return StringObject::create(arg->value ? "істина" : "хиба");
+    return StringObject::create(arg->value ? U"істина" : U"хиба");
 }
 
 static Object* boolToInteger(Object* a)

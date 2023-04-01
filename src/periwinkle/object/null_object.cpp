@@ -6,7 +6,7 @@ using namespace vm;
 
 static Object* nullToString(Object* a)
 {
-    return StringObject::create("нич");
+    return StringObject::create(U"нич");
 }
 
 namespace vm

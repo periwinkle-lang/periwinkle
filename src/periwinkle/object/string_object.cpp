@@ -9,7 +9,7 @@
 
 using namespace vm;
 
-static bool tryConvertToString(Object * o, std::string& str)
+static bool tryConvertToString(Object* o, std::u32string& str)
 {
     if (o->objectType->operators.toString != NULL)
     {
@@ -41,7 +41,7 @@ static Object* strInit(Object* o, std::span<Object*> args, ArrayObject* va)
 
 static Object* strComparison(Object* o1, Object* o2, ObjectCompOperator op)
 {
-    std::string a, b;
+    std::u32string a, b;
     CHECK_STRING(o1);
     CHECK_STRING(o2);
     a = ((StringObject*)o1)->value;
@@ -67,7 +67,7 @@ static Object* strToString(Object* o)
 
 static Object* strAdd(Object* o1, Object* o2)
 {
-    std::string a, b;
+    std::u32string a, b;
     TO_STRING(o1, a);
     TO_STRING(o2, b);
     return StringObject::create(a + b);
@@ -82,14 +82,14 @@ static Object* strGetIter(StringObject* o)
 static Object* stringSize(Object* s, std::span<Object*> args, ArrayObject* va)
 {
     auto strObject = (StringObject*)s;
-    return IntObject::create(utils::utf8Size(strObject->value));
+    return IntObject::create(strObject->value.size());
 }
 
 static Object* strIterNext(StringIterObject* s, std::span<Object*> args, ArrayObject* va)
 {
     if (s->position < s->length)
     {
-        return StringObject::create(utils::utf8At(s->iterable, s->position++));
+        return StringObject::create(std::u32string{ s->iterable[s->position++] });
     }
     return &P_endIter;
 }
@@ -129,17 +129,29 @@ namespace vm
     };
 }
 
-StringObject* vm::StringObject::create(std::string value)
+std::string vm::StringObject::asUtf8() const
+{
+    return utils::utf32to8(value);
+}
+
+StringObject* vm::StringObject::create(const std::string& value)
+{
+    auto stringObject = (StringObject*)allocObject(&stringObjectType);
+    stringObject->value = utils::utf8to32(value);
+    return stringObject;
+}
+
+StringObject* vm::StringObject::create(const std::u32string& value)
 {
     auto stringObject = (StringObject*)allocObject(&stringObjectType);
     stringObject->value = value;
     return stringObject;
 }
 
-StringIterObject* vm::StringIterObject::create(const std::string& iterable)
+StringIterObject* vm::StringIterObject::create(const std::u32string& iterable)
 {
     auto strIterObject = (StringIterObject*)allocObject(&stringIterObjectType);
     strIterObject->iterable = iterable;
-    strIterObject->length = utils::utf8Size(iterable);
+    strIterObject->length = iterable.size();
     return strIterObject;
 }

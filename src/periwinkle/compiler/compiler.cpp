@@ -618,7 +618,20 @@ vm::WORD compiler::Compiler::integerConstIdx(i64 value)
 
 vm::WORD compiler::Compiler::stringConstIdx(const std::string& value)
 {
-    FIND_CONST_IDX(StringObject, STRING)
+    for (vm::WORD i = 0; i < (vm::WORD)codeObject->constants.size(); ++i)
+    {
+        auto constant = codeObject->constants[i];
+        if (constant->objectType->type != vm::ObjectTypes::STRING)
+        {
+            continue;
+        }
+        else if (((vm::StringObject*)constant)->asUtf8() == value)
+        {
+            return i;
+        }
+    }
+    codeObject->constants.push_back(vm::StringObject::create(value));
+        return vm::WORD(codeObject->constants.size() - 1);
 }
 
 vm::WORD compiler::Compiler::nullConstIdx()

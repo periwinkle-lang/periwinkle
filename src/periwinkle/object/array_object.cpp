@@ -42,7 +42,7 @@ static Object* arrayToString(Object* o)
     for (auto it = arrayObject->items.begin(); it != arrayObject->items.end(); it++)
     {
         auto stringObject = (StringObject*)Object::toString(*it);
-        str << stringObject->value;
+        str << stringObject->asUtf8();
         if (it + 1 != arrayObject->items.end())
             str << ", ";
     }

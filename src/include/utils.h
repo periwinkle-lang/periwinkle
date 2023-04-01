@@ -23,6 +23,9 @@ namespace utils
     // Повертає utf8 символ по індексу
     std::string utf8At(const std::string& str, size_t index);
 
+    std::u32string utf8to32(const std::string& s);
+    std::string utf32to8(const std::u32string& s);
+
     // Відступ на задану ширину, заповнює відступ пробілами.
     // Наприклад:
     //     std::cout << "id =" << indent(10) << "10";

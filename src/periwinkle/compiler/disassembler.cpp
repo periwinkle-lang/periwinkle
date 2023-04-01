@@ -59,7 +59,7 @@ std::string compiler::Disassembler::getValueAsString(vm::Object* object)
     }
     case STRING:
     {
-        return "\"" + utils::escapeString(((vm::StringObject*)object)->value) + "\"";
+        return "\"" + utils::escapeString(((vm::StringObject*)object)->asUtf8()) + "\"";
     }
     case REAL:
     {

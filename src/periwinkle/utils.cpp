@@ -86,6 +86,72 @@ static int getUtf8CharLen(char c)
     return -1;
 }
 
+// Першим аргументом приймає змінну, в яку записує результат конвертації,
+// другим аргументом приймає посилання на стрічку.
+// Повертає кількість char, які були сконвертовані
+static inline int char8to32(char32_t& c32, const char* str)
+{
+    c32 = 0xff & (*str);
+    auto length = getUtf8CharLen(*str);
+    switch (length) {
+    case 1:
+        break;
+    case 2:
+        str++;
+        c32 = ((c32 << 6) & 0x7ff) + ((*str) & 0x3f);
+        break;
+    case 3:
+        str++;
+        c32 = ((c32 << 12) & 0xffff) + ((0xff & (*str) << 6) & 0xfff);
+        str++;
+        c32 += (*str) & 0x3f;
+        break;
+    case 4:
+        str++;
+        c32 = ((c32 << 18) & 0x1fffff) + ((0xff & (*str) << 12) & 0x3ffff);
+        str++;
+        c32 += (0xff & (*str) << 6) & 0xfff;
+        str++;
+        c32 += (*str) & 0x3f;
+        break;
+    }
+    str++;
+    return length;
+}
+
+// Першим аргументом приймає змінну, в яку записує результат конвертації,
+// другим аргументом приймає посилання на char32 символ.
+// Повертає кількість char, які записані в змінній
+static inline int char32to8(char* c8, char32_t c32)
+{
+    if (c32 < 0x80)
+    {
+        *(c8++) = c32;
+        return 1;
+    }
+    else if (c32 < 0x800)
+    {
+        *(c8++) = (c32 >> 6) | 0xc0;
+        *(c8++) = (c32 & 0x3f) | 0x80;
+        return 2;
+    }
+    else if (c32 < 0x10000)
+    {
+        *(c8++) = (c32 >> 12) | 0xe0;
+        *(c8++) = ((c32 >> 6) & 0x3f) | 0x80;
+        *(c8++) = (c32 & 0x3f) | 0x80;
+        return 3;
+    }
+    else
+    {
+        *(c8++) = (c32 >> 18) | 0xf0;
+        *(c8++) = ((c32 >> 12) & 0x3f) | 0x80;
+        *(c8++) = ((c32 >> 6) & 0x3f) | 0x80;
+        *(c8++) = (c32 & 0x3f) | 0x80;
+        return 4;
+    }
+}
+
 size_t utils::utf8Size(const std::string& str)
 {
     size_t i, q;
@@ -105,6 +171,36 @@ std::string utils::utf8At(const std::string& str, size_t index)
         i += len;
     }
     return str.substr(i, getUtf8CharLen(str[i]));
+}
+
+std::u32string utils::utf8to32(const std::string& s)
+{
+    std::u32string result;
+    auto cstr = s.c_str();
+    size_t size = 0;
+
+    while (size < s.size())
+    {
+        char32_t c32;
+        size += char8to32(c32, cstr + size);
+        result += c32;
+    }
+
+    return result;
+}
+
+std::string utils::utf32to8(const std::u32string& s)
+{
+    std::string result;
+    char out[4]{};
+
+    for (auto c32 : s)
+    {
+        std::size_t size = char32to8(out, c32);
+        result += std::string_view{ out, size };
+    }
+
+    return result;
 }
 
 std::string utils::indent(int width)

@@ -9,18 +9,20 @@ namespace vm
 
     struct StringObject : Object
     {
-        std::string value;
+        std::u32string value;
 
-        static StringObject* create(std::string value);
+        std::string asUtf8() const;
+        static StringObject* create(const std::string& value);
+        static StringObject* create(const std::u32string& value);
     };
 
     struct StringIterObject : Object
     {
         size_t position;
         size_t length;
-        std::string iterable;
+        std::u32string iterable;
 
-        static StringIterObject* create(const std::string& iterable);
+        static StringIterObject* create(const std::u32string& iterable);
     };
 }
 
