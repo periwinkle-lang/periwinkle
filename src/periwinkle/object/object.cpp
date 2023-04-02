@@ -44,7 +44,7 @@ namespace vm
 
     TypeObject typeObjectType =
     {
-        .base = nullptr,
+        .base = &objectObjectType,
         .name = "Тип",
         .type = ObjectTypes::TYPE,
         .operators =
