@@ -239,9 +239,18 @@ Object* vm::Object::toString(Object* o)
     return op(o);
 }
 
+Object* vm::Object::toBool(Object* o)
+{
+    auto op = GET_OPERATOR(o, toBool);
+    if (op == nullptr)
+    {
+        return &P_true;
+    }
+    return op(o);
+}
+
 UNARY_OPERATOR_WITH_MESSAGE(toInteger, "Неможливо конвертувати об'єкт типу \"%s\" в число")
 UNARY_OPERATOR_WITH_MESSAGE(toReal, "Неможливо конвертувати об'єкт типу \"%s\" в дійсне число")
-UNARY_OPERATOR_WITH_MESSAGE(toBool, "Неможливо конвертувати об'єкт типу \"%s\" в логічний тип")
 BINARY_OPERATOR(add, +)
 BINARY_OPERATOR(sub, -)
 BINARY_OPERATOR(mul, *)
