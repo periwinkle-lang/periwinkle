@@ -228,7 +228,17 @@ Object* vm::Object::call(Object* callable, Object**& sp, WORD argc)
     return result;
 }
 
-UNARY_OPERATOR_WITH_MESSAGE(toString, "Неможливо конвертувати об'єкту типу \"%s\" в стрічку")
+Object* vm::Object::toString(Object* o)
+{
+    auto op = GET_OPERATOR(o, toString);
+    if (op == nullptr)
+    {
+        return StringObject::create(
+            utils::format("<екземпляр класу %s %p>", o->objectType->name.c_str(), o));
+    }
+    return op(o);
+}
+
 UNARY_OPERATOR_WITH_MESSAGE(toInteger, "Неможливо конвертувати об'єкт типу \"%s\" в число")
 UNARY_OPERATOR_WITH_MESSAGE(toReal, "Неможливо конвертувати об'єкт типу \"%s\" в дійсне число")
 UNARY_OPERATOR_WITH_MESSAGE(toBool, "Неможливо конвертувати об'єкт типу \"%s\" в логічний тип")
