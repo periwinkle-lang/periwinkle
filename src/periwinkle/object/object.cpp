@@ -258,5 +258,13 @@ Object* vm::Object::getAttr(Object* o, const std::string& name)
     {
         return o->objectType->attributes[name];
     }
+    else if (o->objectType->type == ObjectTypes::TYPE)
+    {
+        auto type = (TypeObject*)o;
+        if (type->attributes.contains(name))
+        {
+            return type->attributes[name];
+        }
+    }
     return nullptr;
 }
