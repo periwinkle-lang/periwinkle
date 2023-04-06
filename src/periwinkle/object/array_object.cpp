@@ -34,6 +34,45 @@ static Object* arrayInit(Object* o, std::span<Object*> args, ArrayObject* va)
     return arrayObject;
 }
 
+static inline bool arrayObjectEqual(ArrayObject* a, ArrayObject* b, bool notEqual=false)
+{
+    if (a->items.size() != b->items.size())
+    {
+        return false;
+    }
+
+    for (size_t i = 0; i < a->items.size(); ++i)
+    {
+        if (Object::compare(a->items[i], b->items[i],
+            notEqual ? ObjectCompOperator::NE : ObjectCompOperator::EQ) == false)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static Object* arrayComparison(Object* o1, Object* o2, ObjectCompOperator op)
+{
+    CHECK_ARRAY(o1);
+    CHECK_ARRAY(o2);
+    auto a = (ArrayObject*)o1;
+    auto b = (ArrayObject*)o2;
+    bool result;
+
+    using enum ObjectCompOperator;
+    switch (op)
+    {
+    case EQ: result = arrayObjectEqual(a, b);       break;
+    case NE: result = arrayObjectEqual(a, b, true); break;
+    default:
+        return &P_NotImplemented;
+    }
+
+    return P_BOOL(result);
+}
+
 static Object* arrayToString(Object* o)
 {
     auto arrayObject = (ArrayObject*)o;
@@ -292,6 +331,7 @@ namespace vm
             .add = arrayAdd,
             .getIter = (unaryFunction)arrayGetIter,
         },
+        .comparison = arrayComparison,
         .attributes =
         {
             OBJECT_METHOD("видалити",   1, false, arrayRemove,    arrayObjectType),
