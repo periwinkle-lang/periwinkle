@@ -77,6 +77,11 @@ static Object* strToString(Object* o)
     return o;
 }
 
+static Object* strToBool(StringObject* o)
+{
+    return P_BOOL(o->value.size());
+}
+
 static Object* strAdd(Object* o1, Object* o2)
 {
     std::u32string a, b;
@@ -395,6 +400,7 @@ namespace vm
         .operators =
         {
             .toString = strToString,
+            .toBool = (unaryFunction)strToBool,
             .add = strAdd,
             .getIter = (unaryFunction)strGetIter,
         },
