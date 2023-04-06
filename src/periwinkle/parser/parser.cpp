@@ -682,7 +682,7 @@ Expression* parser::Parser::parseAssignmentExpression()
 Expression* parser::Parser::parseExpression()
 {
     SIMPLE_RULE(parseAssignmentExpression);
-    SIMPLE_RULE(parsePrimaryExpression);
+    SIMPLE_RULE(parseRhs);
     return nullptr;
 }
 

@@ -43,8 +43,8 @@ static inline bool arrayObjectEqual(ArrayObject* a, ArrayObject* b, bool notEqua
 
     for (size_t i = 0; i < a->items.size(); ++i)
     {
-        if (Object::compare(a->items[i], b->items[i],
-            notEqual ? ObjectCompOperator::NE : ObjectCompOperator::EQ) == false)
+        if (((BoolObject*)Object::compare(a->items[i], b->items[i],
+            notEqual ? ObjectCompOperator::NE : ObjectCompOperator::EQ))->value == false)
         {
             return false;
         }
