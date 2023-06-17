@@ -81,11 +81,17 @@ namespace parser
 
     struct FunctionDeclaration : Statement
     {
+        using parameters_t = std::vector<lexer::Token>;
+        using variadicParameter_t = std::optional<lexer::Token>;
+        using defaultParameter_t = std::pair<lexer::Token, Expression*>;
+        using defaultParameters_t = std::vector<defaultParameter_t>;
+
         lexer::Token keyword;
         lexer::Token id;
         lexer::Token lpar;
-        std::vector<lexer::Token> parameters;
-        std::optional<lexer::Token> variadicParameter;
+        parameters_t parameters;
+        variadicParameter_t variadicParameter;
+        defaultParameters_t defaultParameters;
         lexer::Token rpar;
         BlockStatement* block;
 

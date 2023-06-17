@@ -68,7 +68,9 @@ add_library(periwinkle STATIC
     "src/include/object/array_object.h" "src/periwinkle/object/array_object.cpp"
     "src/include/object/end_iteration_object.h" "src/periwinkle/object/end_iteration_object.cpp"
     "src/include/vm/argument_parser.h" "src/periwinkle/vm/argument_parser.cpp"
-    "src/include/object/method_with_instance_object.h" "src/periwinkle/object/method_with_instance_object.cpp")
+    "src/include/object/method_with_instance_object.h" "src/periwinkle/object/method_with_instance_object.cpp"
+    "src/include/object/string_vector_object.h" "src/periwinkle/object/string_vector_object.cpp"
+    "src/include/object/validate_args.h" "src/periwinkle/object/validate_args.cpp")
 target_compile_features(periwinkle PUBLIC cxx_std_20)
 
 

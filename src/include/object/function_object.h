@@ -15,6 +15,7 @@ namespace vm
     {
         CodeObject* code;
         std::vector<CellObject*> closure; // Масив комірок
+        std::vector<Object*> defaultArguments; // Зберігає значення параметрів за замовчуванням
 
         static FunctionObject* create(CodeObject* code);
     };

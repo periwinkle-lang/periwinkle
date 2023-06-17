@@ -84,9 +84,14 @@ namespace parser
 
     struct CallExpression : Expression
     {
+        using arguments_t = std::vector<Expression*>;
+        using namedArgument_t = std::pair<lexer::Token, Expression*>;
+        using namedArguments_t = std::vector<namedArgument_t>;
+
         Expression* callable;
         lexer::Token lpar;
-        std::vector<Expression*> arguments;
+        arguments_t arguments;
+        namedArguments_t namedArguments;
         lexer::Token rpar;
 
         CallExpression()

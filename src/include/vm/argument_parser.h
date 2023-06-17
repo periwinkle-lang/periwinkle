@@ -20,7 +20,8 @@ namespace vm
 
         std::vector<Arg> description;
 
-        void parse(const std::span<Object*> args);
+        void parse(const std::span<Object*> args,
+            DefaultParameters* defaults=nullptr, NamedArgs* na=nullptr);
 
         ArgParser(std::initializer_list<Arg> args) : description{args}
         {

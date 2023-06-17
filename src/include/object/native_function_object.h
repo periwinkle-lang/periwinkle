@@ -7,18 +7,18 @@
 #include "vm.h"
 #include "array_object.h"
 
-#define NATIVE_FUNCTION(name, arity, variadic, func)               \
+#define NATIVE_FUNCTION(name, arity, variadic, func, defaults)     \
     vm::NativeFunctionObject{&vm::nativeFunctionObjectType, arity, \
-                           variadic, name, func}
+                           variadic, name, func, defaults}
 
-#define OBJECT_STATIC_METHOD(name, arity, variadic, func) \
-    {name, new NATIVE_FUNCTION(name, arity, variadic, (nativeFunction)func)}
+#define OBJECT_STATIC_METHOD(name, arity, variadic, func, defaults) \
+    {name, new NATIVE_FUNCTION(name, arity, variadic, (nativeFunction)func, defaults)}
 
 namespace vm
 {
     extern TypeObject nativeFunctionObjectType;
     // Функція приймає масив об'єктів та повертає посилання на результат
-    using nativeFunction = Object*(*)(std::span<Object*>, ArrayObject*);
+    using nativeFunction = Object*(*)(std::span<Object*>, ArrayObject*, NamedArgs*);
 
     struct NativeFunctionObject : Object
     {
@@ -26,9 +26,11 @@ namespace vm
         bool isVariadic;
         std::string name;
         nativeFunction function;
+        DefaultParameters* defaults;
 
         static NativeFunctionObject* create(
-            int arity, bool isVariadic, std::string name, nativeFunction function);
+            int arity, bool isVariadic, std::string name,
+            nativeFunction function, DefaultParameters* defaults=nullptr);
     };
 }
 

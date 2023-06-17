@@ -29,7 +29,7 @@ static Object* name(Object* a, Object* b)     \
     return IntObject::create(result);         \
 }
 
-static Object* intInit(Object* o, std::span<Object*> args, ArrayObject* va)
+static Object* intInit(Object* o, std::span<Object*> args, ArrayObject* va, NamedArgs* na)
 {
     return Object::toInteger(args[0]);
 }
@@ -123,7 +123,7 @@ namespace vm
         .name = "Число",
         .type = ObjectTypes::INTEGER,
         .alloc = DEFAULT_ALLOC(IntObject),
-        .constructor = new NATIVE_METHOD("конструктор", 1, false, intInit, intObjectType),
+        .constructor = new NATIVE_METHOD("конструктор", 1, false, intInit, intObjectType, nullptr),
         .operators =
         {
             .toString = intToString,

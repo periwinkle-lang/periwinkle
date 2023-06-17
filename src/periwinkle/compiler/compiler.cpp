@@ -10,6 +10,7 @@
 #include "string_object.h"
 #include "real_object.h"
 #include "null_object.h"
+#include "string_vector_object.h"
 #include "types.h"
 #include "builtins.h"
 #include "plogger.h"
@@ -241,7 +242,7 @@ void compiler::Compiler::compileFunctionDeclaration(parser::FunctionDeclaration*
         }
     }
 
-    codeObject->arity = statement->parameters.size();
+    codeObject->arity = statement->parameters.size() + statement->defaultParameters.size();
     if (statement->variadicParameter)
         codeObject->isVariadic = true;
     compileBlock(statement->block);
@@ -253,8 +254,14 @@ void compiler::Compiler::compileFunctionDeclaration(parser::FunctionDeclaration*
     STATE_POP();
     codeObject = prevCodeObject;
 
-    setLineno(statement->id.lineno);
+    for (auto& defaultParameter : statement->defaultParameters)
+    {
+        fnCodeObject->defaults.push_back(defaultParameter.first.text);
+        setLineno(defaultParameter.first.lineno);
+        compileExpression(defaultParameter.second);
+    }
 
+    setLineno(statement->id.lineno);
     if (fnCodeObject->freevars.size() > 0)
     {
         auto state = (FunctionState*)unwindStateStack(CompilerStateType::FUNCTION);
@@ -440,7 +447,9 @@ void compiler::Compiler::compileVariableExpression(VariableExpression* expressio
 
 void compiler::Compiler::compileCallExpression(CallExpression* expression)
 {
-    auto argc = (vm::WORD)expression->arguments.size();
+    auto argc = (vm::WORD)expression->arguments.size() + (vm::WORD)expression->namedArguments.size();
+    bool withNamedArgs = (bool)expression->namedArguments.size();
+    vm::WORD namedArgsIdx;
 
     if (expression->callable->kind == NodeKind::ATTRIBUTE_EXPRESSION)
     {
@@ -458,17 +467,46 @@ void compiler::Compiler::compileCallExpression(CallExpression* expression)
         compileExpression(argument);
     }
 
+    if (withNamedArgs)
+    {
+        std::vector<std::string> namedArgs;
+        for (auto& namedArgument : expression->namedArguments)
+        {
+            for (auto& a: namedArgs)
+            {
+               if (namedArgument.first.text == a)
+               {
+                   throwCompileError(
+                       utils::format(
+                           "Іменований параметр \"%s\" повторюється", a.c_str()),
+                       namedArgument.first
+                   );
+               }
+            }
+
+            namedArgs.push_back(namedArgument.first.text);
+            compileExpression(namedArgument.second);
+        }
+
+        namedArgsIdx = stringVectorIdx(namedArgs);
+    }
+
     // Якщо викликний вираз є атрибутом,
     // то викликати його треба за допомогою CALL_METHOD
     if (expression->callable->kind == NodeKind::ATTRIBUTE_EXPRESSION)
     {
-        emitOpCode(CALL_METHOD);
+        emitOpCode(withNamedArgs ? CALL_METHOD_NA : CALL_METHOD);
     }
     else
     {
-        emitOpCode(CALL);
+        emitOpCode(withNamedArgs ? CALL_NA : CALL);
     }
     emitOperand(argc);
+
+    if (withNamedArgs)
+    {
+        emitOperand(namedArgsIdx);
+    }
 }
 
 void compiler::Compiler::compileBinaryExpression(BinaryExpression* expression)
@@ -608,12 +646,17 @@ vm::WORD compiler::Compiler::booleanConstIdx(bool value)
 
 vm::WORD compiler::Compiler::realConstIdx(double value)
 {
-    FIND_CONST_IDX(RealObject, REAL);
+    FIND_CONST_IDX(RealObject, REAL)
 }
 
 vm::WORD compiler::Compiler::integerConstIdx(i64 value)
 {
     FIND_CONST_IDX(IntObject, INTEGER)
+}
+
+vm::WORD compiler::Compiler::stringVectorIdx(const std::vector<std::string>& value)
+{
+    FIND_CONST_IDX(StringVectorObject, STRING_VECTOR_OBJECT)
 }
 
 vm::WORD compiler::Compiler::stringConstIdx(const std::string& value)

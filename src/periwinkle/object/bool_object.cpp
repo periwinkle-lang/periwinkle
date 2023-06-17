@@ -31,7 +31,7 @@ static Object* boolComparison(Object* o1, Object* o2, ObjectCompOperator op)
     return P_BOOL(result);
 }
 
-static Object* boolInit(Object* o, std::span<Object*> args, ArrayObject* va)
+static Object* boolInit(Object* o, std::span<Object*> args, ArrayObject* va, NamedArgs* na)
 {
     return Object::toBool(args[0]);
 }
@@ -65,7 +65,7 @@ namespace vm
         .name = "Логічний",
         .type = ObjectTypes::BOOL,
         .alloc = DEFAULT_ALLOC(BoolObject),
-        .constructor = new NATIVE_METHOD("конструктор", 1, false, boolInit, boolObjectType),
+        .constructor = new NATIVE_METHOD("конструктор", 1, false, boolInit, boolObjectType, nullptr),
         .operators =
         {
             .toString = boolToString,

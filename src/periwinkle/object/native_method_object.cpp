@@ -1,9 +1,12 @@
 ﻿#include "native_method_object.h"
+#include "string_vector_object.h"
 #include "utils.h"
+#include "validate_args.h"
 
 using namespace vm;
 
-static Object* nativeMethodCall(NativeMethodObject* callable, Object**& sp, WORD argc)
+static Object* nativeMethodCall(NativeMethodObject* callable, Object**& sp, WORD argc,
+    NamedArgs* namedArgs)
 {
     auto firstArg = sp - argc + 1;
 
@@ -15,8 +18,29 @@ static Object* nativeMethodCall(NativeMethodObject* callable, Object**& sp, WORD
             " до якого відноситься метод");
     }
 
+    //if (namedArgs)
+    //{
+    //    for (auto& argName : *namedArgs->names)
+    //    {
+    //        auto it = std::find(
+    //            callable->defaults->names.begin(),
+    //            callable->defaults->names.end(),
+    //            argName
+    //        );
+
+    //        if (it != callable->defaults->names.end())
+    //        {
+    //            VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
+    //                utils::format(
+    //                    "Метод \"%s\" не має параметра за замовчуванням з іменем \"%s\"",
+    //                    callable->name.c_str(), argName.c_str())
+    //            );
+    //        }
+    //    }
+    //}
+
     std::span<Object*> args{ firstArg + 1, argc - 1 };
-    auto result = callNativeMethod(*firstArg, callable, args);
+    auto result = callNativeMethod(*firstArg, callable, args, namedArgs);
     sp -= argc + 1; // +1 для методу
     return result;
 }
@@ -38,55 +62,48 @@ namespace vm
 
 NativeMethodObject* vm::NativeMethodObject::create(
     WORD arity, bool isVariadic, std::string name,
-    nativeMethod method, TypeObject* classType)
+    nativeMethod method, TypeObject* classType, DefaultParameters* defaults)
 {
     auto nativeMethod =
         (NativeMethodObject*)allocObject(&nativeMethodObjectType);
-    nativeMethod->arity = arity + 1; // + 1 для екземляра класу
+    nativeMethod->arity = arity + 1; // +1 для екземляра класу
     nativeMethod->isVariadic = isVariadic;
     nativeMethod->name = name;
     nativeMethod->method = method;
     nativeMethod->classType = classType;
+    nativeMethod->defaults = defaults;
     return nativeMethod;
 }
 
-Object* vm::callNativeMethod(
-    Object* instance, NativeMethodObject* method, std::span<Object*> args)
+Object* vm::callNativeMethod(Object* instance, NativeMethodObject* method, std::span<Object*> args,
+    NamedArgs* namedArgs)
 {
     auto argc = args.size() + 1; // +1 для екземпляра
 
-    if (method->isVariadic)
+    std::vector<std::string>* defaultNames = nullptr;
+    if (method->defaults)
     {
-        if (method->arity > argc)
-        {
-            VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
-                utils::format(
-                    "Функція \"%s\" очікує мінімум %u аргументів,"
-                    "натомість було передано %u",
-                    method->name.c_str(), method->arity, argc));
-        }
+        defaultNames = &method->defaults->names;
     }
-    else if (method->arity != argc)
-    {
-        VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
-            utils::format(
-                "Функція \"%s\" очікує %u аргументів, натомість було передано %u",
-                method->name.c_str(), method->arity, argc));
-    }
+    std::vector<size_t> namedArgIndexes;
+
+    validateCall(
+        method->arity, defaultNames, method->isVariadic,
+        method->name, true, argc, namedArgs, &namedArgIndexes
+    );
 
     auto variadicParameter = ArrayObject::create();
-    if (auto variadicCount = argc - method->arity; variadicCount > 0)
+    if (method->isVariadic)
     {
-        static auto arrayPush =
-            ((NativeMethodObject*)arrayObjectType.attributes["додати"])->method;
+        auto variadicCount = argc + (namedArgs != nullptr ? namedArgs->count : 0) - method->arity;
         for (WORD i = 0; i < variadicCount; ++i)
         {
-            arrayPush(variadicParameter, { data(args) + i, 1}, nullptr);
+            variadicParameter->items.push_back(args[argc - variadicCount - 1 + i]);
         }
     }
 
     auto result = method->method(
-        instance, { data(args), method->arity - 1 }, variadicParameter);
+        instance, { data(args), method->arity - 1 }, variadicParameter, namedArgs);
     delete variadicParameter;
     return result;
 }

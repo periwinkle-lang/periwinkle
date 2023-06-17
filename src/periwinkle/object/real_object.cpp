@@ -42,7 +42,7 @@ static Object* name(Object* o1, Object* o2)     \
     return RealObject::create(result);          \
 }
 
-static Object* realInit(Object* o, std::span<Object*> args, ArrayObject* va)
+static Object* realInit(Object* o, std::span<Object*> args, ArrayObject* va, NamedArgs* na)
 {
     return Object::toReal(args[0]);
 }
@@ -133,7 +133,7 @@ namespace vm
         .name = "Дійсний",
         .type = ObjectTypes::REAL,
         .alloc = DEFAULT_ALLOC(RealObject),
-        .constructor = new NATIVE_METHOD("конструктор", 1, false, realInit, realObjectType),
+        .constructor = new NATIVE_METHOD("конструктор", 1, false, realInit, realObjectType, nullptr),
         .operators =
         {
             .toString = realToString,

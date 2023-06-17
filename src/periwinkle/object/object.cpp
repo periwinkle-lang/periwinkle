@@ -7,6 +7,7 @@
 #include "utils.h"
 #include "string_object.h"
 #include "native_method_object.h"
+#include "string_vector_object.h"
 
 using namespace vm;
 
@@ -213,7 +214,7 @@ Object* vm::Object::compare(Object* o1, Object* o2, ObjectCompOperator op)
     return result;
 }
 
-Object* vm::Object::call(Object* callable, Object**& sp, WORD argc)
+Object* vm::Object::call(Object* callable, Object**& sp, WORD argc, NamedArgs* namedArgs)
 {
     auto callOp = GET_OPERATOR(callable, call);
     if (callOp == nullptr)
@@ -224,7 +225,7 @@ Object* vm::Object::call(Object* callable, Object**& sp, WORD argc)
         );
     }
 
-    auto result = callOp(callable, sp, argc);
+    auto result = callOp(callable, sp, argc, namedArgs);
     return result;
 }
 

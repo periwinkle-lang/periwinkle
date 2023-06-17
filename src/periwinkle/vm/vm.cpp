@@ -10,6 +10,7 @@
 #include "native_method_object.h"
 #include "end_iteration_object.h"
 #include "method_with_instance_object.h"
+#include "string_vector_object.h"
 #include "builtins.h"
 #include "plogger.h"
 #include "utils.h"
@@ -166,6 +167,26 @@ Object* VirtualMachine::execute()
             PUSH(result);
             break;
         }
+        case CALL_NA:
+        {
+            auto argc = READ();
+            auto namedArgNames = (StringVectorObject*)GET_CONST();
+            auto callable = *(sp - argc);
+            auto namedArgs = new NamedArgs;
+            auto namedArgCount = namedArgNames->value.size();
+
+            namedArgs->names = &namedArgNames->value;
+            namedArgs->count = namedArgCount;
+            for (size_t i = 0; i < namedArgCount; ++i)
+            {
+                namedArgs->values.push_back(*(sp--));
+            }
+
+            auto result = Object::call(callable, sp, argc - namedArgCount, namedArgs);
+            PUSH(result);
+            delete namedArgs;
+            break;
+        }
         case RETURN:
         {
             auto returnValue = POP();
@@ -313,6 +334,11 @@ Object* VirtualMachine::execute()
             PUSH(result);
             break;
         }
+        case CALL_METHOD_NA:
+        {
+            plog::fatal << "CALL_METHOD_NA ще не реалізовано";
+            break;
+        }
         case MAKE_FUNCTION:
         {
             auto codeObject = (CodeObject*)POP();
@@ -321,6 +347,11 @@ Object* VirtualMachine::execute()
             for (WORD i = 0; i < codeObject->freevars.size(); ++i)
             {
                 functionObject->closure.push_back((CellObject*)POP());
+            }
+
+            for (WORD i = 0; i < codeObject->defaults.size(); ++i)
+            {
+                functionObject->defaultArguments.push_back(POP());
             }
 
             PUSH(functionObject);

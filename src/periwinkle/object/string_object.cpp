@@ -46,7 +46,7 @@ static bool tryConvertToString(Object* o, std::u32string& str)
             &IndexErrorObjectType, "Індекс виходить за межі стрічки"); \
     }
 
-static Object* strInit(Object* o, std::span<Object*> args, ArrayObject* va)
+static Object* strInit(Object* o, std::span<Object*> args, ArrayObject* va, NamedArgs* na)
 {
     return Object::toString(args[0]);
 }
@@ -396,7 +396,7 @@ namespace vm
         .name = "Стрічка",
         .type = ObjectTypes::STRING,
         .alloc = DEFAULT_ALLOC(StringObject),
-        .constructor = new NATIVE_METHOD("конструктор", 1, false, strInit, stringObjectType),
+        .constructor = new NATIVE_METHOD("конструктор", 1, false, strInit, stringObjectType, nullptr),
         .operators =
         {
             .toString = strToString,
@@ -407,25 +407,25 @@ namespace vm
         .comparison = strComparison,
         .attributes =
         {
-            OBJECT_METHOD("видалитиЗакінчення", 1, false, removeEnd,     stringObjectType),
-            OBJECT_METHOD("видалитиПрефікс",    1, false, removePrefix,  stringObjectType),
-            OBJECT_METHOD("вставити",           2, false, strInsert,     stringObjectType),
-            OBJECT_METHOD("встановити",         2, false, strSet,        stringObjectType),
-            OBJECT_METHOD("довжина",            0, false, strSize,       stringObjectType),
-            OBJECT_METHOD("закінчуєтьсяНа",     1, false, strEndsWith,   stringObjectType),
-            OBJECT_METHOD("замінити",           2, false, strReplace,    stringObjectType),
-            OBJECT_METHOD("знайти",             1, false, strFind,       stringObjectType),
-            OBJECT_METHOD("копія",              0, false, strCopy,       stringObjectType),
-            OBJECT_METHOD("кількість",          1, false, strCount,      stringObjectType),
-            OBJECT_METHOD("містить",            1, false, strContains,   stringObjectType),
-            OBJECT_METHOD("отримати",           1, false, strGet,        stringObjectType),
-            OBJECT_METHOD("починаєтьсяНа",      1, false, strStartsWith, stringObjectType),
-            OBJECT_METHOD("причепурити",        0, false, strTrim,       stringObjectType),
-            OBJECT_METHOD("причепуритиЗліва",   0, false, strLeftTrim,   stringObjectType),
-            OBJECT_METHOD("причепуритиСправа",  0, false, strRightTrim,  stringObjectType),
-            OBJECT_METHOD("підстрічка",         2, false, strSubstr,     stringObjectType),
-            OBJECT_METHOD("розділити",          1, false, strSplit,      stringObjectType),
-            OBJECT_STATIC_METHOD("зліпити",     2, false, strJoin),
+            OBJECT_METHOD("видалитиЗакінчення", 1, false, removeEnd,     stringObjectType, nullptr),
+            OBJECT_METHOD("видалитиПрефікс",    1, false, removePrefix,  stringObjectType, nullptr),
+            OBJECT_METHOD("вставити",           2, false, strInsert,     stringObjectType, nullptr),
+            OBJECT_METHOD("встановити",         2, false, strSet,        stringObjectType, nullptr),
+            OBJECT_METHOD("довжина",            0, false, strSize,       stringObjectType, nullptr),
+            OBJECT_METHOD("закінчуєтьсяНа",     1, false, strEndsWith,   stringObjectType, nullptr),
+            OBJECT_METHOD("замінити",           2, false, strReplace,    stringObjectType, nullptr),
+            OBJECT_METHOD("знайти",             1, false, strFind,       stringObjectType, nullptr),
+            OBJECT_METHOD("копія",              0, false, strCopy,       stringObjectType, nullptr),
+            OBJECT_METHOD("кількість",          1, false, strCount,      stringObjectType, nullptr),
+            OBJECT_METHOD("містить",            1, false, strContains,   stringObjectType, nullptr),
+            OBJECT_METHOD("отримати",           1, false, strGet,        stringObjectType, nullptr),
+            OBJECT_METHOD("починаєтьсяНа",      1, false, strStartsWith, stringObjectType, nullptr),
+            OBJECT_METHOD("причепурити",        0, false, strTrim,       stringObjectType, nullptr),
+            OBJECT_METHOD("причепуритиЗліва",   0, false, strLeftTrim,   stringObjectType, nullptr),
+            OBJECT_METHOD("причепуритиСправа",  0, false, strRightTrim,  stringObjectType, nullptr),
+            OBJECT_METHOD("підстрічка",         2, false, strSubstr,     stringObjectType, nullptr),
+            OBJECT_METHOD("розділити",          1, false, strSplit,      stringObjectType, nullptr),
+            OBJECT_STATIC_METHOD("зліпити",     2, false, strJoin, nullptr),
         },
     };
 
@@ -437,9 +437,11 @@ namespace vm
         .alloc = DEFAULT_ALLOC(StringIterObject),
         .attributes =
         {
-            OBJECT_METHOD("наступний", 0, false, strIterNext, stringIterObjectType),
+            OBJECT_METHOD("наступний", 0, false, strIterNext, stringIterObjectType, nullptr),
         },
     };
+
+    StringObject P_emptyStr = { {.objectType = &stringObjectType}, U"" };
 }
 
 std::string vm::StringObject::asUtf8() const

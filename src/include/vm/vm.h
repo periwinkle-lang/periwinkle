@@ -29,13 +29,13 @@ namespace vm
         AND, OR, NOT,
 
         // Операції контролю потоку виконання
-        JMP, JMP_IF_TRUE, JMP_IF_FALSE, CALL, RETURN, FOR_EACH,
+        JMP, JMP_IF_TRUE, JMP_IF_FALSE, CALL, CALL_NA, RETURN, FOR_EACH,
 
         // Операції для роботи з пам'яттю
         LOAD_CONST, LOAD_GLOBAL, STORE_GLOBAL, LOAD_LOCAL, STORE_LOCAL,
         GET_CELL, LOAD_CELL, STORE_CELL, GET_ATTR,
 
-        LOAD_METHOD, CALL_METHOD,
+        LOAD_METHOD, CALL_METHOD, CALL_METHOD_NA,
 
         MAKE_FUNCTION,
 

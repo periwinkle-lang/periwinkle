@@ -247,9 +247,10 @@ Statement* parser::Parser::parseFunctionDeclaration()
             if (auto lpar = matchToken(LPAR))
             {
                 fnDeclaration->lpar = lpar.value();
-                auto [parameters, variadicParameter] = parseParameters();
+                auto [parameters, variadicParameter, defaultParameters] = parseParameters();
                 fnDeclaration->parameters = parameters;
                 fnDeclaration->variadicParameter = variadicParameter;
+                fnDeclaration->defaultParameters = defaultParameters;
                 if (auto rpar = matchToken(RPAR))
                 {
                     fnDeclaration->rpar = rpar.value();
@@ -264,7 +265,7 @@ Statement* parser::Parser::parseFunctionDeclaration()
                         {
                             throwParserError(
                                 "Інструкція \"функція\" повинна закінчуватись на ключове"
-                                "слово \"кінець\"",
+                                " слово \"кінець\"",
                                 fnDeclaration->keyword);
                         }
                     }
@@ -284,45 +285,86 @@ Statement* parser::Parser::parseFunctionDeclaration()
     return nullptr;
 }
 
-std::pair<
-    std::vector<lexer::Token>,
-    std::optional<lexer::Token> > parser::Parser::parseParameters()
+std::tuple<
+    FunctionDeclaration::parameters_t,
+    FunctionDeclaration::variadicParameter_t,
+    FunctionDeclaration::defaultParameters_t> parser::Parser::parseParameters()
 {
-    std::vector<Token> parameters;
-    std::optional<lexer::Token> variadicParameter = std::nullopt;
+    FunctionDeclaration::parameters_t parameters;
+    FunctionDeclaration::variadicParameter_t variadicParameter = std::nullopt;
+    FunctionDeclaration::defaultParameters_t defaultParameters;
+    enum state_{PARAMETERS, VARIADIC_PARAMETER, DEFAULT_PARAMETERS};
+    state_ state = PARAMETERS; // Стан парсингу параметрів функції
 
     while (peekToken().tokenType != RPAR)
     {
-        if (variadicParameter = parseVariadicParameter())
+        if (auto variadicParameterTmp = parseVariadicParameter())
         {
-            if (peekToken().tokenType != RPAR)
+            switch (state)
             {
+            case DEFAULT_PARAMETERS:
                 throwParserError(
-                    "Варіативний параметр має стояти в кінці списку параметрів функції",
-                    peekToken());
+                    "Варіативний параметр у функції повинен стояти після параметрів "
+                    "та перед іменованими параметрами",
+                    variadicParameterTmp.value()
+                );
+                break;
+            case VARIADIC_PARAMETER:
+                throwParserError(
+                    "Варіативний параметр може бути тільки один",
+                    variadicParameterTmp.value()
+                );
+                break;
+            default:
+                state = VARIADIC_PARAMETER;
+                variadicParameter = variadicParameterTmp;
             }
-            break;
+
+            continue;
+        }
+
+        if (auto defaultParameter = parseDefaultParameter())
+        {
+            state = DEFAULT_PARAMETERS;
+            defaultParameters.push_back(defaultParameter.value());
+            continue;
         }
 
         if (auto identifier = matchToken(ID))
         {
+            switch (state)
+            {
+            case VARIADIC_PARAMETER:
+            case DEFAULT_PARAMETERS:
+                throwParserError(
+                    "Простий параметр має стояти перед варіативним та параметрами за замовчуванням",
+                    identifier.value()
+                );
+                break;
+            default:
+                break;
+            }
+
             parameters.push_back(identifier.value());
-        }
-        else
-        {
-            break;
+            continue;
         }
 
-        if (!matchToken(COMMA))
+        if (matchToken(COMMA))
         {
-            break;
+            continue;
         }
+        else if (peekToken().tokenType != RPAR)
+        {
+            throwParserError("Неправильний синтаксис", peekToken());
+        }
+
+        break;
     }
 
-    return {parameters, variadicParameter};
+    return {parameters, variadicParameter, defaultParameters};
 }
 
-std::optional<lexer::Token> parser::Parser::parseVariadicParameter()
+FunctionDeclaration::variadicParameter_t parser::Parser::parseVariadicParameter()
 {
     auto mark = position;
     if (auto identifier = matchToken(ID))
@@ -330,6 +372,25 @@ std::optional<lexer::Token> parser::Parser::parseVariadicParameter()
         if (matchToken(ELLIPSIS))
         {
             return std::optional(identifier);
+        }
+    }
+
+    position = mark;
+    return std::nullopt;
+}
+
+std::optional<FunctionDeclaration::defaultParameter_t> parser::Parser::parseDefaultParameter()
+{
+    auto mark = position;
+    if (auto id = matchToken(ID))
+    {
+        if (matchToken(EQUAL))
+        {
+            if (auto value = parseRhs())
+            {
+                return std::make_optional<FunctionDeclaration::defaultParameter_t>(
+                    {id.value(), value});
+            }
         }
     }
 
@@ -761,7 +822,9 @@ Expression* parser::Parser::parseCallExpression()
         if (auto lpar = matchToken(LPAR))
         {
             callExpression->lpar = lpar.value();
-            callExpression->arguments = parseArguments();
+            auto [arguments, namedArguments] = parseArguments();
+            callExpression->arguments = arguments;
+            callExpression->namedArguments = namedArguments;
 
             if (auto rpar = matchToken(RPAR))
             {
@@ -774,6 +837,75 @@ Expression* parser::Parser::parseCallExpression()
     position = mark;
     delete callExpression;
     return nullptr;
+}
+
+std::pair<CallExpression::arguments_t,
+    CallExpression::namedArguments_t> parser::Parser::parseArguments()
+{
+    CallExpression::arguments_t arguments;
+    CallExpression::namedArguments_t namedArguments;
+    enum state_ { ARGUMENTS, NAMED_ARGUMENTS };
+    state_ state = ARGUMENTS; // Стан парсингу параметрів функції
+
+    while (peekToken().tokenType != RPAR)
+    {
+        if (peekToken().tokenType == COMMA)
+        {
+            throwParserError("Неправильний синтаксис", peekToken());
+        }
+
+        if (auto namedArgument = parseNamedArgument())
+        {
+            state = NAMED_ARGUMENTS;
+            namedArguments.push_back(namedArgument.value());
+        }
+        else if (auto firstToken = peekToken(); auto rhs = parseRhs())
+        {
+            if (state == NAMED_ARGUMENTS)
+            {
+                throwParserError("Аргументи мають стояти перед іменованими аргументами", firstToken);
+            }
+
+            arguments.push_back(rhs);
+        }
+
+        if (matchToken(COMMA))
+        {
+            if (peekToken().tokenType == RPAR)
+            {
+                throwParserError("Неправильний синтаксис", tokens[position - 1]);
+            }
+
+            continue;
+        }
+        else if (peekToken().tokenType != RPAR)
+        {
+            throwParserError("Неправильний синтаксис", tokens[position - 1]);
+        }
+
+        break;
+    }
+
+    return { arguments, namedArguments };
+}
+
+std::optional<CallExpression::namedArgument_t> parser::Parser::parseNamedArgument()
+{
+    auto mark = position;
+    if (auto id = matchToken(ID))
+    {
+        if (matchToken(EQUAL))
+        {
+            if (auto value = parseRhs())
+            {
+                return std::make_optional<CallExpression::namedArgument_t>(
+                    { id.value(), value });
+            }
+        }
+    }
+
+    position = mark;
+    return std::nullopt;
 }
 
 Expression* parser::Parser::parseLiteralExpression()
@@ -833,30 +965,6 @@ Expression* parser::Parser::parseLiteralExpression()
     }
 
     return nullptr;
-}
-
-std::vector<Expression*> parser::Parser::parseArguments()
-{
-    std::vector<Expression*> arguments;
-
-    while (peekToken().tokenType != RPAR)
-    {
-        if (auto rhs = parseRhs())
-        {
-            arguments.push_back(rhs);
-        }
-        else
-        {
-            break;
-        }
-
-        if (!matchToken(COMMA))
-        {
-            break;
-        }
-    }
-
-    return arguments;
 }
 
 std::optional<Token> parser::Parser::parseAssignmentOperator()

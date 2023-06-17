@@ -24,6 +24,7 @@ namespace vm
         std::vector<std::string> cells;
         std::vector<std::string> freevars;
         std::vector<std::string> argsAsCells; // Імена аргументів, які є комірками
+        std::vector<std::string> defaults; // Імена параметрів за замовчуванням
         // Ключ - номер опкода, значення - номер лінії в коді
         std::map<WORD, WORD> ipToLineno;
 

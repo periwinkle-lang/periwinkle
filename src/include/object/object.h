@@ -3,6 +3,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "types.h"
 
@@ -14,13 +15,27 @@
     }
 
 #define METHOD_TEMPLATE(name, object) \
-    static Object* name(object* o, std::span<Object*> args, ArrayObject* va)
+    static Object* name(object* o, std::span<Object*> args, ArrayObject* va, NamedArgs* na)
 
 namespace vm
 {
     struct Object;
     struct TypeObject;
     struct NativeMethodObject;
+    struct ArrayObject;
+
+    struct NamedArgs
+    {
+        std::vector<std::string>* names;
+        std::vector<Object*> values;
+        u64 count;
+    };
+
+    struct DefaultParameters
+    {
+        std::vector<std::string> names;
+        std::vector<Object*> values;
+    };
 
     enum class ObjectTypes
     {
@@ -40,6 +55,7 @@ namespace vm
         ARRAY, ARRAY_ITERATOR,
         END_ITERATION,
         METHOD_WITH_INSTANCE,
+        STRING_VECTOR_OBJECT,
     };
 
     enum class ObjectCompOperator
@@ -50,7 +66,7 @@ namespace vm
     using unaryFunction      = vm::Object*(*)(Object*);
     using binaryFunction     = vm::Object*(*)(Object*, Object*);
     using ternaryFunction    = vm::Object*(*)(Object*, Object*, Object*);
-    using callFunction       = vm::Object*(*)(Object*, Object**&, u64);
+    using callFunction       = vm::Object*(*)(Object*, Object**&, u64, NamedArgs*);
     using comparisonFunction = vm::Object*(*)(Object*, Object*, ObjectCompOperator);
 
     struct ObjectOperators
@@ -79,7 +95,7 @@ namespace vm
         TypeObject* objectType = &typeObjectType;
 
         // Викликає об'єкт
-        static Object* call(Object* callable, Object**& sp, u64 argc);
+        static Object* call(Object* callable, Object**& sp, u64 argc, NamedArgs* namedArgs=nullptr);
 
         // Викликає операції порівяння для вхідних об'єктів
         static Object* compare(Object* o1, Object* o2, ObjectCompOperator op);

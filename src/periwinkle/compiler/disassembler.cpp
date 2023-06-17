@@ -11,6 +11,7 @@
 #include "bool_object.h"
 #include "string_object.h"
 #include "real_object.h"
+#include "string_vector_object.h"
 #include "plogger.h"
 
 using namespace compiler;
@@ -39,6 +40,9 @@ int compiler::Disassembler::opCodeLenArguments(OpCode code)
     case CALL_METHOD:
     case FOR_EACH:
         return 1;
+    case CALL_NA:
+    case CALL_METHOD_NA:
+        return 2;
     default:
         return 0;
     }
@@ -76,7 +80,17 @@ std::string compiler::Disassembler::getValueAsString(vm::Object* object)
         std::stringstream ss;
         ss << "<CodeObject " << ((vm::CodeObject*)object)->name << ": " << object << ">";
         return ss.str();
-
+    }
+    case STRING_VECTOR_OBJECT:
+    {
+        std::stringstream ss;
+        const auto& args = ((vm::StringVectorObject*)object)->value;
+        ss << args[0];
+        for (size_t i = 1; i < args.size(); ++i)
+        {
+            ss << ", " << args[i];
+        }
+        return ss.str();
     }
     default:
         plog::fatal << "Не реалізовано для типу: \"" << object->objectType->name << "\"";
@@ -105,8 +119,9 @@ std::string compiler::Disassembler::disassemble(vm::CodeObject* codeObject)
         out << std::left << std::setw(16);
         out << vm::stringEnum::enumToString(op);
 
-        int argumentLen = opCodeLenArguments(op);
-        if (argumentLen == 1)
+        switch (opCodeLenArguments(op))
+        {
+        case 1:
         {
             vm::WORD argument = codeObject->code[++ip];
             out << argument;
@@ -120,7 +135,7 @@ std::string compiler::Disassembler::disassemble(vm::CodeObject* codeObject)
                 }
             }
             else if (op == STORE_GLOBAL || op == LOAD_GLOBAL
-                || op == GET_ATTR  || op == LOAD_METHOD)
+                || op == GET_ATTR || op == LOAD_METHOD)
             {
                 auto& name = codeObject->names[argument];
                 out << "(" << name << ")";
@@ -158,10 +173,24 @@ std::string compiler::Disassembler::disassemble(vm::CodeObject* codeObject)
                 }
                 out << "(" << name << ")";
             }
+            break;
         }
+        case 2:
+        {
+            vm::WORD argument1 = codeObject->code[++ip];
+            vm::WORD argument2 = codeObject->code[++ip];
+            out << argument1;
 
+            out << ", " << argument2;
+
+            if (op == CALL_NA || op == CALL_METHOD_NA)
+            {
+                out << "(" << getValueAsString(codeObject->constants[argument2]) << ")";
+            }
+            break;
+        }
+        }
         out << std::endl;
-
     }
 
     for (auto value : codeObjects)

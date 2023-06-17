@@ -16,6 +16,8 @@ namespace vm
         static StringObject* create(const std::u32string& value);
     };
 
+    extern StringObject P_emptyStr;
+
     struct StringIterObject : Object
     {
         size_t position;

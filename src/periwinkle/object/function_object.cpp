@@ -1,10 +1,15 @@
-﻿#include "function_object.h"
-#include "utils.h"
-#include "vm.h"
+﻿#include <algorithm>
+
+#include "function_object.h"
 #include "string_object.h"
 #include "int_object.h"
 #include "array_object.h"
 #include "native_method_object.h"
+#include "string_vector_object.h"
+#include "vm.h"
+#include "validate_args.h"
+
+#include "plogger.h"
 
 using namespace vm;
 
@@ -40,42 +45,64 @@ static Frame* frameFromFunctionObject(FunctionObject* fn)
     return newFrame;
 }
 
-Object* fnCall(Object* callable, Object**& sp, WORD argc)
+Object* fnCall(Object* callable, Object**& sp, WORD argc, NamedArgs* namedArgs)
 {
     auto fn = (FunctionObject*)callable;
     ArrayObject* variadicParameter = nullptr;
+    auto defaultCount = fn->code->defaults.size();
+    std::vector<size_t> namedArgIndexes;
+
+    validateCall(
+        fn->code->arity, &fn->code->defaults, fn->code->isVariadic, fn->code->name,
+        false, argc, namedArgs, &namedArgIndexes
+    );
+
     if (fn->code->isVariadic)
     {
-        if (fn->code->arity > argc)
-        {
-            VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
-                utils::format(
-                    "Функція \"%s\" очікує мінімум %u аргументів, натомість передано %u",
-                    fn->code->name.c_str(), fn->code->arity, argc)
-            );
-        }
-
         variadicParameter = ArrayObject::create();
 
-        if (auto variadicCount = argc - fn->code->arity; variadicCount > 0)
+        if (auto variadicCount = argc - (fn->code->arity - defaultCount); variadicCount > 0)
         {
-            static auto arrayPush =
-                ((NativeMethodObject*)arrayObjectType.attributes["додати"])->method;
-            for (WORD i = variadicCount; i > 0 ; --i)
+            for (WORD i = variadicCount; i > 0; --i)
             {
-                arrayPush(variadicParameter, { sp - i + 1, 1 }, nullptr);
+                variadicParameter->items.push_back(*(sp - i + 1));
             }
             sp -= variadicCount;
+            argc -= variadicCount; // Змінюється значення вхідного аргументу
         }
         *(++sp) = variadicParameter;
     }
-    else if (fn->code->arity != argc)
+
+    if (defaultCount)
     {
-        VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
-            utils::format("Функція \"%s\" очікує %u аргументів, натомість передано %u",
-                fn->code->name.c_str(), fn->code->arity, argc)
-        );
+        if (namedArgs != nullptr)
+        {
+            for (size_t i = 0, j = namedArgIndexes.size(); i < defaultCount; ++i)
+            {
+                if (j)
+                {
+                    auto it = std::find(namedArgIndexes.begin(), namedArgIndexes.end(), i);
+                    if (it != namedArgIndexes.end())
+                    {
+                        auto index = it - namedArgIndexes.begin();
+                        *(++sp) = namedArgs->values[namedArgs->count - index - 1];
+                        j--;
+                        continue;
+                    }
+                }
+
+                *(++sp) = fn->defaultArguments[defaultCount - i - 1];
+            }
+        }
+        else
+        {
+            for (size_t i = 0, argLack = fn->code->arity - argc; i < argLack; ++i)
+            {
+                *(++sp) = fn->defaultArguments[argLack - i - 1];
+            }
+        }
     }
+
     auto frame = frameFromFunctionObject(fn);
     auto prevVm = VirtualMachine::currentVm;
     auto newVM = VirtualMachine(frame);

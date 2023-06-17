@@ -6,6 +6,7 @@
 #include <optional>
 #include <functional>
 #include <map>
+#include <tuple>
 
 #include "types.h"
 #include "lexer.h"
@@ -47,10 +48,12 @@ namespace parser
         Statement* parseElseOrIfStatement();
         Statement* parseElseStatement();
         Statement* parseFunctionDeclaration();
-        std::pair<
-            std::vector<lexer::Token>,
-            std::optional<lexer::Token> > parseParameters();
-        std::optional<lexer::Token> parseVariadicParameter();
+        std::tuple<
+            FunctionDeclaration::parameters_t,
+            FunctionDeclaration::variadicParameter_t,
+            FunctionDeclaration::defaultParameters_t> parseParameters();
+        FunctionDeclaration::variadicParameter_t parseVariadicParameter();
+        std::optional<FunctionDeclaration::defaultParameter_t> parseDefaultParameter();
         Statement* parseReturnStatement();
         Statement* parseForEachStatement();
 
@@ -70,8 +73,9 @@ namespace parser
         Expression* parseAttributeExpression();
         Expression* parseVariableExpression();
         Expression* parseCallExpression();
+        std::pair<CallExpression::arguments_t, CallExpression::namedArguments_t> parseArguments();
+        std::optional<CallExpression::namedArgument_t> parseNamedArgument();
         Expression* parseLiteralExpression();
-        std::vector<Expression*> parseArguments();
 
         std::optional<lexer::Token> parseAssignmentOperator();
         std::optional<lexer::Token> parseUnaryOperator();

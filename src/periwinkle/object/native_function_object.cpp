@@ -1,47 +1,44 @@
 ﻿#include "native_function_object.h"
-#include "vm.h"
 #include "utils.h"
 #include "native_method_object.h"
+#include "string_vector_object.h"
+#include "vm.h"
+#include "validate_args.h"
 
 using namespace vm;
 
-Object* nativeCall(Object* callable, Object**& sp, WORD argc)
+Object* nativeCall(NativeFunctionObject* nativeFunction, Object**& sp, WORD argc, NamedArgs* namedArgs)
 {
-   auto nativeFunction = (NativeFunctionObject*)callable;
-   if (nativeFunction->isVariadic)
-   {
-       if (nativeFunction->arity > argc)
-       {
-           VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
-               utils::format("Функція \"%s\" очікує мінімум %u аргументів,"
-                   "натомість було передано %u",
-                   nativeFunction->name.c_str(), nativeFunction->arity, argc));
-       }
-   }
-   else if (nativeFunction->arity != argc)
-   {
-       VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
-           utils::format("Функція \"%s\" очікує мінімум %u аргументів,"
-               "натомість було передано %u",
-               nativeFunction->name.c_str(), nativeFunction->arity, argc));
-   }
+    std::vector<std::string>* defaultNames = nullptr;
+    if (nativeFunction->defaults)
+    {
+        defaultNames = &nativeFunction->defaults->names;
+    }
+    std::vector<size_t> namedArgIndexes;
 
-   auto variadicParameter = ArrayObject::create();
-   if (auto variadicCount = argc - nativeFunction->arity; variadicCount > 0)
-   {
-       static auto arrayPush =
-           ((NativeMethodObject*)arrayObjectType.attributes["додати"])->method;
-       for (WORD i = variadicCount; i > 0; --i)
-       {
-           arrayPush(variadicParameter, { sp - i + 1, 1 }, nullptr);
-       }
-   }
+    validateCall(
+        nativeFunction->arity, defaultNames, nativeFunction->isVariadic,
+        nativeFunction->name, false, argc, namedArgs, &namedArgIndexes
+    );
 
-   auto result = nativeFunction->function({sp - argc + 1,
-       nativeFunction->arity}, variadicParameter);
-   delete variadicParameter;
-   sp -= argc + 1;
-   return result;
+    auto variadicParameter = ArrayObject::create();
+    if (nativeFunction->isVariadic)
+    {
+        auto variadicCount = argc + (namedArgs != nullptr ? namedArgs->count : 0) - nativeFunction->arity;
+        for (WORD i = variadicCount; i > 0; --i)
+        {
+            variadicParameter->items.push_back(*(sp - i + 1));
+        }
+        sp -= variadicCount;
+        argc -= variadicCount; // Змінюється значення вхідного аргументу
+    }
+    auto result = nativeFunction->function(
+        {sp - (argc != 0 ? argc - 1 : 0), argc},
+        variadicParameter, namedArgs
+    );
+    delete variadicParameter;
+    sp -= argc + 1;
+    return result;
 }
 
 namespace vm
@@ -54,18 +51,20 @@ namespace vm
         .alloc = DEFAULT_ALLOC(NativeFunctionObject),
         .operators =
         {
-            .call = nativeCall,
+            .call = (callFunction)nativeCall,
         },
     };
 }
 
 NativeFunctionObject* vm::NativeFunctionObject::create(
-    int arity, bool isVariadic, std::string name, nativeFunction function)
+    int arity, bool isVariadic, std::string name,
+    nativeFunction function, DefaultParameters* defaults)
 {
     auto nativeFunction = (NativeFunctionObject*)allocObject(&nativeFunctionObjectType);
-    nativeFunction->arity = arity;
+    nativeFunction->arity = arity + (defaults ? defaults->names.size() : 0);
     nativeFunction->isVariadic = isVariadic;
     nativeFunction->name = name;
     nativeFunction->function = function;
+    nativeFunction->defaults = defaults;
     return nativeFunction;
 }
