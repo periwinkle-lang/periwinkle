@@ -18,27 +18,6 @@ static Object* nativeMethodCall(NativeMethodObject* callable, Object**& sp, WORD
             " до якого відноситься метод");
     }
 
-    //if (namedArgs)
-    //{
-    //    for (auto& argName : *namedArgs->names)
-    //    {
-    //        auto it = std::find(
-    //            callable->defaults->names.begin(),
-    //            callable->defaults->names.end(),
-    //            argName
-    //        );
-
-    //        if (it != callable->defaults->names.end())
-    //        {
-    //            VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
-    //                utils::format(
-    //                    "Метод \"%s\" не має параметра за замовчуванням з іменем \"%s\"",
-    //                    callable->name.c_str(), argName.c_str())
-    //            );
-    //        }
-    //    }
-    //}
-
     std::span<Object*> args{ firstArg + 1, argc - 1 };
     auto result = callNativeMethod(*firstArg, callable, args, namedArgs);
     sp -= argc + 1; // +1 для методу
