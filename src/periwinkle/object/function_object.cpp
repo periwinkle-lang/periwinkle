@@ -3,7 +3,7 @@
 #include "function_object.h"
 #include "string_object.h"
 #include "int_object.h"
-#include "array_object.h"
+#include "list_object.h"
 #include "native_method_object.h"
 #include "string_vector_object.h"
 #include "vm.h"
@@ -48,7 +48,7 @@ static Frame* frameFromFunctionObject(FunctionObject* fn)
 Object* fnCall(Object* callable, Object**& sp, WORD argc, NamedArgs* namedArgs)
 {
     auto fn = (FunctionObject*)callable;
-    ArrayObject* variadicParameter = nullptr;
+    ListObject* variadicParameter = nullptr;
     auto defaultCount = fn->code->defaults.size();
     std::vector<size_t> namedArgIndexes;
 
@@ -59,7 +59,7 @@ Object* fnCall(Object* callable, Object**& sp, WORD argc, NamedArgs* namedArgs)
 
     if (fn->code->isVariadic)
     {
-        variadicParameter = ArrayObject::create();
+        variadicParameter = ListObject::create();
 
         if (auto variadicCount = argc - (fn->code->arity - defaultCount); variadicCount > 0)
         {

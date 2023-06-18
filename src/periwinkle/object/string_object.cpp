@@ -46,7 +46,7 @@ static bool tryConvertToString(Object* o, std::u32string& str)
             &IndexErrorObjectType, "Індекс виходить за межі стрічки"); \
     }
 
-static Object* strInit(Object* o, std::span<Object*> args, ArrayObject* va, NamedArgs* na)
+static Object* strInit(Object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
 {
     return Object::toString(args[0]);
 }
@@ -199,13 +199,13 @@ METHOD_TEMPLATE(strReplace, StringObject)
     return StringObject::create(newStr);
 }
 
-Object* strJoin(std::span<Object*> args, ArrayObject* va)
+Object* strJoin(std::span<Object*> args, ListObject* va)
 {
     StringObject* separator;
-    ArrayObject* objects;
+    ListObject* objects;
     static ArgParser argParser{
         {&separator, stringObjectType, "роздільник"},
-        {&objects, arrayObjectType, "обєкти"},
+        {&objects, listObjectType, "обєкти"},
     };
     argParser.parse(args);
 
@@ -364,7 +364,7 @@ METHOD_TEMPLATE(strSplit, StringObject)
     };
     argParser.parse(args);
 
-   auto strs = ArrayObject::create();
+   auto strs = ListObject::create();
     size_t start = 0, end = o->value.find(delimiter->value);
 
     while (end != std::string::npos) {

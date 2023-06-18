@@ -5,7 +5,7 @@
 
 #include "object.h"
 #include "vm.h"
-#include "array_object.h"
+#include "list_object.h"
 
 #define NATIVE_FUNCTION(name, arity, variadic, func, defaults)     \
     vm::NativeFunctionObject{&vm::nativeFunctionObjectType, arity, \
@@ -18,7 +18,7 @@ namespace vm
 {
     extern TypeObject nativeFunctionObjectType;
     // Функція приймає масив об'єктів та повертає посилання на результат
-    using nativeFunction = Object*(*)(std::span<Object*>, ArrayObject*, NamedArgs*);
+    using nativeFunction = Object*(*)(std::span<Object*>, ListObject*, NamedArgs*);
 
     struct NativeFunctionObject : Object
     {

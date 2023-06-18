@@ -23,7 +23,7 @@ Object* nativeCall(NativeFunctionObject* nativeFunction, Object**& sp, WORD argc
         nativeFunction->name, false, argc, namedArgs, &namedArgIndexes
     );
 
-    auto variadicParameter = ArrayObject::create();
+    auto variadicParameter = ListObject::create();
     if (nativeFunction->isVariadic)
     {
         auto variadicCount = argc - arityWithoutDefaults;

@@ -73,7 +73,7 @@ Object* vm::callNativeMethod(Object* instance, NativeMethodObject* method, std::
         method->name, true, argc, namedArgs, &namedArgIndexes
     );
 
-    auto variadicParameter = ArrayObject::create();
+    auto variadicParameter = ListObject::create();
     if (method->isVariadic)
     {
         auto variadicCount = argc - arityWithoutDefaults;

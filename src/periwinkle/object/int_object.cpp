@@ -29,7 +29,7 @@ static Object* name(Object* a, Object* b)     \
     return IntObject::create(result);         \
 }
 
-static Object* intInit(Object* o, std::span<Object*> args, ArrayObject* va, NamedArgs* na)
+static Object* intInit(Object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
 {
     return Object::toInteger(args[0]);
 }

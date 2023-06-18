@@ -15,14 +15,14 @@
     }
 
 #define METHOD_TEMPLATE(name, object) \
-    static Object* name(object* o, std::span<Object*> args, ArrayObject* va, NamedArgs* na)
+    static Object* name(object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
 
 namespace vm
 {
     struct Object;
     struct TypeObject;
     struct NativeMethodObject;
-    struct ArrayObject;
+    struct ListObject;
 
     struct NamedArgs
     {
@@ -52,7 +52,7 @@ namespace vm
         NULL_,
         EXCEPTION,
         CELL,
-        ARRAY, ARRAY_ITERATOR,
+        LIST, LIST_ITERATOR,
         END_ITERATION,
         METHOD_WITH_INSTANCE,
         STRING_VECTOR_OBJECT,

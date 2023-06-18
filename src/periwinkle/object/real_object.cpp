@@ -42,7 +42,7 @@ static Object* name(Object* o1, Object* o2)     \
     return RealObject::create(result);          \
 }
 
-static Object* realInit(Object* o, std::span<Object*> args, ArrayObject* va, NamedArgs* na)
+static Object* realInit(Object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
 {
     return Object::toReal(args[0]);
 }

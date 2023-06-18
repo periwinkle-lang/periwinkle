@@ -5,7 +5,7 @@
 
 #include "object.h"
 #include "vm.h"
-#include "array_object.h"
+#include "list_object.h"
 
 #define NATIVE_METHOD(name, arity, variadic, method, classType, defaults)  \
     vm::NativeMethodObject{&vm::nativeMethodObjectType, arity + 1,         \
@@ -17,7 +17,7 @@
 namespace vm
 {
     extern TypeObject nativeMethodObjectType;
-    using nativeMethod = Object*(*)(Object*, std::span<Object*>, ArrayObject*, NamedArgs*);
+    using nativeMethod = Object*(*)(Object*, std::span<Object*>, ListObject*, NamedArgs*);
 
     struct NativeMethodObject : Object
     {

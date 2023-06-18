@@ -5,7 +5,7 @@
 #include "null_object.h"
 #include "string_object.h"
 #include "utils.h"
-#include "array_object.h"
+#include "list_object.h"
 #include "native_function_object.h"
 #include "int_object.h"
 #include "bool_object.h"
@@ -44,7 +44,7 @@ static std::u32string joinObjectString(
     return U"";
 }
 
-static Object* printNative(std::span<Object*> args, ArrayObject* va, NamedArgs* na)
+static Object* printNative(std::span<Object*> args, ListObject* va, NamedArgs* na)
 {
     StringObject* separator;
     static ArgParser argParser{
@@ -56,7 +56,7 @@ static Object* printNative(std::span<Object*> args, ArrayObject* va, NamedArgs* 
     return &P_null;
 }
 
-static Object* printLnNative(std::span<Object*> args, ArrayObject* va, NamedArgs* na)
+static Object* printLnNative(std::span<Object*> args, ListObject* va, NamedArgs* na)
 {
     StringObject* separator;
     static ArgParser argParser{
@@ -68,7 +68,7 @@ static Object* printLnNative(std::span<Object*> args, ArrayObject* va, NamedArgs
     return &P_null;
 }
 
-static Object* readLineNative(std::span<Object*> args, ArrayObject* va, NamedArgs* na)
+static Object* readLineNative(std::span<Object*> args, ListObject* va, NamedArgs* na)
 {
     StringObject* prompt;
     static ArgParser argParser{
@@ -80,7 +80,7 @@ static Object* readLineNative(std::span<Object*> args, ArrayObject* va, NamedArg
     return StringObject::create(line);
 }
 
-static Object* getIterator(std::span<Object*> args, ArrayObject* va, NamedArgs* na)
+static Object* getIterator(std::span<Object*> args, ListObject* va, NamedArgs* na)
 {
     return Object::getIter(args[0]);
 }
@@ -102,7 +102,7 @@ builtin_t* vm::getBuiltin()
             BUILTIN_TYPE(boolObjectType),
             BUILTIN_TYPE(stringObjectType),
             BUILTIN_TYPE(realObjectType),
-            BUILTIN_TYPE(arrayObjectType),
+            BUILTIN_TYPE(listObjectType),
 
             {"КінецьІтерації", &P_endIter},
         }
