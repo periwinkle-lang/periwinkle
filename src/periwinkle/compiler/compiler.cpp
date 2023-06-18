@@ -182,7 +182,7 @@ void compiler::Compiler::compileContinueStatement(ContinueStatement* statement)
     }
     else
     {
-        throwCompileError("Оператор \"продовжити\" знаходиться поза циклом!", statement->continue_);
+        throwCompileError("Оператор \"пропустити\" знаходиться поза циклом!", statement->continue_);
     }
 }
 

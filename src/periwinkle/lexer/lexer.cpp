@@ -60,7 +60,7 @@ const static std::vector<std::pair<TokenType, regex>> tokenTypesRegexList
     {TokenType::END,             uregex("^кінець" WB)},
     {TokenType::WHILE,           uregex("^поки" WB)},
     {TokenType::BREAK,           uregex("^завершити" WB)},
-    {TokenType::CONTINUE,        uregex("^продовжити" WB)},
+    {TokenType::CONTINUE,        uregex("^пропустити" WB)},
     {TokenType::IF,              uregex("^якщо" WB)},
     {TokenType::ELSE_IF,         uregex("^або якщо" WB)},
     {TokenType::OR,              uregex("^або" WB)},
