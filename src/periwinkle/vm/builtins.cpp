@@ -21,7 +21,10 @@
 
 using namespace vm;
 
+static StringObject strWithSpace = { {.objectType = &stringObjectType}, U" " };
+
 static DefaultParameters readLineDefaults = { {"підказка"}, {&P_emptyStr} };
+static DefaultParameters printDefaults = { {"роздільник"}, {&strWithSpace} };
 
 static std::u32string joinObjectString(
     const std::u32string& sep, const std::vector<Object*>& objects)
@@ -43,26 +46,36 @@ static std::u32string joinObjectString(
 
 static Object* printNative(std::span<Object*> args, ArrayObject* va, NamedArgs* na)
 {
-    auto str = joinObjectString(U" ", va->items);
+    StringObject* separator;
+    static ArgParser argParser{
+        {&separator, stringObjectType, "роздільник"}
+    };
+    argParser.parse(args, &printDefaults, na);
+    auto str = joinObjectString(separator->value, va->items);
     std::cout << utils::utf32to8(str) << std::flush;
     return &P_null;
 }
 
 static Object* printLnNative(std::span<Object*> args, ArrayObject* va, NamedArgs* na)
 {
-    auto str = joinObjectString(U" ", va->items);
+    StringObject* separator;
+    static ArgParser argParser{
+        {&separator, stringObjectType, "роздільник"}
+    };
+    argParser.parse(args, &printDefaults, na);
+    auto str = joinObjectString(separator->value, va->items);
     std::cout << utils::utf32to8(str) << std::endl;
     return &P_null;
 }
 
 static Object* readLineNative(std::span<Object*> args, ArrayObject* va, NamedArgs* na)
 {
-    StringObject* a;
+    StringObject* prompt;
     static ArgParser argParser{
-        {&a, stringObjectType, "а"},
+        {&prompt, stringObjectType, "підказка"},
     };
     argParser.parse(args, &readLineDefaults, na);
-    std::cout << a->asUtf8();
+    std::cout << prompt->asUtf8();
     std::string line = utils::readline();
     return StringObject::create(line);
 }
@@ -80,8 +93,8 @@ builtin_t* vm::getBuiltin()
         builtin = new builtin_t();
         builtin->insert(
         {
-            BUILTIN_FUNCTION("друк", 0, true, printNative, nullptr),
-            BUILTIN_FUNCTION("друкр", 0, true, printLnNative, nullptr),
+            BUILTIN_FUNCTION("друк", 0, true, printNative, &printDefaults),
+            BUILTIN_FUNCTION("друкр", 0, true, printLnNative, &printDefaults),
             BUILTIN_FUNCTION("зчитати", 0, false, readLineNative, &readLineDefaults),
             BUILTIN_FUNCTION("ітератор", 1, false, getIterator, nullptr),
 

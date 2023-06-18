@@ -9,10 +9,12 @@ using namespace vm;
 
 Object* nativeCall(NativeFunctionObject* nativeFunction, Object**& sp, WORD argc, NamedArgs* namedArgs)
 {
+    auto arityWithoutDefaults = nativeFunction->arity;
     std::vector<std::string>* defaultNames = nullptr;
     if (nativeFunction->defaults)
     {
         defaultNames = &nativeFunction->defaults->names;
+        arityWithoutDefaults -= defaultNames->size();
     }
     std::vector<size_t> namedArgIndexes;
 
@@ -24,7 +26,7 @@ Object* nativeCall(NativeFunctionObject* nativeFunction, Object**& sp, WORD argc
     auto variadicParameter = ArrayObject::create();
     if (nativeFunction->isVariadic)
     {
-        auto variadicCount = argc + (namedArgs != nullptr ? namedArgs->count : 0) - nativeFunction->arity;
+        auto variadicCount = argc - arityWithoutDefaults;
         for (WORD i = variadicCount; i > 0; --i)
         {
             variadicParameter->items.push_back(*(sp - i + 1));

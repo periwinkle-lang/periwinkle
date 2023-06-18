@@ -57,12 +57,14 @@ NativeMethodObject* vm::NativeMethodObject::create(
 Object* vm::callNativeMethod(Object* instance, NativeMethodObject* method, std::span<Object*> args,
     NamedArgs* namedArgs)
 {
+    auto arityWithoutDefaults = method->arity;
     auto argc = args.size() + 1; // +1 для екземпляра
 
     std::vector<std::string>* defaultNames = nullptr;
     if (method->defaults)
     {
         defaultNames = &method->defaults->names;
+        arityWithoutDefaults -= defaultNames->size();
     }
     std::vector<size_t> namedArgIndexes;
 
@@ -74,7 +76,7 @@ Object* vm::callNativeMethod(Object* instance, NativeMethodObject* method, std::
     auto variadicParameter = ArrayObject::create();
     if (method->isVariadic)
     {
-        auto variadicCount = argc + (namedArgs != nullptr ? namedArgs->count : 0) - method->arity;
+        auto variadicCount = argc - arityWithoutDefaults;
         for (WORD i = 0; i < variadicCount; ++i)
         {
             variadicParameter->items.push_back(args[argc - variadicCount - 1 + i]);
