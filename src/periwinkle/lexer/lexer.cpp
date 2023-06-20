@@ -24,7 +24,8 @@ std::string Lexer::peek(size_t offset)
 }
 
 // Аналогічно метасимволу b(працює лише з ascii символами), але для українських слів
-#define WB "(?=[^а-яА-ЯїієґЇІЄҐ]|$)"
+#define WB "(?=[^а-щА-ЩьюяїієґЬЮЯЇІЄҐ]|$)"
+static regex badLetters = uregex("^[ыъэ]");
 
 const static std::vector<std::pair<TokenType, regex>> tokenTypesRegexList
 {
@@ -70,7 +71,7 @@ const static std::vector<std::pair<TokenType, regex>> tokenTypesRegexList
     {TokenType::EACH,            uregex("^кожній" WB)},
     {TokenType::EACH_FROM,       uregex("^з" WB)},
 
-    {TokenType::ID,              uregex("^[а-яА-ЯїієґЇІЄҐ_][а-яА-ЯїієґЇІЄҐ0-9_]*")},
+    {TokenType::ID,              uregex("^[а-щА-ЩьюяїієґЬЮЯЇІЄҐ_][а-щА-ЩьюяїієґЬЮЯЇІЄҐ0-9_]*")},
     {TokenType::LPAR,            uregex("^\\(")},
     {TokenType::RPAR,            uregex("^\\)")},
     {TokenType::COMMA,           uregex("^,")},
@@ -142,7 +143,8 @@ bool Lexer::nextToken()
             }
         }
         throwLexerError(
-            "Знайдено невідомий символ",
+            badLetters.match(subject) ?
+                "Вибач, але я не розумію російську язику" : "Знайдено невідомий символ",
             utils::linenoFromPosition(code, pos),
             utils::positionInLineFromPosition(code, pos) + 1);
     }
