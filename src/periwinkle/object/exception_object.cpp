@@ -48,5 +48,8 @@ namespace vm
     EXCEPTION_EXTEND(ExceptionObjectType, IndexError, "ПомилкаІндексу",
         { .toString = exceptionToString });
 
+    EXCEPTION_EXTEND(ExceptionObjectType, DivisionByZeroError, "ПомилкаДіленняНаНуль",
+        { .toString = exceptionToString } );
+
     NotImplementedErrorObject P_NotImplemented{ {{.objectType = &NotImplementedErrorObjectType}} };
 }

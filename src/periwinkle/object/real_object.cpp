@@ -103,7 +103,20 @@ static Object* realToBool(Object* a)
 BINARY_OP(realAdd, +)
 BINARY_OP(realSub, -)
 BINARY_OP(realMul, *)
-BINARY_OP(realDiv, / )
+
+static Object* realDiv(Object* o1, Object* o2)
+{
+    double a, b;
+    TO_DOUBLE(o1, a);
+    TO_DOUBLE(o2, b);
+    if (b == 0)
+    {
+        VirtualMachine::currentVm->throwException(
+            &DivisionByZeroErrorObjectType, "Ділення на нуль");
+    }
+    double result = a / b;
+    return RealObject::create(result);
+}
 
 static Object* realFloorDiv(Object* o1, Object* o2)
 {

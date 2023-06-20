@@ -88,6 +88,11 @@ static Object* intDiv(Object* a, Object* b)
 {
     CHECK_INT(a);
     CHECK_INT(b);
+    if (((IntObject*)b)->value == 0)
+    {
+        VirtualMachine::currentVm->throwException(
+            &DivisionByZeroErrorObjectType, "Ділення на нуль");
+    }
     auto arg1 = (IntObject*)a;
     auto arg2 = (IntObject*)b;
     auto result = (double)arg1->value / (double)arg2->value;
