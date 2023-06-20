@@ -15,7 +15,6 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "Нич",
-        .type = ObjectTypes::NULL_,
         .alloc = DEFAULT_ALLOC(NullObject),
         .operators =
         {

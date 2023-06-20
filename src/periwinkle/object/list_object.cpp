@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "object.h"
 #include "list_object.h"
 #include "string_object.h"
 #include "bool_object.h"
@@ -16,8 +17,8 @@
 using namespace vm;
 
 
-#define CHECK_LIST(object)                             \
-    if (object->objectType->type != ObjectTypes::LIST) \
+#define CHECK_LIST(object)                     \
+    if (OBJECT_IS(object, &listObjectType) == false) \
         return &P_NotImplemented;
 
 #define CHECK_INDEX(index, listObject)                                \
@@ -330,7 +331,6 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "Список",
-        .type = ObjectTypes::LIST,
         .alloc = DEFAULT_ALLOC(ListObject),
         .constructor = new NATIVE_METHOD("конструктор", 0, true, listInit, listObjectType, nullptr),
         .operators =
@@ -365,7 +365,6 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "ІтераторСписку",
-        .type = ObjectTypes::LIST_ITERATOR,
         .alloc = DEFAULT_ALLOC(ListIterObject),
         .attributes =
         {

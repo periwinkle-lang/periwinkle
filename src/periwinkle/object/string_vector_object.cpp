@@ -8,7 +8,6 @@ namespace vm
     {
         .base = nullptr,
         .name = "StringVectorObject",
-        .type = ObjectTypes::STRING_VECTOR_OBJECT,
         .alloc = DEFAULT_ALLOC(StringVectorObject),
     };
 }

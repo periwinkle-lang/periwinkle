@@ -8,7 +8,6 @@ using namespace vm;
     {                                                   \
         .base = &baseType,                              \
         .name = excName,                                \
-        .type = ObjectTypes::EXCEPTION,                 \
         .alloc = DEFAULT_ALLOC(exc##Object),            \
         .operators = excOperators,                      \
     };
@@ -25,7 +24,6 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "Виняток",
-        .type = ObjectTypes::EXCEPTION,
         .alloc = DEFAULT_ALLOC(ExceptionObject),
         .operators =
         {

@@ -17,6 +17,9 @@
 #define METHOD_TEMPLATE(name, object) \
     static Object* name(object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
 
+// Порівнює тип об'єкта з переданим типом
+#define OBJECT_IS(object, type) ((object)->objectType == type)
+
 namespace vm
 {
     struct Object;
@@ -35,27 +38,6 @@ namespace vm
     {
         std::vector<std::string> names;
         std::vector<Object*> values;
-    };
-
-    enum class ObjectTypes
-    {
-        OBJECT,
-        TYPE,
-        CODE,
-        FUNCTION,
-        NATIVE_FUNCTION,
-        NATIVE_METHOD,
-        INTEGER,
-        BOOL,
-        STRING, STRING_ITERATOR,
-        REAL,
-        NULL_,
-        EXCEPTION,
-        CELL,
-        LIST, LIST_ITERATOR,
-        END_ITERATION,
-        METHOD_WITH_INSTANCE,
-        STRING_VECTOR_OBJECT,
     };
 
     enum class ObjectCompOperator
@@ -146,7 +128,6 @@ namespace vm
     {
         TypeObject* base; // Батьківський тип
         std::string name;
-        ObjectTypes type;
         Object* (*alloc)(void); // Створення нового екземпляра
         NativeMethodObject* constructor; // Ініціалізація екземпляра
         NativeMethodObject* descructor;

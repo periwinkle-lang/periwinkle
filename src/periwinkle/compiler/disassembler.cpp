@@ -6,12 +6,15 @@
 #include "disassembler.h"
 #include "types.h"
 #include "utils.h"
+#include "object.h"
 #include "native_function_object.h"
 #include "int_object.h"
 #include "bool_object.h"
 #include "string_object.h"
 #include "real_object.h"
 #include "string_vector_object.h"
+#include "code_object.h"
+#include "null_object.h"
 #include "plogger.h"
 
 using namespace compiler;
@@ -50,38 +53,35 @@ int compiler::Disassembler::opCodeLenArguments(OpCode code)
 
 std::string compiler::Disassembler::getValueAsString(vm::Object* object)
 {
-    using enum vm::ObjectTypes;
-    switch (object->objectType->type)
-    {
-    case INTEGER:
+    if (OBJECT_IS(object, &vm::intObjectType))
     {
         return std::to_string(((vm::IntObject*)object)->value);
     }
-    case BOOL:
+    else if (OBJECT_IS(object, &vm::boolObjectType))
     {
         return ((vm::BoolObject*)object)->value ? "істина" : "хиба";
     }
-    case STRING:
+    else if (OBJECT_IS(object, &vm::stringObjectType))
     {
         return "\"" + utils::escapeString(((vm::StringObject*)object)->asUtf8()) + "\"";
     }
-    case REAL:
+    else if (OBJECT_IS(object, &vm::realObjectType))
     {
         std::stringstream ss;
         ss << (((vm::RealObject*)object)->value);
         return ss.str();
     }
-    case NULL_:
+    else if (OBJECT_IS(object, &vm::nullObjectType))
     {
         return "нич";
     }
-    case CODE:
+    else if (OBJECT_IS(object, &vm::codeObjectType))
     {
         std::stringstream ss;
         ss << "<CodeObject " << ((vm::CodeObject*)object)->name << ": " << object << ">";
         return ss.str();
     }
-    case STRING_VECTOR_OBJECT:
+    else if (OBJECT_IS(object, &vm::stringVectorObjectType))
     {
         std::stringstream ss;
         const auto& args = ((vm::StringVectorObject*)object)->value;
@@ -92,7 +92,8 @@ std::string compiler::Disassembler::getValueAsString(vm::Object* object)
         }
         return ss.str();
     }
-    default:
+    else
+    {
         plog::fatal << "Не реалізовано для типу: \"" << object->objectType->name << "\"";
     }
 }
@@ -129,7 +130,7 @@ std::string compiler::Disassembler::disassemble(vm::CodeObject* codeObject)
             {
                 auto argumentAsObject = codeObject->constants[argument];
                 out << "(" << getValueAsString(argumentAsObject) << ")";
-                if (argumentAsObject->objectType->type == vm::ObjectTypes::CODE)
+                if (OBJECT_IS(argumentAsObject, &vm::codeObjectType))
                 {
                     codeObjects.push_back((vm::CodeObject*)argumentAsObject);
                 }

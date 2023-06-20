@@ -21,11 +21,11 @@ using namespace parser;
 using enum vm::OpCode;
 using enum parser::NodeKind;
 
-#define FIND_CONST_IDX(OBJECT, OBJECT_TYPES)                              \
+#define FIND_CONST_IDX(OBJECT, OBJECT_TYPE)                               \
     for (vm::WORD i = 0; i < (vm::WORD)codeObject->constants.size(); ++i) \
     {                                                                     \
         auto constant = codeObject->constants[i];                         \
-        if (constant->objectType->type != vm::ObjectTypes::OBJECT_TYPES ) \
+        if (OBJECT_IS(constant, &vm::OBJECT_TYPE) == false)               \
         {                                                                 \
             continue;                                                     \
         }                                                                 \
@@ -631,7 +631,7 @@ vm::WORD compiler::Compiler::booleanConstIdx(bool value)
 {
     for (vm::WORD i = 0; i < (vm::WORD)codeObject->constants.size(); ++i)
     {
-        if (codeObject->constants[i]->objectType->type != vm::ObjectTypes::BOOL)
+        if (OBJECT_IS(codeObject->constants[i], &vm::boolObjectType) == false)
         {
             continue;
         }
@@ -646,17 +646,17 @@ vm::WORD compiler::Compiler::booleanConstIdx(bool value)
 
 vm::WORD compiler::Compiler::realConstIdx(double value)
 {
-    FIND_CONST_IDX(RealObject, REAL)
+    FIND_CONST_IDX(RealObject, realObjectType)
 }
 
 vm::WORD compiler::Compiler::integerConstIdx(i64 value)
 {
-    FIND_CONST_IDX(IntObject, INTEGER)
+    FIND_CONST_IDX(IntObject, intObjectType)
 }
 
 vm::WORD compiler::Compiler::stringVectorIdx(const std::vector<std::string>& value)
 {
-    FIND_CONST_IDX(StringVectorObject, STRING_VECTOR_OBJECT)
+    FIND_CONST_IDX(StringVectorObject, stringVectorObjectType)
 }
 
 vm::WORD compiler::Compiler::stringConstIdx(const std::string& value)
@@ -664,7 +664,7 @@ vm::WORD compiler::Compiler::stringConstIdx(const std::string& value)
     for (vm::WORD i = 0; i < (vm::WORD)codeObject->constants.size(); ++i)
     {
         auto constant = codeObject->constants[i];
-        if (constant->objectType->type != vm::ObjectTypes::STRING)
+        if (OBJECT_IS(constant, &vm::stringObjectType) == false)
         {
             continue;
         }
@@ -681,7 +681,7 @@ vm::WORD compiler::Compiler::nullConstIdx()
 {
     for (vm::WORD i = 0; i < (vm::WORD)codeObject->constants.size(); ++i)
     {
-        if (codeObject->constants[i]->objectType->type == vm::ObjectTypes::NULL_)
+        if (OBJECT_IS(codeObject->constants[i], &vm::nullObjectType))
         {
             return i;
         }

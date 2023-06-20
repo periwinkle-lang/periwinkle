@@ -3,6 +3,7 @@
 #include <cmath>
 #include <limits>
 
+#include "object.h"
 #include "real_object.h"
 #include "native_function_object.h"
 #include "string_object.h"
@@ -15,7 +16,7 @@ using namespace vm;
 
 static bool tryConvertToDouble(Object* o, double& d)
 {
-    if (o->objectType->type != ObjectTypes::INTEGER)
+    if (OBJECT_IS(o, &intObjectType) == false)
     {
         return false;
     }
@@ -23,13 +24,13 @@ static bool tryConvertToDouble(Object* o, double& d)
     return true;
 }
 
-#define TO_DOUBLE(object, d)                           \
-    if (object->objectType->type == ObjectTypes::REAL) \
-        d = ((RealObject*)object)->value;              \
-    else                                               \
-    {                                                  \
-        if (tryConvertToDouble(object, d) == false)    \
-            return &P_NotImplemented;                  \
+#define TO_DOUBLE(object, d)                        \
+    if (OBJECT_IS(object, &realObjectType))         \
+        d = ((RealObject*)object)->value;           \
+    else                                            \
+    {                                               \
+        if (tryConvertToDouble(object, d) == false) \
+            return &P_NotImplemented;               \
     }
 
 #define BINARY_OP(name, op)                     \
@@ -144,7 +145,6 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "Дійсний",
-        .type = ObjectTypes::REAL,
         .alloc = DEFAULT_ALLOC(RealObject),
         .constructor = new NATIVE_METHOD("конструктор", 1, false, realInit, realObjectType, nullptr),
         .operators =

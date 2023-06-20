@@ -1,5 +1,6 @@
 ﻿#include <numeric>
 
+#include "object.h"
 #include "string_object.h"
 #include "exception_object.h"
 #include "null_object.h"
@@ -23,13 +24,13 @@ static bool tryConvertToString(Object* o, std::u32string& str)
     return false;
 }
 
-#define CHECK_STRING(object)                             \
-    if (object->objectType->type != ObjectTypes::STRING) \
+#define CHECK_STRING(object)                  \
+    if (OBJECT_IS(object, &stringObjectType)) \
         return &P_NotImplemented;
 
 // Конвертує об'єкт до StringObject, окрім випадку, коли об'єкт типу "нич"
 #define TO_STRING(object, str)                           \
-    if (object->objectType->type == ObjectTypes::STRING) \
+    if (OBJECT_IS(object, &stringObjectType))            \
         str = ((StringObject*)object)->value;            \
     else                                                 \
     {                                                    \
@@ -394,7 +395,6 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "Стрічка",
-        .type = ObjectTypes::STRING,
         .alloc = DEFAULT_ALLOC(StringObject),
         .constructor = new NATIVE_METHOD("конструктор", 1, false, strInit, stringObjectType, nullptr),
         .operators =
@@ -433,7 +433,6 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "ІтераторСтрічки",
-        .type = ObjectTypes::STRING_ITERATOR,
         .alloc = DEFAULT_ALLOC(StringIterObject),
         .attributes =
         {

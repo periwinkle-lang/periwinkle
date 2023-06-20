@@ -1,4 +1,5 @@
-﻿#include "bool_object.h"
+﻿#include "object.h"
+#include "bool_object.h"
 #include "string_object.h"
 #include "int_object.h"
 #include "real_object.h"
@@ -7,9 +8,9 @@
 
 using namespace vm;
 
-#define TO_BOOL(object, b)                             \
-    if (object->objectType->type != ObjectTypes::BOOL) \
-        return &P_NotImplemented;                      \
+#define TO_BOOL(object, b)                           \
+    if (OBJECT_IS(object, &boolObjectType) == false) \
+        return &P_NotImplemented;                    \
     b = object == &P_true;
 
 static Object* boolComparison(Object* o1, Object* o2, ObjectCompOperator op)
@@ -63,7 +64,6 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "Логічний",
-        .type = ObjectTypes::BOOL,
         .alloc = DEFAULT_ALLOC(BoolObject),
         .constructor = new NATIVE_METHOD("конструктор", 1, false, boolInit, boolObjectType, nullptr),
         .operators =

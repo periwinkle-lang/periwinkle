@@ -1,5 +1,6 @@
 ﻿#include <string>
 
+#include "object.h"
 #include "int_object.h"
 #include "native_function_object.h"
 #include "string_object.h"
@@ -10,8 +11,8 @@
 
 using namespace vm;
 
-#define CHECK_INT(object)                                 \
-    if (object->objectType->type != ObjectTypes::INTEGER) \
+#define CHECK_INT(object)                           \
+    if (OBJECT_IS(object, &intObjectType) == false) \
         return &P_NotImplemented;
 
 #define TO_INT(object, i)            \
@@ -126,7 +127,6 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "Число",
-        .type = ObjectTypes::INTEGER,
         .alloc = DEFAULT_ALLOC(IntObject),
         .constructor = new NATIVE_METHOD("конструктор", 1, false, intInit, intObjectType, nullptr),
         .operators =

@@ -30,7 +30,6 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "НативнийМетод",
-        .type = ObjectTypes::NATIVE_METHOD,
         .alloc = DEFAULT_ALLOC(NativeMethodObject),
         .operators =
         {

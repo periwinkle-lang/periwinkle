@@ -49,7 +49,6 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "НативнаФункція",
-        .type = ObjectTypes::NATIVE_FUNCTION,
         .alloc = DEFAULT_ALLOC(NativeFunctionObject),
         .operators =
         {

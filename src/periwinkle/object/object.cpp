@@ -40,14 +40,12 @@ namespace vm
         // Object - базовий тип для всіх типів, і тому ні від кого не наслідується
         .base = nullptr,
         .name = "Обєкт",
-        .type = ObjectTypes::OBJECT,
     };
 
     TypeObject typeObjectType =
     {
         .base = &objectObjectType,
         .name = "Тип",
-        .type = ObjectTypes::TYPE,
         .operators =
         {
             .call = (callFunction)typeCall,
@@ -268,7 +266,7 @@ Object* vm::Object::getAttr(Object* o, const std::string& name)
     {
         return o->objectType->attributes[name];
     }
-    else if (o->objectType->type == ObjectTypes::TYPE)
+    else if (OBJECT_IS(o, &objectObjectType))
     {
         auto type = (TypeObject*)o;
         if (type->attributes.contains(name))

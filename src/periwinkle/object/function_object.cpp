@@ -120,7 +120,6 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "Функція",
-        .type = ObjectTypes::FUNCTION,
         .alloc = DEFAULT_ALLOC(FunctionObject),
         .operators =
         {

@@ -8,7 +8,6 @@ namespace vm
     {
         .base = nullptr,
         .name = "MethodWithInstance",
-        .type = ObjectTypes::METHOD_WITH_INSTANCE,
         .alloc = DEFAULT_ALLOC(MethodWithInstanceObject),
     };
 }

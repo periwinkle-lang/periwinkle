@@ -8,7 +8,6 @@ namespace vm
     {
         .base = nullptr,
         .name = "ОбєктКоду",
-        .type = ObjectTypes::CODE,
         .alloc = DEFAULT_ALLOC(CodeObject),
     };
 }

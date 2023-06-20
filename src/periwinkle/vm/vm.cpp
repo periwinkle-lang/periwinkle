@@ -301,7 +301,7 @@ Object* VirtualMachine::execute()
                         object->objectType->name.c_str(), name.c_str()));
             }
 
-            if (function->objectType->type == ObjectTypes::NATIVE_METHOD)
+            if (OBJECT_IS(function, &nativeMethodObjectType))
             {
                 PUSH(MethodWithInstanceObject::create(object, function));
             }
@@ -318,7 +318,7 @@ Object* VirtualMachine::execute()
             auto callable = *(sp - argc);
 
             Object* result;
-            if (callable->objectType->type == ObjectTypes::METHOD_WITH_INSTANCE)
+            if (OBJECT_IS(callable, &methodWithInstanceObjectType))
             {
                 auto methodWithInstance = (MethodWithInstanceObject*)callable;
                 result = callNativeMethod(

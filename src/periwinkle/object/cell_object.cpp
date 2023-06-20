@@ -8,7 +8,6 @@ namespace vm
     {
         .base = nullptr,
         .name = "Cell",
-        .type = ObjectTypes::CELL,
         .alloc = DEFAULT_ALLOC(CellObject),
     };
 }
