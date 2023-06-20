@@ -47,7 +47,7 @@ static std::u32string joinObjectString(
 static Object* printNative(std::span<Object*> args, ListObject* va, NamedArgs* na)
 {
     StringObject* separator;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&separator, stringObjectType, "роздільник"}
     };
     argParser.parse(args, &printDefaults, na);
@@ -59,7 +59,7 @@ static Object* printNative(std::span<Object*> args, ListObject* va, NamedArgs* n
 static Object* printLnNative(std::span<Object*> args, ListObject* va, NamedArgs* na)
 {
     StringObject* separator;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&separator, stringObjectType, "роздільник"}
     };
     argParser.parse(args, &printDefaults, na);
@@ -71,7 +71,7 @@ static Object* printLnNative(std::span<Object*> args, ListObject* va, NamedArgs*
 static Object* readLineNative(std::span<Object*> args, ListObject* va, NamedArgs* na)
 {
     StringObject* prompt;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&prompt, stringObjectType, "підказка"},
     };
     argParser.parse(args, &readLineDefaults, na);

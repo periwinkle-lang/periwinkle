@@ -44,7 +44,7 @@ void vm::validateCall(
     }
     else
     {
-        if (argc > arity)
+        if (argc > arity && defaultCount == 0)
         {
             VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
                 utils::format(
