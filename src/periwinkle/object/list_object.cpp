@@ -11,6 +11,7 @@
 #include "native_method_object.h"
 #include "end_iteration_object.h"
 #include "argument_parser.h"
+#include "utils.h"
 
 using namespace vm;
 
@@ -81,8 +82,16 @@ static Object* listToString(Object* o)
 
     for (auto it = listObject->items.begin(); it != listObject->items.end(); it++)
     {
-        auto stringObject = (StringObject*)Object::toString(*it);
-        str << stringObject->asUtf8();
+        if ((*it)->objectType == &stringObjectType)
+        {
+            str << "\"" << utils::escapeString(((StringObject*)*it)->asUtf8()) << "\"";
+        }
+        else
+        {
+            auto stringObject = (StringObject*)Object::toString(*it);
+            str << stringObject->asUtf8();
+        }
+
         if (it + 1 != listObject->items.end())
             str << ", ";
     }
