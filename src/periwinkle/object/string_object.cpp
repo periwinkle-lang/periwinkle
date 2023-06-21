@@ -28,7 +28,7 @@ static bool tryConvertToString(Object* o, std::u32string& str)
     if (OBJECT_IS(object, &stringObjectType)) \
         return &P_NotImplemented;
 
-// Конвертує об'єкт до StringObject, окрім випадку, коли об'єкт типу "нич"
+// Конвертує об'єкт до StringObject, окрім випадку, коли об'єкт типу "ніц"
 #define TO_STRING(object, str)                           \
     if (OBJECT_IS(object, &stringObjectType))            \
         str = ((StringObject*)object)->value;            \

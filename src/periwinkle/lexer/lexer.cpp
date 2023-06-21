@@ -32,7 +32,7 @@ const static std::vector<std::pair<TokenType, regex>> tokenTypesRegexList
     {TokenType::BOOLEAN,         uregex("^((істина)|(хиба))" WB)},
     {TokenType::REAL,            uregex("^(([0-9]+[.][0-9]*)|([0-9]*[.][0-9]+))")},
     {TokenType::NUMBER,          uregex("^0|^([1-9][0-9]*)")},
-    {TokenType::NULL_,           uregex("^нич")},
+    {TokenType::NULL_,           uregex("^ніц")},
 
     {TokenType::PLUS_EQUAL,      uregex("^\\+=")},
     {TokenType::MINUS_EQUAL,     uregex("^\\-=")},

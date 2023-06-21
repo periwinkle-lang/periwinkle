@@ -4,9 +4,11 @@
 
 using namespace vm;
 
+static StringObject strNull = { {.objectType = &stringObjectType}, U"ніц" };
+
 static Object* nullToString(Object* a)
 {
-    return StringObject::create(U"нич");
+    return &strNull;
 }
 
 namespace vm
@@ -14,7 +16,7 @@ namespace vm
     TypeObject nullObjectType =
     {
         .base = &objectObjectType,
-        .name = "Нич",
+        .name = "Ніц",
         .alloc = DEFAULT_ALLOC(NullObject),
         .operators =
         {

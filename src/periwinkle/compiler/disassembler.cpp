@@ -73,7 +73,7 @@ std::string compiler::Disassembler::getValueAsString(vm::Object* object)
     }
     else if (OBJECT_IS(object, &vm::nullObjectType))
     {
-        return "нич";
+        return "ніц";
     }
     else if (OBJECT_IS(object, &vm::codeObjectType))
     {
