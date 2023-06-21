@@ -285,6 +285,16 @@ Statement* parser::Parser::parseFunctionDeclaration()
     return nullptr;
 }
 
+#define CHECK_PARAMETER_UNIQUE(vec, parameter, parameterName) \
+    std::find_if(vec.begin(), vec.end(),                      \
+        [&parameter](const Token& a) { return a.text == (parameterName); }) != vec.end()
+
+#define THROW_PARAMETER_UNIQUE_ERROR(parameterToken)                                        \
+    throwParserError(                                                                       \
+        utils::format("Параметр з ім'ям \"%s\" повторюється", parameterToken.text.c_str()), \
+        parameterToken                                                                      \
+    );
+
 std::tuple<
     FunctionDeclaration::parameters_t,
     FunctionDeclaration::variadicParameter_t,
@@ -317,6 +327,11 @@ std::tuple<
                 break;
             default:
                 state = VARIADIC_PARAMETER;
+                if (CHECK_PARAMETER_UNIQUE(
+                    parameters, variadicParameterTmp, variadicParameterTmp.value().text))
+                {
+                    THROW_PARAMETER_UNIQUE_ERROR(variadicParameterTmp.value());
+                }
                 variadicParameter = variadicParameterTmp;
             }
 
@@ -326,6 +341,11 @@ std::tuple<
         if (auto defaultParameter = parseDefaultParameter())
         {
             state = DEFAULT_PARAMETERS;
+            if (CHECK_PARAMETER_UNIQUE(parameters, defaultParameter, defaultParameter.value().first.text)
+                || variadicParameter.value().text == defaultParameter.value().first.text)
+            {
+                THROW_PARAMETER_UNIQUE_ERROR(defaultParameter.value().first);
+            }
             defaultParameters.push_back(defaultParameter.value());
             continue;
         }
@@ -343,6 +363,11 @@ std::tuple<
                 break;
             default:
                 break;
+            }
+
+            if (CHECK_PARAMETER_UNIQUE(parameters, identifier, identifier.value().text))
+            {
+                THROW_PARAMETER_UNIQUE_ERROR(identifier.value());
             }
 
             parameters.push_back(identifier.value());
