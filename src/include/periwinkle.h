@@ -20,7 +20,6 @@ namespace periwinkle
         static int patchVersion();
         void execute();
 #ifdef DEBUG
-        void printTokens();
         void printDisassemble();
 #endif
         Periwinkle(std::string code);

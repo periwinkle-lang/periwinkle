@@ -34,7 +34,6 @@ endif()
 include_directories(
     "src/include"
     "src/include/compiler"
-    "src/include/lexer"
     "src/include/object"
     "src/include/parser"
     "src/include/vm"
@@ -56,7 +55,6 @@ add_library(periwinkle STATIC
     "src/periwinkle/object/code_object.cpp" "src/include/object/code_object.h"
     "src/periwinkle/object/string_object.cpp" "src/include/object/string_object.h"
     "src/periwinkle/vm/vm.cpp" "src/include/vm/vm.h"
-    "src/periwinkle/lexer/lexer.cpp" "src/include/lexer/lexer.h"
     "src/periwinkle/compiler/scope.cpp" "src/include/compiler/scope.h"
     "src/periwinkle/compiler/compiler.cpp" "src/include/compiler/compiler.h"
     "src/periwinkle/compiler/disassembler.cpp" "src/include/compiler/disassembler.h"

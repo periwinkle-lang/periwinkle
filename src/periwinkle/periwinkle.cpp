@@ -2,8 +2,7 @@
 
 #include "periwinkle.h"
 #include "vm.h"
-#include "lexer.h"
-#include "parser.h"
+#include "parser.hpp"
 #include "compiler.h"
 #include "utils.h"
 #include "pconfig.h"
@@ -24,8 +23,7 @@ int periwinkle::Periwinkle::patchVersion() { return PERIWINKLE_VERSION_PATCH; }
 
 void periwinkle::Periwinkle::execute()
 {
-    lexer::Lexer lex(code);
-    parser::Parser parser(lex.tokenize(), code);
+    PParser::Parser parser(code);
     compiler::Compiler comp(parser.parse(), code);
     std::array<vm::Object*, 512> stack{};
     auto frame = comp.compile();
@@ -40,24 +38,9 @@ void periwinkle::Periwinkle::execute()
 #include <iomanip>
 #include "disassembler.h"
 
-void periwinkle::Periwinkle::printTokens()
-{
-    lexer::Lexer lex(code);
-    auto tokens = lex.tokenize();
-    for (auto& token : tokens)
-    {
-        std::cout << std::left << std::setw(15) << lexer::stringEnum::enumToString(token.tokenType) << " \""
-            << (token.tokenType == lexer::TokenType::STRING
-                || token.tokenType == lexer::TokenType::SHEBANG
-                ? utils::escapeString(token.text) : token.text)
-            << "\"" << std::endl;
-    }
-}
-
 void periwinkle::Periwinkle::printDisassemble()
 {
-    lexer::Lexer lex(code);
-    parser::Parser parser(lex.tokenize(), code);
+    PParser::Parser parser(code);
     compiler::Compiler comp(parser.parse(), code);
     compiler::Disassembler disassembler;
     std::cout << disassembler.disassemble(comp.compile()->codeObject);
