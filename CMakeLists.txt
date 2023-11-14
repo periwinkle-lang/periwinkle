@@ -1,10 +1,14 @@
-﻿cmake_minimum_required(VERSION 3.16)
+﻿cmake_minimum_required(VERSION 3.20)
 
 project(Барвінок VERSION 0.0.0 LANGUAGES CXX)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
 find_package(PCRE2)
 find_package(JPCRE2)
+if(NOT WIN32)
+    set(Python3_FIND_UNVERSIONED_NAMES NEVER)
+endif()
+find_package(Python3 3.10)
 
 configure_file("pconfig.h.in" "pconfig.h")
 include_directories(${CMAKE_CURRENT_BINARY_DIR}) # Для видимості pconfig.h в проекті
@@ -15,6 +19,9 @@ if(NOT PCRE2_FOUND)
 endif()
 if(NOT JPCRE2_FOUND)
     message(FATAL_ERROR "Бібліотеку JPCRE2 не знайдено!")
+endif()
+if (NOT Python3_Interpreter_FOUND)
+    message(FATAL_ERROR "Python 3 не знайдено!")
 endif()
 
 
@@ -34,7 +41,7 @@ include_directories(
 )
 
 
-# Бібліотека з реалізацією барвінку
+# Бібліотека з реалізацією Барвінку
 add_library(periwinkle STATIC
     "src/include/types.h"
     "src/include/string_enum.h"
@@ -53,7 +60,6 @@ add_library(periwinkle STATIC
     "src/periwinkle/compiler/scope.cpp" "src/include/compiler/scope.h"
     "src/periwinkle/compiler/compiler.cpp" "src/include/compiler/compiler.h"
     "src/periwinkle/compiler/disassembler.cpp" "src/include/compiler/disassembler.h"
-    "src/periwinkle/parser/parser.cpp" "src/include/parser/parser.h"
     "src/include/parser/expression.h"
     "src/include/parser/node.h"
     "src/include/parser/node_kind.h"
@@ -74,6 +80,23 @@ add_library(periwinkle STATIC
 target_compile_features(periwinkle PUBLIC cxx_std_20)
 
 
+# Парсер
+add_library(parser STATIC
+    "parser.hpp"
+    "parser.cpp"
+)
+target_compile_features(parser PUBLIC cxx_std_17)
+
+
+# Генерація парсера
+add_custom_command(
+    OUTPUT "parser.hpp" "parser.cpp"
+    PRE_BUILD
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/thirdparty/pparser.py ${CMAKE_SOURCE_DIR}/барвінок.граматика
+    COMMENT "Генерація парсера..."
+)
+
+
 # Виконуваний файл
 add_executable(periwinkle-bin "src/periwinkle/main.cpp")
 target_compile_features(periwinkle-bin PUBLIC cxx_std_20)
@@ -83,6 +106,7 @@ set_target_properties(periwinkle-bin PROPERTIES OUTPUT_NAME барвінок)
 # Додавання бібліотек до виконуваного файлу
 target_include_directories(periwinkle PUBLIC ${PCRE2_INCLUDE_DIRS} ${JPCRE2_INCLUDE_DIRS})
 target_link_libraries(periwinkle ${PCRE2_LIBRARIES})
+target_link_libraries(periwinkle parser)
 target_link_libraries(periwinkle-bin periwinkle)
 
 
