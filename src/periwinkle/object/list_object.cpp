@@ -167,7 +167,7 @@ METHOD_TEMPLATE(listInsert, ListObject)
 {
     IntObject* index;
     Object* element;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&index, intObjectType, "індекс"},
         {&element, objectObjectType, "елемент"},
     };
@@ -183,7 +183,7 @@ METHOD_TEMPLATE(listSetItem, ListObject)
 {
     IntObject* index;
     Object* element;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&index, intObjectType, "індекс"},
         {&element, objectObjectType, "елемент"},
     };
@@ -284,7 +284,7 @@ METHOD_TEMPLATE(listReverse, ListObject)
 METHOD_TEMPLATE(listGetItem, ListObject)
 {
     IntObject* index;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&index, intObjectType, "індекс"},
     };
     argParser.parse(args);
@@ -302,7 +302,7 @@ METHOD_TEMPLATE(listClear, ListObject)
 METHOD_TEMPLATE(listSublist, ListObject)
 {
     IntObject *start, *count;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&start, intObjectType, "початок"},
         {&count, intObjectType, "кількість"},
     };

@@ -100,7 +100,7 @@ static Object* strGetIter(StringObject* o)
 METHOD_TEMPLATE(removeEnd, StringObject)
 {
     StringObject* end;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&end, stringObjectType, "закінчення"}
     };
     argParser.parse(args);
@@ -117,7 +117,7 @@ METHOD_TEMPLATE(removeEnd, StringObject)
 METHOD_TEMPLATE(removePrefix, StringObject)
 {
     StringObject* prefix;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&prefix, stringObjectType, "префікс"},
     };
     argParser.parse(args);
@@ -135,7 +135,7 @@ METHOD_TEMPLATE(strInsert, StringObject)
 {
     IntObject* index;
     StringObject* str;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&index, intObjectType, "індекс"},
         {&str, stringObjectType, "значення"},
     };
@@ -150,7 +150,7 @@ METHOD_TEMPLATE(strSet, StringObject)
 {
     IntObject* index;
     StringObject* str;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&index, intObjectType, "індекс"},
         {&str, stringObjectType, "значення"},
     };
@@ -170,7 +170,7 @@ METHOD_TEMPLATE(strSize, StringObject)
 METHOD_TEMPLATE(strEndsWith, StringObject)
 {
     StringObject* value;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&value, stringObjectType, "значення"},
     };
     argParser.parse(args);
@@ -181,7 +181,7 @@ METHOD_TEMPLATE(strEndsWith, StringObject)
 METHOD_TEMPLATE(strReplace, StringObject)
 {
     StringObject *what, *with;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&what, stringObjectType, "що"},
         {&with, stringObjectType, "чим"},
     };
@@ -204,7 +204,7 @@ Object* strJoin(std::span<Object*> args, ListObject* va)
 {
     StringObject* separator;
     ListObject* objects;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&separator, stringObjectType, "роздільник"},
         {&objects, listObjectType, "обєкти"},
     };
@@ -231,7 +231,7 @@ Object* strJoin(std::span<Object*> args, ListObject* va)
 METHOD_TEMPLATE(strFind, StringObject)
 {
     StringObject* value;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&value, stringObjectType, "значення"},
     };
     argParser.parse(args);
@@ -248,7 +248,7 @@ METHOD_TEMPLATE(strCopy, StringObject)
 METHOD_TEMPLATE(strCount, StringObject)
 {
     StringObject* value;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&value, stringObjectType, "значення"},
     };
     argParser.parse(args);
@@ -267,7 +267,7 @@ METHOD_TEMPLATE(strCount, StringObject)
 METHOD_TEMPLATE(strContains, StringObject)
 {
     StringObject* value;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&value, stringObjectType, "значення"},
     };
     argParser.parse(args);
@@ -279,7 +279,7 @@ METHOD_TEMPLATE(strContains, StringObject)
 METHOD_TEMPLATE(strGet, StringObject)
 {
     IntObject* index;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&index, intObjectType, "індекс"},
     };
     argParser.parse(args);
@@ -291,7 +291,7 @@ METHOD_TEMPLATE(strGet, StringObject)
 METHOD_TEMPLATE(strStartsWith, StringObject)
 {
     StringObject* value;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&value, stringObjectType, "значення"},
     };
     argParser.parse(args);
@@ -346,7 +346,7 @@ METHOD_TEMPLATE(strRightTrim, StringObject)
 METHOD_TEMPLATE(strSubstr, StringObject)
 {
     IntObject *start, *count;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&start, intObjectType, "початок"},
         {&count, intObjectType, "кількість"},
     };
@@ -360,7 +360,7 @@ METHOD_TEMPLATE(strSubstr, StringObject)
 METHOD_TEMPLATE(strSplit, StringObject)
 {
     StringObject* delimiter;
-    static ArgParser argParser{
+    ArgParser argParser{
         {&delimiter, stringObjectType, "роздільник"},
     };
     argParser.parse(args);
