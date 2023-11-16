@@ -273,6 +273,7 @@ class RuleNode(Node):
 
 STRING_UNESCAPE_TABLE = {
     "\\": "\\",
+    "\"": "\"",
     "a": "\a",
     "b": "\b",
     "f": "\f",
@@ -710,6 +711,8 @@ class LeftRecursiveAnalyzer:
         for item in sequence.items:
             if isinstance(item, ParsingExpressionRuleNameNode):
                 return item
+            elif isinstance(item, ParsingExpressionGroupNode):
+                return self.get_first_rule_or_none(item.parsing_expression[0])
             elif not self.is_parsing_expr_consume_zero(item):
                 break
         return None
@@ -807,6 +810,18 @@ class StaticAnalyzer:
 
     def unused_rules(self):
         checked_rules = []
+        def group_traversal(group: ParsingExpressionGroupNode) -> set[str]:
+            rules = set()
+            for sequence in group.parsing_expression:
+                for item in sequence.items:
+                    if isinstance(r := item, ParsingExpressionRuleNameNode):
+                        if r.name not in checked_rules:
+                            rules.add(r.name)
+                            rules.update(rule_traversal(self.get_rule_by_name(r.name)))
+                    elif isinstance(g := item, ParsingExpressionGroupNode):
+                        rules.update(group_traversal(g))
+            return rules
+
         def rule_traversal(rule: RuleNode) -> set[str]:
             checked_rules.append(rule.name)
             rules = set()
@@ -816,6 +831,8 @@ class StaticAnalyzer:
                         if r.name not in checked_rules:
                             rules.add(r.name)
                             rules.update(rule_traversal(self.get_rule_by_name(r.name)))
+                    elif isinstance(g := item, ParsingExpressionGroupNode):
+                        rules.update(group_traversal(g))
             return rules
 
         root_rule = self.get_rule_by_name(self.root_rule_name)
@@ -1489,10 +1506,12 @@ class CodeGenerator:
         if node.ctx.lookahead:
             code += "{\n"
             code += "   size_t __tempMark = position;\n"
+            if node.ctx.name:
+                code += f"   {self.rules_return_type[node.name]} __result;\n"
+                var = f"{return_type.raw_type} {node.ctx.name};"
             code += f"   if({'!' if node.ctx.lookahead_positive else ''}("
             if node.ctx.name:
-                code += "auto __result = "
-                var = f"{return_type.raw_type} {node.ctx.name};"
+                code += "__result = "
             code += f"rule__{node.name}())) goto {next};\n"
             if node.ctx.name:
                 code += f"else {node.ctx.name} = __result{return_type.getter};\n"
@@ -1513,7 +1532,9 @@ class CodeGenerator:
                 code += "    size_t __i = 0;\n"
             code += "    for (;;)\n"
             code += "    {\n"
-            code += f"        if (!({'auto __result = ' if node.ctx.name else ''} rule__{node.name}())) break;\n"
+            if node.ctx.name:
+                code += f"    {self.rules_return_type[node.name]} __result;\n"
+            code += f"        if (!({'__result = ' if node.ctx.name else ''} rule__{node.name}())) break;\n"
             if node.ctx.name:
                 code += f"        {node.ctx.name}.push_back(__result{return_type.getter});\n"
             if node.ctx.loop_nonempty:
