@@ -1,0 +1,194 @@
+﻿%name parser
+
+%hpp {
+    #include "ast.h"
+}
+
+%cpp {
+    using namespace ast;
+
+    Token newToken(const std::string& text, const PParser::TokenPos& pos)
+    {
+        Token tok { pos.startLine, pos.startCol, text };
+        return tok;
+    }
+}
+
+%type "ast::Node*"
+
+program<ast::BlockStatement*> = shebang? _? comments s:statement* comments _? EOF
+    { $$ = new BlockStatement(s); }
+    ~{ parseError("Неправильний синтаксис."); }
+
+shebang = "#!" (!EOL .)+ EOL
+
+statement<ast::Statement*> = comments _? s:statement_ comments _? { $$ = s; }
+
+statement_<ast::Statement*> =
+    | s:if_statement { $$ = s; }
+    | s:while_statement { $$ = s; }
+    | s:for_each_statement { $$ = s; }
+    | s:break_statement { $$ = s; }
+    | s:continue_statement { $$ = s; }
+    | s:return_statement { $$ = s; }
+    | s:function_declaration { $$ = s; }
+    | e:expression { $$ = new ExpressionStatement(e); }
+
+if_statement<ast::IfStatement*> = s:if_statement_ "кінець" { $$ = s; }
+if_statement_<ast::IfStatement*> = "якщо" _ c:rhs b:if_block* e:else_or_if?
+    { $$ = new IfStatement(newToken("якщо", $1), c, new BlockStatement(b), e); }
+else_or_if<ast::Statement*> =
+    | "або " &"якщо" s:if_statement_ { $$ = s; static_cast<ast::IfStatement*>($$)->if_ = newToken("або якщо", $1); }
+    | "інакше" _ b:if_block* { $$ = new ElseStatement(newToken("інакше", $1), new BlockStatement(b)); }
+if_block<ast::Statement*> = !("кінець" | "або якщо" | "інакше") s:statement { $$ = s; }
+
+block_statement<ast::Statement*> = !"кінець" s:statement { $$ = s; }
+
+while_statement<ast::WhileStatement*> = "поки" _ c:rhs b:block_statement* "кінець"
+    { $$ = new WhileStatement(newToken("поки", $1), c, new BlockStatement(b)); }
+
+for_each_statement<ast::ForEachStatement*> = "кожній" _ id:identifier _ "з" _ e:rhs b:block_statement* "кінець"
+    { $$ = new ForEachStatement(newToken("кожній", $1), newToken(id, $3), e, new BlockStatement(b)); }
+
+break_statement<ast::BreakStatement*> = "завершити" { $$ = new BreakStatement(newToken("завершити", $1)); }
+continue_statement<ast::ContinueStatement*> = "пропустити" { $$ = new ContinueStatement(newToken("пропустити", $1)); }
+
+return_statement<ast::ReturnStatement*> = "повернути" (_ e:rhs | ";")
+    {
+        std::optional<Expression*> returnValue;
+        if (e) returnValue = e;
+        $$ = new ReturnStatement(newToken("повернути", $1), returnValue);
+    }
+
+function_declaration<ast::FunctionDeclaration*> =
+    "функція" _ id:identifier _? "(" _? params:function_params _? ")" b:block_statement* _? "кінець"
+    {
+        auto& [p, v, d] = params;
+        $$ = new FunctionDeclaration(newToken(id, $3), p, v, d, new BlockStatement(b));
+    }
+
+function_params<
+    std::tuple<
+        ast::FunctionDeclaration::parameters_t,
+        ast::FunctionDeclaration::variadicParameter_t,
+        ast::FunctionDeclaration::defaultParameters_t>
+    > =
+    | p:parameters _? "," _? v:variadic_parameter _? "," _? d:default_parameters { $$ = { p, v, d }; }
+    | p:parameters _? "," _? d:default_parameters { $$ = { p, std::nullopt, d }; }
+    | p:parameters _? "," _? v:variadic_parameter { $$ = { p, v, {} }; }
+    | v:variadic_parameter _? "," _? d:default_parameters { $$ = { {}, v, d }; }
+    | p:parameters { $$ = { p, std::nullopt, {} }; }
+    | v:variadic_parameter { $$ = { FunctionDeclaration::parameters_t{}, v, {} }; }
+    | d:default_parameters { $$ = { {}, std::nullopt, d }; }
+
+parameters<ast::FunctionDeclaration::parameters_t> =
+    | params:parameters _? "," _? !variadic_parameter p:identifier { $$ = params; $$.push_back(newToken(p, $5)); }
+    | !(identifier "..." | default_parameter) p:identifier { $$.push_back(newToken(p, $1)); }
+
+variadic_parameter<ast::Token> = !default_parameter vparam:identifier "..." { $$ = newToken(vparam, $2); }
+
+default_parameters<ast::FunctionDeclaration::defaultParameters_t> =
+    | dparams:default_parameters _? "," _? d:default_parameter { $$ = dparams; $$.push_back(d); }
+    | d:default_parameter { $$.push_back(d); }
+
+default_parameter<ast::FunctionDeclaration::defaultParameter_t> = id:identifier _? "=" _? v:rhs { $$ = {newToken(id, $1), v}; }
+
+expression<ast::Expression*> =
+    | e:assignment_expression { $$ = e; }
+    | e:rhs { $$ = e; }
+
+lhs<std::string> = id:identifier { $$ = id; }
+rhs<ast::Expression*> = e:disjunction { $$ = e; }
+
+disjunction<ast::Expression*> =
+    | l:disjunction _ "або" _ r:conjunction { $$ = new BinaryExpression(l, newToken("або", $3), r); }
+    | e:conjunction { $$ = e; }
+
+conjunction<ast::Expression*> =
+    | l:conjunction _ "та" _ r:inversion { $$ = new BinaryExpression(l, newToken("та", $3), r); }
+    | e:inversion { $$ = e; }
+
+inversion<ast::Expression*> =
+    | "не" _ e:inversion { $$ = new UnaryExpression(newToken("не", $1), e); }
+    | e:comparison { $$ = e; }
+
+comparison<ast::Expression*> =
+    | l:comparison _ op:("є" | "менше" "="? | "більше" "="? | "==" | "!=") _ r:sum
+        { $$ = new BinaryExpression(l, newToken(op, $3), r); }
+    | l:comparison _? op:("==" | "!=") _? r:sum
+        { $$ = new BinaryExpression(l, newToken(op, $3), r); }
+    | e:sum { $$ = e; }
+
+sum<ast::Expression*> =
+    | l:sum _? op:[+-] _? r:term { $$ = new BinaryExpression(l, newToken(op, $3), r); }
+    | e:term { $$ = e; }
+
+term<ast::Expression*> =
+    | l:term _? op:("*" | "/" | "%" | "\\") _? r:factor { $$ = new BinaryExpression(l, newToken(op, $3), r); }
+    | e:factor { $$ = e; }
+
+factor<ast::Expression*> =
+    | op:("+" | "-") _? e:factor { $$ = new UnaryExpression(newToken(op, $1), e); }
+    | e:primary { $$ = e; }
+
+primary<ast::Expression*> =
+    | e:primary _? "." _? id:identifier { $$ = new AttributeExpression(e, newToken(id, $5)); }
+    | e:primary _? "(" _? args:call_arguments _? ")" { auto& [a, n] = args; $$ = new CallExpression(e, a, n); }
+    | v:("істина" | "хиба") { $$ = new LiteralExpression(newToken(v, $1), LiteralExpression::Type::BOOLEAN, v == "істина"); }
+    | num:([1-9][1-9]*)
+        {
+            try {
+                $$ = new LiteralExpression(newToken(num, $1), LiteralExpression::Type::NUMBER, std::stoll(num));
+            } catch (const std::out_of_range& e) {
+                parseError("Число не входить в діапазон можливих значень числа");
+            }
+        }
+    | num:(([0-9]+ "." [0-9]*) | ([0-9]*[.][0-9]+))
+        {
+            try {
+                $$ = new LiteralExpression(newToken(num, $1), LiteralExpression::Type::REAL, std::stod(num));
+            } catch(const std::out_of_range& e) {
+                parseError("Число не входить в діапазон можливих значень дійсного числа");
+            }
+        }
+    | s:("\"" body:("\\\""? !"\"" .)* "\"") { $$ = new LiteralExpression(newToken(s, $1), LiteralExpression::Type::STRING, body); }
+    | "ніц" { $$ = new LiteralExpression(newToken("ніц", $1), LiteralExpression::Type::NULL_, {}); }
+    | id:identifier { $$ = new VariableExpression(newToken(id, $1)); }
+    | "(" e:rhs ")" { $$ = new ParenthesizedExpression(e); }
+
+call_arguments<
+    std::tuple<
+        ast::CallExpression::arguments_t,
+        ast::CallExpression::namedArguments_t>
+    > =
+    | a:arguments _? "," _? n:named_arguments { $$ = { a, n }; }
+    | a:arguments { $$ = { a, {} }; }
+    | n:named_arguments { $$ = { CallExpression::arguments_t{}, n }; }
+
+arguments<ast::CallExpression::arguments_t> =
+    | args:arguments _? "," _? !named_argument a:rhs { $$ = args; $$.push_back(a); }
+    | !named_argument a:rhs { $$.push_back(a); }
+
+named_arguments<ast::CallExpression::namedArguments_t> =
+    | nargs:named_arguments _? "," _? a:named_argument { $$ = nargs; $$.push_back(a); }
+    | a:named_argument { $$.push_back(a); }
+
+named_argument<ast::CallExpression::namedArgument_t> = id:identifier _? "=" _? v:rhs { $$ = {newToken(id, $1), v}; }
+
+assignment_expression<ast::AssignmentExpression*> = l:lhs _? op:([-+*\\/%]? "=") _? r:rhs
+    { $$ = new AssignmentExpression(newToken(l, $1), newToken(op, $2), r); }
+
+identifier<std::string> = keywords id:([а-щА-ЩьюяїієґЬЮЯЇІЄҐ_][а-щА-ЩьюяїієґЬЮЯЇІЄҐ0-9_]*) { $$ = id; }
+keywords =
+    !"якщо" !"або якщо" !"інакше" !"кінець" !"поки" !"пропустити" !"завершити" !"менше" !"більше"
+    !"є" !"не" !"або" !"та" !"функція" !"повернути" !"кожній" !"з"
+
+comments = (_? one_line_comment | _? multiline_comment)*
+one_line_comment = "//" (!EOL .)* EOL
+multiline_comment =
+    | "/*" (!"*/" .)* "*/"
+    | "/*" .* { parseError("Очікується */"); }
+
+_ = [ \t\r\n]+
+EOL = "\n" | "\r" | "\r\n"
+EOF = !.

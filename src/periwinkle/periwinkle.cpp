@@ -24,7 +24,9 @@ int periwinkle::Periwinkle::patchVersion() { return PERIWINKLE_VERSION_PATCH; }
 void periwinkle::Periwinkle::execute()
 {
     PParser::Parser parser(code);
-    compiler::Compiler comp(parser.parse(), code);
+    auto ast = parser.parse();
+    if (!ast.has_value()) { exit(1); }
+    compiler::Compiler comp(ast.value(), code);
     std::array<vm::Object*, 512> stack{};
     auto frame = comp.compile();
     frame->sp = &stack[0];
@@ -41,7 +43,9 @@ void periwinkle::Periwinkle::execute()
 void periwinkle::Periwinkle::printDisassemble()
 {
     PParser::Parser parser(code);
-    compiler::Compiler comp(parser.parse(), code);
+    auto ast = parser.parse();
+    if (!ast.has_value()) { exit(1); }
+    compiler::Compiler comp(ast.value(), code);
     compiler::Disassembler disassembler;
     std::cout << disassembler.disassemble(comp.compile()->codeObject);
 }

@@ -2,8 +2,6 @@
 #include <variant>
 
 #include "compiler.h"
-#include "lexer.h"
-#include "node_kind.h"
 #include "code_object.h"
 #include "bool_object.h"
 #include "int_object.h"
@@ -15,11 +13,12 @@
 #include "builtins.h"
 #include "plogger.h"
 #include "exception.h"
+#include "keyword.h"
 
 using namespace compiler;
-using namespace parser;
+using namespace ast;
 using enum vm::OpCode;
-using enum parser::NodeKind;
+using enum ast::NodeKind;
 
 #define FIND_CONST_IDX(OBJECT, OBJECT_TYPE)                               \
     for (vm::WORD i = 0; i < (vm::WORD)codeObject->constants.size(); ++i) \
@@ -123,12 +122,12 @@ void compiler::Compiler::compileStatement(Statement* statement)
     case RETURN_STATEMENT:
         compileReturnStatement((ReturnStatement*)statement);
         break;
-    case FOR_EACH_STATEMET:
+    case FOR_EACH_STATEMENT:
         compileForEachStatement((ForEachStatement*)statement);
         break;
     default:
         plog::fatal << "Неможливо обробити вузол \""
-            << parser::stringEnum::enumToString(statement->kind) << "\"";
+            << ast::stringEnum::enumToString(statement->kind) << "\"";
     }
 }
 
@@ -160,7 +159,7 @@ void compiler::Compiler::compileBreakStatement(BreakStatement* statement)
     auto state = (LoopState*)unwindStateStack(CompilerStateType::LOOP);
     if (state)
     {
-        setLineno(statement->break_.lineno);
+        setLineno(statement->break_);
         emitOpCode(JMP);
         auto endBlock = emitOperand(0);
         state->addressesForPatchWithEndBlock.push_back(endBlock);
@@ -176,7 +175,7 @@ void compiler::Compiler::compileContinueStatement(ContinueStatement* statement)
     auto state = (LoopState*)unwindStateStack(CompilerStateType::LOOP);
     if (state)
     {
-        setLineno(statement->continue_.lineno);
+        setLineno(statement->continue_);
         emitOpCode(JMP);
         emitOperand(state->startIp);
     }
@@ -218,7 +217,7 @@ void compiler::Compiler::compileIfStatement(IfStatement* statement)
     }
 }
 
-void compiler::Compiler::compileFunctionDeclaration(parser::FunctionDeclaration* statement)
+void compiler::Compiler::compileFunctionDeclaration(ast::FunctionDeclaration* statement)
 {
     auto& name = statement->id.text;
     auto fnCodeObject = vm::CodeObject::create(name);
@@ -257,11 +256,11 @@ void compiler::Compiler::compileFunctionDeclaration(parser::FunctionDeclaration*
     for (auto& defaultParameter : statement->defaultParameters)
     {
         fnCodeObject->defaults.push_back(defaultParameter.first.text);
-        setLineno(defaultParameter.first.lineno);
+        setLineno(defaultParameter.first);
         compileExpression(defaultParameter.second);
     }
 
-    setLineno(statement->id.lineno);
+    setLineno(statement->id);
     if (fnCodeObject->freevars.size() > 0)
     {
         auto state = (FunctionState*)unwindStateStack(CompilerStateType::FUNCTION);
@@ -282,12 +281,12 @@ void compiler::Compiler::compileFunctionDeclaration(parser::FunctionDeclaration*
     compileNameSet(name);
 }
 
-void compiler::Compiler::compileReturnStatement(parser::ReturnStatement* statement)
+void compiler::Compiler::compileReturnStatement(ast::ReturnStatement* statement)
 {
     auto state = (FunctionState*)unwindStateStack(CompilerStateType::FUNCTION);
     if (state)
     {
-        setLineno(statement->return_.lineno);
+        setLineno(statement->return_);
         if (statement->returnValue)
         {
             compileExpression(statement->returnValue.value());
@@ -308,12 +307,12 @@ void compiler::Compiler::compileReturnStatement(parser::ReturnStatement* stateme
 void compiler::Compiler::compileForEachStatement(ForEachStatement* statement)
 {
     compileExpression(statement->expression);
-    setLineno(statement->forEach.lineno);
+    setLineno(statement->forEach);
     emitOpCode(GET_ITER);
     auto startForEachAddress = getOffset();
     emitOpCode(FOR_EACH);
     auto endForEachBlock = emitOperand(0);
-    setLineno(statement->variable.lineno);
+    setLineno(statement->variable);
     compileNameSet(statement->variable.text);
     PUSH_LOOP_STATE(startForEachAddress);
     compileBlock(statement->block);
@@ -357,50 +356,42 @@ void compiler::Compiler::compileExpression(Expression* expression)
         break;
     default:
         plog::fatal << "Неможливо обробити вузол \""
-            << parser::stringEnum::enumToString(expression->kind) << "\"";
+            << ast::stringEnum::enumToString(expression->kind) << "\"";
     }
 }
 
 void compiler::Compiler::compileAssignmentExpression(AssignmentExpression* expression)
 {
-    using enum lexer::TokenType;
     std::string name = expression->id.text;
-
     compileExpression(expression->expression);
-    auto assignmentType = expression->assignment.tokenType;
-    if (assignmentType == EQUAL)
+    auto& op = expression->assignment.text;
+    if (op == Keyword::EQUAL)
     {
-        setLineno(expression->assignment.lineno);
+        setLineno(expression->assignment);
         compileNameSet(name);
         return;
     }
 
-    setLineno(expression->id.lineno);
+    setLineno(expression->id);
     compileNameGet(name);
 
-    setLineno(expression->assignment.lineno);
-    switch (assignmentType)
-    {
-    case PLUS_EQUAL: emitOpCode(ADD); break;
-    case MINUS_EQUAL: emitOpCode(SUB); break;
-    case STAR_EQUAL: emitOpCode(MUL); break;
-    case SLASH_EQUAL: emitOpCode(DIV); break;
-    case PERCENT_EQUAL: emitOpCode(MOD); break;
-    case BACKSLASH_EQUAL: emitOpCode(FLOOR_DIV); break;
-    default:
-        plog::fatal << "Неправильний оператор присвоєння: \""
-            << lexer::stringEnum::enumToString(assignmentType) << "\"";
-    }
-
+    setLineno(expression->assignment);
+    if      (op == Keyword::ADD_EQUAL) emitOpCode(ADD);
+    else if (op == Keyword::SUB_EQUAL) emitOpCode(SUB);
+    else if (op == Keyword::MUL_EQUAL) emitOpCode(MUL);
+    else if (op == Keyword::DIV_EQUAL) emitOpCode(DIV);
+    else if (op == Keyword::MOD_EQUAL) emitOpCode(MOD);
+    else if (op == Keyword::FLOOR_DIV_EQUAL) emitOpCode(FLOOR_DIV);
+    else plog::fatal << "Неправильний оператор присвоєння: \"" << op << "\"";
     compileNameSet(name);
 }
 
 void compiler::Compiler::compileLiteralExpression(LiteralExpression* expression)
 {
-    using enum lexer::TokenType;
     vm::WORD index;
-    setLineno(expression->literalToken.lineno);
-    switch (expression->literalToken.tokenType)
+    setLineno(expression->literalToken);
+    using enum LiteralExpression::Type;
+    switch (expression->literalType)
     {
     case NUMBER:
     {
@@ -441,7 +432,7 @@ void compiler::Compiler::compileLiteralExpression(LiteralExpression* expression)
 void compiler::Compiler::compileVariableExpression(VariableExpression* expression)
 {
     auto& variableName = expression->variable.text;
-    setLineno(expression->variable.lineno);
+    setLineno(expression->variable);
     compileNameGet(variableName);
 }
 
@@ -513,52 +504,38 @@ void compiler::Compiler::compileBinaryExpression(BinaryExpression* expression)
 {
     compileExpression(expression->right);
     compileExpression(expression->left);
+    setLineno(expression->op);
 
-    setLineno(expression->operator_.lineno);
     using enum vm::ObjectCompOperator;
-    switch (expression->operator_.tokenType)
-    {
-    case lexer::TokenType::PLUS: emitOpCode(ADD); break;
-    case lexer::TokenType::MINUS: emitOpCode(SUB); break;
-    case lexer::TokenType::SLASH: emitOpCode(DIV); break;
-    case lexer::TokenType::STAR: emitOpCode(MUL); break;
-    case lexer::TokenType::PERCENT: emitOpCode(MOD); break;
-    case lexer::TokenType::BACKSLASH: emitOpCode(FLOOR_DIV); break;
-    case lexer::TokenType::AND: emitOpCode(AND); break;
-    case lexer::TokenType::OR: emitOpCode(OR); break;
-    case lexer::TokenType::IS: emitOpCode(IS); break;
-    case lexer::TokenType::EQUAL_EQUAL:
-        emitOpCode(COMPARE); emitOperand((vm::WORD)EQ); break;
-    case lexer::TokenType::NOT_EQUAL:
-        emitOpCode(COMPARE); emitOperand((vm::WORD)NE); break;
-    case lexer::TokenType::GREATER:
-        emitOpCode(COMPARE); emitOperand((vm::WORD)GT); break;
-    case lexer::TokenType::GREATER_EQUAL:
-        emitOpCode(COMPARE); emitOperand((vm::WORD)GE); break;
-    case lexer::TokenType::LESS:
-        emitOpCode(COMPARE); emitOperand((vm::WORD)LT); break;
-    case lexer::TokenType::LESS_EQUAL:
-        emitOpCode(COMPARE); emitOperand((vm::WORD)LE); break;
-    default:
-        plog::fatal << "Неправильний токен оператора: \""
-            <<  lexer::stringEnum::enumToString(expression->operator_.tokenType) << "\"";
-    }
+    auto& op = expression->op.text;
+    if      (op == Keyword::ADD) emitOpCode(ADD);
+    else if (op == Keyword::SUB) emitOpCode(SUB);
+    else if (op == Keyword::DIV) emitOpCode(DIV);
+    else if (op == Keyword::MUL) emitOpCode(MUL);
+    else if (op == Keyword::MOD) emitOpCode(MOD);
+    else if (op == Keyword::FLOOR_DIV) emitOpCode(FLOOR_DIV);
+    else if (op == Keyword::AND) emitOpCode(AND);
+    else if (op == Keyword::OR) emitOpCode(OR);
+    else if (op == Keyword::IS) emitOpCode(IS);
+    else if (op == Keyword::EQUAL_EQUAL) { emitOpCode(COMPARE); emitOperand((vm::WORD)EQ); }
+    else if (op == Keyword::NOT_EQUAL) { emitOpCode(COMPARE); emitOperand((vm::WORD)NE); }
+    else if (op == Keyword::GREATER) { emitOpCode(COMPARE); emitOperand((vm::WORD)GT); }
+    else if (op == Keyword::GREATER_EQUAL) { emitOpCode(COMPARE); emitOperand((vm::WORD)GE); }
+    else if (op == Keyword::LESS) { emitOpCode(COMPARE); emitOperand((vm::WORD)LT); }
+    else if (op == Keyword::LESS_EQUAL) { emitOpCode(COMPARE); emitOperand((vm::WORD)LE); }
+    else plog::fatal << "Неправильний токен оператора: \"" << op << "\"";
 }
 
 void compiler::Compiler::compileUnaryExpression(UnaryExpression* expression)
 {
     compileExpression(expression->operand);
+    setLineno(expression->op);
 
-    setLineno(expression->operator_.lineno);
-    switch (expression->operator_.tokenType)
-    {
-    case lexer::TokenType::PLUS: emitOpCode(POS); break;
-    case lexer::TokenType::MINUS: emitOpCode(NEG); break;
-    case lexer::TokenType::NOT: emitOpCode(NOT); break;
-    default:
-        plog::fatal << "Неправильний токен унарного оператора: \""
-            << lexer::stringEnum::enumToString(expression->operator_.tokenType) << "\"";
-    }
+    auto& op = expression->op.text;
+    if (op == Keyword::ADD) emitOpCode(POS);
+    else if (op == Keyword::SUB) emitOpCode(NEG);
+    else if (op == Keyword::NOT) emitOpCode(NOT);
+    else plog::fatal << "Неправильний токен унарного оператора: \"" << op << "\"";
 }
 
 void compiler::Compiler::compileParenthesizedExpression(ParenthesizedExpression* expression)
@@ -570,7 +547,7 @@ void compiler::Compiler::compileAttributeExpression(
     AttributeExpression* expression, bool isMethod)
 {
     compileExpression(expression->expression);
-    setLineno(expression->attribute.lineno);
+    setLineno(expression->attribute);
     emitOpCode(isMethod ? LOAD_METHOD : GET_ATTR);
     emitOperand(nameIdx(expression->attribute.text));
 }
@@ -742,16 +719,16 @@ vm::WORD compiler::Compiler::nameIdx(const std::string& name)
     }
 }
 
-void compiler::Compiler::throwCompileError(std::string message, lexer::Token token)
+void compiler::Compiler::throwCompileError(std::string message, Token token)
 {
-    vm::SyntaxException error(message, token.lineno, token.positionInLine);
+    vm::SyntaxException error(message, token.lineno, token.col);
     vm::throwSyntaxException(error, code);
     exit(1);
 }
 
-void compiler::Compiler::setLineno(size_t lineno)
+void compiler::Compiler::setLineno(Token token)
 {
-    currentLineno = (vm::WORD)lineno;
+    currentLineno = (vm::WORD)token.lineno;
 }
 
 vm::WORD compiler::Compiler::emitOpCode(vm::OpCode op)

@@ -35,7 +35,7 @@ include_directories(
     "src/include"
     "src/include/compiler"
     "src/include/object"
-    "src/include/parser"
+    "src/include/ast"
     "src/include/vm"
 )
 
@@ -58,10 +58,8 @@ add_library(periwinkle STATIC
     "src/periwinkle/compiler/scope.cpp" "src/include/compiler/scope.h"
     "src/periwinkle/compiler/compiler.cpp" "src/include/compiler/compiler.h"
     "src/periwinkle/compiler/disassembler.cpp" "src/include/compiler/disassembler.h"
-    "src/include/parser/expression.h"
-    "src/include/parser/node.h"
-    "src/include/parser/node_kind.h"
-    "src/include/parser/statement.h"
+    "src/include/ast/ast.h"
+    "src/include/ast/keyword.h"
     "src/include/plogger.h"
     "src/periwinkle/vm/builtins.cpp" "src/include/vm/builtins.h"
     "src/periwinkle/periwinkle.cpp" "src/include/periwinkle.h"
@@ -74,7 +72,8 @@ add_library(periwinkle STATIC
     "src/include/vm/argument_parser.h" "src/periwinkle/vm/argument_parser.cpp"
     "src/include/object/method_with_instance_object.h" "src/periwinkle/object/method_with_instance_object.cpp"
     "src/include/object/string_vector_object.h" "src/periwinkle/object/string_vector_object.cpp"
-    "src/include/object/validate_args.h" "src/periwinkle/object/validate_args.cpp")
+    "src/include/object/validate_args.h" "src/periwinkle/object/validate_args.cpp"
+)
 target_compile_features(periwinkle PUBLIC cxx_std_20)
 
 
@@ -91,6 +90,7 @@ add_custom_command(
     OUTPUT "parser.hpp" "parser.cpp"
     PRE_BUILD
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/thirdparty/pparser.py ${CMAKE_SOURCE_DIR}/барвінок.граматика
+    DEPENDS ${CMAKE_SOURCE_DIR}/барвінок.граматика
     COMMENT "Генерація парсера..."
 )
 

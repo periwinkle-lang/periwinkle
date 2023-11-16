@@ -1,5 +1,5 @@
 ﻿#include "scope.h"
-#include "expression.h"
+#include "ast.h"
 #include "plogger.h"
 #include "builtins.h"
 
@@ -119,15 +119,15 @@ vm::OpCode Scope::getVarSetter(const std::string& name)
     }
 }
 
-void ScopeAnalyzer::_analyze(parser::Node* node, Scope* parent)
+void ScopeAnalyzer::_analyze(ast::Node* node, Scope* parent)
 {
-    using enum parser::NodeKind;
+    using enum ast::NodeKind;
 
     switch (node->kind)
     {
     case BLOCK_STATEMENT:
     {
-        for (auto node : ((parser::BlockStatement*)node)->statements)
+        for (auto node : ((ast::BlockStatement*)node)->statements)
         {
             _analyze(node, parent);
         }
@@ -135,27 +135,27 @@ void ScopeAnalyzer::_analyze(parser::Node* node, Scope* parent)
     }
     case EXPRESSION_STATEMENT:
     {
-        _analyze(((parser::ExpressionStatement*)node)->expression, parent);
+        _analyze(((ast::ExpressionStatement*)node)->expression, parent);
         break;
     }
     case WHILE_STATEMENT:
     {
-        _analyze(((parser::WhileStatement*)node)->block, parent);
+        _analyze(((ast::WhileStatement*)node)->block, parent);
         break;
     }
     case IF_STATEMENT:
     {
-        _analyze(((parser::IfStatement*)node)->block, parent);
+        _analyze(((ast::IfStatement*)node)->block, parent);
         break;
     }
     case ELSE_STATEMENT:
     {
-        _analyze(((parser::ElseStatement*)node)->block, parent);
+        _analyze(((ast::ElseStatement*)node)->block, parent);
         break;
     }
     case FUNCTION_STATEMENT:
     {
-        auto fnDeclaration = (parser::FunctionDeclaration*)node;
+        auto fnDeclaration = (ast::FunctionDeclaration*)node;
         auto& fnName = fnDeclaration->id.text;
         parent->addLocal(fnName);
 
@@ -183,61 +183,61 @@ void ScopeAnalyzer::_analyze(parser::Node* node, Scope* parent)
     }
     case RETURN_STATEMENT:
     {
-        auto returnStatement = (parser::ReturnStatement*)node;
+        auto returnStatement = (ast::ReturnStatement*)node;
         if (returnStatement->returnValue)
         {
             _analyze(returnStatement->returnValue.value(), parent);
         }
         break;
     }
-    case FOR_EACH_STATEMET:
+    case FOR_EACH_STATEMENT:
     {
-        auto forEach = (parser::ForEachStatement*)node;
+        auto forEach = (ast::ForEachStatement*)node;
         parent->addLocal(forEach->variable.text);
         _analyze(forEach->block, parent);
         break;
     }
     case ASSIGNMENT_EXPRESSION:
     {
-        auto assignmentExpression = (parser::AssignmentExpression*)node;
+        auto assignmentExpression = (ast::AssignmentExpression*)node;
         parent->maybePromote(assignmentExpression->id.text);
         _analyze(assignmentExpression->expression, parent);
         break;
     }
     case BINARY_EXPRESSION:
     {
-        auto binaryExpression = (parser::BinaryExpression*)node;
+        auto binaryExpression = (ast::BinaryExpression*)node;
         _analyze(binaryExpression->right, parent);
         _analyze(binaryExpression->left, parent);
         break;
     }
     case UNARY_EXPRESSION:
     {
-        auto unaryExpression = (parser::UnaryExpression*)node;
+        auto unaryExpression = (ast::UnaryExpression*)node;
         _analyze(unaryExpression->operand, parent);
         break;
     }
     case PARENTHESIZED_EXPRESSION:
     {
-        auto parenthesizedExpression = (parser::ParenthesizedExpression*)node;
+        auto parenthesizedExpression = (ast::ParenthesizedExpression*)node;
         _analyze(parenthesizedExpression->expression, parent);
         break;
     }
     case VARIABLE_EXPRESSION:
     {
-        auto variable = (parser::VariableExpression*)node;
+        auto variable = (ast::VariableExpression*)node;
         parent->maybePromote(variable->variable.text);
         break;
     }
     case ATTRIBUTE_EXPRESSION:
     {
-        auto attr = (parser::AttributeExpression*)node;
+        auto attr = (ast::AttributeExpression*)node;
         _analyze(attr->expression, parent);
         break;
     }
     case CALL_EXPRESSION:
     {
-        auto callExpression = (parser::CallExpression*)node;
+        auto callExpression = (ast::CallExpression*)node;
         _analyze(callExpression->callable, parent);
         for (auto argument : callExpression->arguments)
         {
@@ -251,7 +251,7 @@ void ScopeAnalyzer::_analyze(parser::Node* node, Scope* parent)
         break;
     default:
         plog::fatal << "Неможливо обробити вузол \""
-                << parser::stringEnum::enumToString(node->kind) << "\"";
+                << ast::stringEnum::enumToString(node->kind) << "\"";
     }
 }
 
@@ -264,6 +264,6 @@ ScopeAnalyzer::scope_info_t ScopeAnalyzer::analyze()
     return scopeInfo;
 }
 
-ScopeAnalyzer::ScopeAnalyzer(parser::BlockStatement* root) : rootNode(root)
+ScopeAnalyzer::ScopeAnalyzer(ast::BlockStatement* root) : rootNode(root)
 {
 }
