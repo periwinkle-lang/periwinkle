@@ -61,10 +61,14 @@ return_statement<ast::ReturnStatement*> = "повернути" (_ e:rhs | ";")
     }
 
 function_declaration<ast::FunctionDeclaration*> =
-    "функція" _ id:identifier _? "(" _? params:function_params _? ")" b:block_statement* _? "кінець"
+    "функція" _ id:identifier _? "(" _? params:function_params? _? ")" b:block_statement* _? "кінець"
     {
-        auto& [p, v, d] = params;
-        $$ = new FunctionDeclaration(newToken(id, $3), p, v, d, new BlockStatement(b));
+        if (params){
+            auto& [p, v, d] = params.value();
+            $$ = new FunctionDeclaration(newToken(id, $3), p, v, d, new BlockStatement(b));
+        } else {
+            $$ = new FunctionDeclaration(newToken(id, $3), {}, std::nullopt, {}, new BlockStatement(b));
+        }
     }
 
 function_params<
@@ -82,8 +86,8 @@ function_params<
     | d:default_parameters { $$ = { {}, std::nullopt, d }; }
 
 parameters<ast::FunctionDeclaration::parameters_t> =
-    | params:parameters _? "," _? !variadic_parameter p:identifier { $$ = params; $$.push_back(newToken(p, $5)); }
-    | !(identifier "..." | default_parameter) p:identifier { $$.push_back(newToken(p, $1)); }
+    | params:parameters _? "," _? !variadic_parameter !default_parameter p:identifier { $$ = params; $$.push_back(newToken(p, $5)); }
+    | !variadic_parameter !default_parameter p:identifier { $$.push_back(newToken(p, $1)); }
 
 variadic_parameter<ast::Token> = !default_parameter vparam:identifier "..." { $$ = newToken(vparam, $2); }
 
@@ -91,7 +95,7 @@ default_parameters<ast::FunctionDeclaration::defaultParameters_t> =
     | dparams:default_parameters _? "," _? d:default_parameter { $$ = dparams; $$.push_back(d); }
     | d:default_parameter { $$.push_back(d); }
 
-default_parameter<ast::FunctionDeclaration::defaultParameter_t> = id:identifier _? "=" _? v:rhs { $$ = {newToken(id, $1), v}; }
+default_parameter<ast::FunctionDeclaration::defaultParameter_t> = id:identifier _? "=" _? v:rhs { $$ = { newToken(id, $1), v }; }
 
 expression<ast::Expression*> =
     | e:assignment_expression { $$ = e; }
@@ -133,22 +137,30 @@ factor<ast::Expression*> =
 
 primary<ast::Expression*> =
     | e:primary _? "." _? id:identifier { $$ = new AttributeExpression(e, newToken(id, $5)); }
-    | e:primary _? "(" _? args:call_arguments _? ")" { auto& [a, n] = args; $$ = new CallExpression(e, a, n); }
-    | v:("істина" | "хиба") { $$ = new LiteralExpression(newToken(v, $1), LiteralExpression::Type::BOOLEAN, v == "істина"); }
-    | num:([1-9][1-9]*)
+    | e:primary _? "(" _? args:call_arguments? _? ")"
         {
-            try {
-                $$ = new LiteralExpression(newToken(num, $1), LiteralExpression::Type::NUMBER, std::stoll(num));
-            } catch (const std::out_of_range& e) {
-                parseError("Число не входить в діапазон можливих значень числа");
+            if (args) {
+                auto& [a, n] = args.value();
+                $$ = new CallExpression(e, a, n);
+            } else {
+                $$ = new CallExpression(e, {}, {});
             }
         }
-    | num:(([0-9]+ "." [0-9]*) | ([0-9]*[.][0-9]+))
+    | v:("істина" | "хиба") { $$ = new LiteralExpression(newToken(v, $1), LiteralExpression::Type::BOOLEAN, v == "істина"); }
+    | num:((("0" | [1-9][0-9]*) "." [0-9]*) | ([1-9]* "." [0-9]+))
         {
             try {
                 $$ = new LiteralExpression(newToken(num, $1), LiteralExpression::Type::REAL, std::stod(num));
             } catch(const std::out_of_range& e) {
                 parseError("Число не входить в діапазон можливих значень дійсного числа");
+            }
+        }
+    | num:([1-9][0-9]*)
+        {
+            try {
+                $$ = new LiteralExpression(newToken(num, $1), LiteralExpression::Type::NUMBER, std::stoll(num));
+            } catch (const std::out_of_range& e) {
+                parseError("Число не входить в діапазон можливих значень числа");
             }
         }
     | s:("\"" body:("\\\""? !"\"" .)* "\"") { $$ = new LiteralExpression(newToken(s, $1), LiteralExpression::Type::STRING, body); }
