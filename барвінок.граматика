@@ -12,17 +12,28 @@
         Token tok { pos.startLine, pos.startCol, text };
         return tok;
     }
+
+    BlockStatement* newBlockStatementExcludeOptional(const std::vector<std::optional<Statement*>>& statements)
+    {
+        auto blockStatement = new BlockStatement({});
+        for (auto& s: statements)
+            if (s.has_value())
+                blockStatement->statements.push_back(s.value());
+        return blockStatement;
+    }
 }
 
 %type "ast::Node*"
 
-program<ast::BlockStatement*> = shebang? _? comments s:statement* comments _? EOF
-    { $$ = new BlockStatement(s); }
+program<ast::BlockStatement*> = shebang? _? s:statement* _? EOF
+    { $$ = newBlockStatementExcludeOptional(s); }
     ~{ parseError("Неправильний синтаксис."); }
 
 shebang = "#!" (!EOL .)+ EOL
 
-statement<ast::Statement*> = comments _? s:statement_ comments _? { $$ = s; }
+statement<std::optional<ast::Statement*>> =
+    | comments? _? s:statement_ comments? _? { $$ = s; }
+    | comments _? { $$ = std::nullopt; }
 
 statement_<ast::Statement*> =
     | s:if_statement { $$ = s; }
@@ -34,40 +45,36 @@ statement_<ast::Statement*> =
     | s:function_declaration { $$ = s; }
     | e:expression { $$ = new ExpressionStatement(e); }
 
-if_statement<ast::IfStatement*> = s:if_statement_ "кінець" { $$ = s; }
+if_statement<ast::IfStatement*> = s:if_statement_ _? "кінець" { $$ = s; }
 if_statement_<ast::IfStatement*> = "якщо" _ c:rhs b:if_block* e:else_or_if?
-    { $$ = new IfStatement(newToken("якщо", $1), c, new BlockStatement(b), e); }
+    { $$ = new IfStatement(newToken("якщо", $1), c, newBlockStatementExcludeOptional(b), e); }
 else_or_if<ast::Statement*> =
     | "або " &"якщо" s:if_statement_ { $$ = s; static_cast<ast::IfStatement*>($$)->if_ = newToken("або якщо", $1); }
-    | "інакше" _ b:if_block* { $$ = new ElseStatement(newToken("інакше", $1), new BlockStatement(b)); }
-if_block<ast::Statement*> = !("кінець" | "або якщо" | "інакше") s:statement { $$ = s; }
+    | "інакше" _ b:if_block* { $$ = new ElseStatement(newToken("інакше", $1), newBlockStatementExcludeOptional(b)); }
+if_block<std::optional<ast::Statement*>> = !("кінець" | "або якщо" | "інакше") s:statement { $$ = s; }
 
-block_statement<ast::Statement*> = !"кінець" s:statement { $$ = s; }
+block_statement<std::optional<ast::Statement*>> = !"кінець" s:statement { $$ = s; }
 
-while_statement<ast::WhileStatement*> = "поки" _ c:rhs b:block_statement* "кінець"
-    { $$ = new WhileStatement(newToken("поки", $1), c, new BlockStatement(b)); }
+while_statement<ast::WhileStatement*> = "поки" _ c:rhs b:block_statement* _? "кінець"
+    { $$ = new WhileStatement(newToken("поки", $1), c, newBlockStatementExcludeOptional(b)); }
 
-for_each_statement<ast::ForEachStatement*> = "кожній" _ id:identifier _ "з" _ e:rhs b:block_statement* "кінець"
-    { $$ = new ForEachStatement(newToken("кожній", $1), newToken(id, $3), e, new BlockStatement(b)); }
+for_each_statement<ast::ForEachStatement*> = "кожній" _ id:identifier _ "з" _ e:rhs b:block_statement* _? "кінець"
+    { $$ = new ForEachStatement(newToken("кожній", $1), newToken(id, $3), e, newBlockStatementExcludeOptional(b)); }
 
 break_statement<ast::BreakStatement*> = "завершити" { $$ = new BreakStatement(newToken("завершити", $1)); }
 continue_statement<ast::ContinueStatement*> = "пропустити" { $$ = new ContinueStatement(newToken("пропустити", $1)); }
 
 return_statement<ast::ReturnStatement*> = "повернути" (_ e:rhs | ";")
-    {
-        std::optional<Expression*> returnValue;
-        if (e) returnValue = e;
-        $$ = new ReturnStatement(newToken("повернути", $1), returnValue);
-    }
+    { $$ = new ReturnStatement(newToken("повернути", $1), e); }
 
 function_declaration<ast::FunctionDeclaration*> =
     "функція" _ id:identifier _? "(" _? params:function_params? _? ")" b:block_statement* _? "кінець"
     {
         if (params){
             auto& [p, v, d] = params.value();
-            $$ = new FunctionDeclaration(newToken(id, $3), p, v, d, new BlockStatement(b));
+            $$ = new FunctionDeclaration(newToken(id, $3), p, v, d, newBlockStatementExcludeOptional(b));
         } else {
-            $$ = new FunctionDeclaration(newToken(id, $3), {}, std::nullopt, {}, new BlockStatement(b));
+            $$ = new FunctionDeclaration(newToken(id, $3), {}, std::nullopt, {}, newBlockStatementExcludeOptional(b));
         }
     }
 
@@ -155,7 +162,7 @@ primary<ast::Expression*> =
                 parseError("Число не входить в діапазон можливих значень дійсного числа");
             }
         }
-    | num:([1-9][0-9]*)
+    | num:(("0" | [1-9][0-9]*))
         {
             try {
                 $$ = new LiteralExpression(newToken(num, $1), LiteralExpression::Type::NUMBER, std::stoll(num));
@@ -190,13 +197,13 @@ named_argument<ast::CallExpression::namedArgument_t> = id:identifier _? "=" _? v
 assignment_expression<ast::AssignmentExpression*> = l:lhs _? op:([-+*\\/%]? "=") _? r:rhs
     { $$ = new AssignmentExpression(newToken(l, $1), newToken(op, $2), r); }
 
-identifier<std::string> = keywords id:([а-щА-ЩьюяїієґЬЮЯЇІЄҐ_][а-щА-ЩьюяїієґЬЮЯЇІЄҐ0-9_]*) { $$ = id; }
+identifier<std::string> = !keywords id:([а-щА-ЩьюяїієґЬЮЯЇІЄҐ_][а-щА-ЩьюяїієґЬЮЯЇІЄҐ0-9_]*) { $$ = id; }
 keywords =
-    !"якщо" !"або якщо" !"інакше" !"кінець" !"поки" !"пропустити" !"завершити" !"менше" !"більше"
-    !"є" !"не" !"або" !"та" !"функція" !"повернути" !"кожній" !"з"
+    ("якщо" | "або якщо" | "інакше" | "кінець" | "поки" | "пропустити" | "завершити" | "менше" | "більше"
+     | "є" | "не" | "або" | "та" | "функція" | "повернути" | "кожній" | "з") ![а-щА-ЩьюяїієґЬЮЯЇІЄҐ0-9_]
 
-comments = (_? one_line_comment | _? multiline_comment)*
-one_line_comment = "//" (!EOL .)* EOL
+comments = (_? one_line_comment | _? multiline_comment)+
+one_line_comment = "//" (!(EOL | EOF) .)* (EOL | EOF)
 multiline_comment =
     | "/*" (!"*/" .)* "*/"
     | "/*" .* { parseError("Очікується */"); }
