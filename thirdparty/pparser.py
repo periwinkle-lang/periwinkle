@@ -30,7 +30,7 @@ import sys
 import re
 import os
 
-VERSION = "0.1.0"
+VERSION = "0.1.2"
 RT = typing.TypeVar('RT')  # return type
 
 
@@ -38,7 +38,7 @@ class TokenType(enum.Enum):
     COMMENT = re.compile(r"#.*(?=\n)?")
     IDENTIFIER = re.compile(r"[^\d\W]\w*")
     EQUAL = re.compile(r"=")
-    PIPE = re.compile(r"\|")
+    SLASH = re.compile(r"/")
     AMPERSAND = re.compile(r"&")
     EXCLAMATION_MARK = re.compile(r"!")
     STAR = re.compile(r"\*")
@@ -54,6 +54,7 @@ class TokenType(enum.Enum):
     CHARACTER_CLASS = re.compile(r"\[[^\]\\]*(\\.[^\]\\]*)*\]")
     DOT = re.compile(r"\.")
     TILDE = re.compile(r"~")
+    MINUS = re.compile(r"-")
     # special tokens
     CODE_SECTION = enum.auto()
     ACTION = enum.auto()
@@ -269,6 +270,8 @@ class RuleNode(Node):
     expression_sequences: list[ParsingExpressionSequence]
     return_type: str | None = None
     is_left_recursive: bool = False
+    memo: bool = True
+    inline: bool = False
 
 
 STRING_UNESCAPE_TABLE = {
@@ -329,6 +332,14 @@ def escape_string(string: str) -> str:
         else:
             new_string += ch
     return new_string
+
+
+def string_to_bytes(string: str) -> bytes:
+    return re.sub(
+            rb"\\x[0-9a-fA-F]{2}",
+            lambda x: int(x.group(0)[-2:], 16).to_bytes(1, "big"),
+            string.encode()
+        )
 
 
 class ParsingFail(Exception):
@@ -432,6 +443,7 @@ class Parser:
             id = self.match(TokenType.IDENTIFIER)
             self.lookahead(False, TokenType.EQUAL)
             self.lookahead(False, TokenType.RULE_TYPE)
+            self.lookahead(False, TokenType.MINUS)
             return ParsingExpressionRuleNameNode(id.value).set_pos(id)
         with self.manager:
             str_token = self.match(TokenType.STRING)
@@ -501,7 +513,7 @@ class Parser:
         with self.manager:
             return self.loop(True, self.parsing_expression_named_item_or_item)
         with self.manager:
-            self.match(TokenType.PIPE)
+            self.match(TokenType.SLASH)
             return self.loop(True, self.parsing_expression_named_item_or_item)
         raise ParsingFail
 
@@ -527,15 +539,32 @@ class Parser:
             return node
         raise ParsingFail
 
+    def rule_attribute(self):
+        attr: Token
+        with self.manager:
+            self.match(TokenType.MINUS)
+            attr = self.match(TokenType.IDENTIFIER)
+            if attr.value in ("nomemo", "inline"):
+                return attr
+            self.error(f"Unknown rule attribute \"{attr.value}\"")
+        return None
+
     def rule_statement(self):
         with self.manager:
             rule_name = self.match(TokenType.IDENTIFIER)
             rule_type = self.optional(TokenType.RULE_TYPE)
+            attr = self.rule_attribute()
             self.match(TokenType.EQUAL)
             parsing_expressions = self.loop(True, self.parsing_expression)
             rule_node = RuleNode(rule_name.value, parsing_expressions).set_pos(rule_name)
             if rule_type:
                 rule_node.return_type = rule_type.value[1:-1].strip()
+            if attr:
+                match attr.value:
+                    case "nomemo":
+                        rule_node.memo = False
+                    case "inline":
+                        rule_node.inline = True
             return rule_node
         raise ParsingFail
 
@@ -691,13 +720,45 @@ class CppType:
         return ""
 
 
-class LeftRecursiveAnalyzer:
-    def __init__(self, root_node: BlockStatementNode):
+class AstContext:
+    def __init__(self, root_node: BlockStatementNode, filename: str):
         self.root_node = root_node
+        self.filename = filename
+        if r := self.get_node_or_none(RootRuleNode):
+            self.root_rule: RuleNode = self.get_rule_by_name(r.name)  # type: ignore
+        else:
+            self.root_rule: RuleNode = self.get_node_or_none(RuleNode)  # type: ignore
+
+    def get_rule_by_name(self, name: str) -> RuleNode | None:
+        return find_by_predicate(
+            self.root_node.statements, lambda node: isinstance(node, RuleNode) and node.name == name)
+
+    def get_node_or_none(self, node_type: typing.Type[RT]) -> RT | None:
+        for item in self.root_node.statements:
+            if isinstance(item, node_type):
+                return item
+
+    def get_rules(self) -> list[RuleNode]:
+        rules = []
+        for statement in self.root_node.statements:
+            if isinstance(rule := statement, RuleNode):
+                rules.append(rule)
+        return rules
+
+    def get_rule_names(self) -> list[str]:
+        return [rule.name for rule in self.get_rules()]
+
+    def get_node_count(self, node_type: typing.Type[Node]) -> int:
+        return count_by_predicate(self.root_node.statements, lambda node: isinstance(node, node_type))
+
+
+class LeftRecursiveAnalyzer:
+    def __init__(self, ctx: AstContext):
+        self.ctx = ctx
 
     def analyze(self):
-        for node in self.root_node.statements:
-            if isinstance(rule := node, RuleNode):
+        for rule in self.ctx.get_rules():
+            if not rule.inline:
                 rule.is_left_recursive = self.is_direct_left_recursive(rule)
 
     def is_direct_left_recursive(self, rule: RuleNode) -> bool:
@@ -726,7 +787,7 @@ class LeftRecursiveAnalyzer:
         return False
 
     def is_rule_consume_zero(self, rule_name: str) -> bool:
-        rule = self.get_rule_by_name(rule_name)
+        rule: RuleNode = self.ctx.get_rule_by_name(rule_name)  # type: ignore
         for sequence in rule.expression_sequences:
             zero_consume = True
             for item in sequence.items:
@@ -736,19 +797,10 @@ class LeftRecursiveAnalyzer:
             if zero_consume: return True
         return False
 
-    def get_rule_by_name(self, rule_name: str) -> RuleNode:
-        return find_by_predicate(
-            self.root_node.statements, lambda node: isinstance(node, RuleNode) and node.name == rule_name)  # type: ignore
-
 
 class StaticAnalyzer:
-    def __init__(self, root_node: BlockStatementNode, filename: str):
-        self.root_node = root_node
-        self.filename = filename
-        if r := self.get_node_or_none(RootRuleNode):
-            self.root_rule_name = r.name
-        else:
-            self.root_rule_name = self.get_node_or_none(RuleNode).name  # type: ignore
+    def __init__(self, ctx: AstContext):
+        self.ctx = ctx
 
     def analyze(self):
         self.rules_presence()
@@ -757,7 +809,7 @@ class StaticAnalyzer:
         self.check_rule_name_in_root_directive()
         self.rule_not_exist_but_used()
         self.unused_rules()
-        LeftRecursiveAnalyzer(self.root_node).analyze()  # only after check unused rules
+        LeftRecursiveAnalyzer(self.ctx).analyze()  # only after check unused rules
         self.wrong_left_recursive_rules()
         self.check_action_presence()  # check for the presence of an action when variables are present
         self.same_var_names_in_parsing_expr_sequence()
@@ -768,13 +820,15 @@ class StaticAnalyzer:
         self.check_return_types_in_parsing_expression_sequences()
         self.check_characters_inside_character_class()
         self.check_position_vars_in_action()
+        self.check_nomemo_attr()
+        self.check_inline_attr()
 
     def rules_presence(self):
-        if self.get_node_or_none(RuleNode) is None:
+        if self.ctx.get_node_or_none(RuleNode) is None:
             self.error("No rule is defined")
 
     def same_rule_names(self):
-        rule_names = self.get_rule_names()
+        rule_names = self.ctx.get_rule_names()
         for i, rule_name in enumerate(rule_names[:-1], 1):
             for rule_name_ in rule_names[i:]:
                 if rule_name == rule_name_:
@@ -782,31 +836,30 @@ class StaticAnalyzer:
 
     def check_directives(self):
         error_message = "The '%{}' directive has more than one definition"
-        if self.get_node_count(NameNode) > 1:
+        if self.ctx.get_node_count(NameNode) > 1:
             self.error(error_message.format("name"))
-        if self.get_node_count(HeaderBlockNode) > 1:
+        if self.ctx.get_node_count(HeaderBlockNode) > 1:
             self.error(error_message.format("hpp"))
-        if self.get_node_count(CodeBlockNode) > 1:
+        if self.ctx.get_node_count(CodeBlockNode) > 1:
             self.error(error_message.format("cpp"))
-        if self.get_node_count(RuleTypeNode) > 1:
+        if self.ctx.get_node_count(RuleTypeNode) > 1:
             self.error(error_message.format("type"))
-        if self.get_node_count(RootRuleNode) > 1:
+        if self.ctx.get_node_count(RootRuleNode) > 1:
             self.error(error_message.format("root"))
 
     def check_rule_name_in_root_directive(self):
-        if root_rule_node := self.get_node_or_none(RootRuleNode):
-            if root_rule_node.name not in self.get_rule_names():
+        if root_rule_node := self.ctx.get_node_or_none(RootRuleNode):
+            if root_rule_node.name not in self.ctx.get_rule_names():
                 self.error(f"The directive '%root' contains a non-existing rule: '{root_rule_node.name}'", root_rule_node)
 
     def rule_not_exist_but_used(self):
-        rule_names = self.get_rule_names()
-        for statement in self.root_node.statements:
-            if isinstance(rule := statement, RuleNode):
-                for sequence in rule.expression_sequences:
-                    for item in sequence.items:
-                        if isinstance(item, ParsingExpressionRuleNameNode):
-                            if item.name not in rule_names:
-                                self.error(f"The '{rule.name}' rule invokes a nonexistent rule '{item.name}'", item)
+        rule_names = self.ctx.get_rule_names()
+        for rule in self.ctx.get_rules():
+            for sequence in rule.expression_sequences:
+                for item in sequence.items:
+                    if isinstance(item, ParsingExpressionRuleNameNode):
+                        if item.name not in rule_names:
+                            self.error(f"The '{rule.name}' rule invokes a nonexistent rule '{item.name}'", item)
 
     def unused_rules(self):
         checked_rules = []
@@ -817,7 +870,7 @@ class StaticAnalyzer:
                     if isinstance(r := item, ParsingExpressionRuleNameNode):
                         if r.name not in checked_rules:
                             rules.add(r.name)
-                            rules.update(rule_traversal(self.get_rule_by_name(r.name)))
+                            rules.update(rule_traversal(self.ctx.get_rule_by_name(r.name)))  # type: ignore
                     elif isinstance(g := item, ParsingExpressionGroupNode):
                         rules.update(group_traversal(g))
             return rules
@@ -830,184 +883,170 @@ class StaticAnalyzer:
                     if isinstance(r := item, ParsingExpressionRuleNameNode):
                         if r.name not in checked_rules:
                             rules.add(r.name)
-                            rules.update(rule_traversal(self.get_rule_by_name(r.name)))
+                            rules.update(rule_traversal(self.ctx.get_rule_by_name(r.name)))  # type: ignore
                     elif isinstance(g := item, ParsingExpressionGroupNode):
                         rules.update(group_traversal(g))
             return rules
 
-        root_rule = self.get_rule_by_name(self.root_rule_name)
-        used_rules = rule_traversal(root_rule)
-        used_rules.add(root_rule.name)
-        all_rules = set(self.get_rule_names())
+        used_rules = rule_traversal(self.ctx.root_rule)
+        used_rules.add(self.ctx.root_rule.name)
+        all_rules = set(self.ctx.get_rule_names())
         if len(unused_rules := all_rules - used_rules):
             error_messages = []
             for unused_rule_name in unused_rules:
-                unused_rule_node = self.get_rule_by_name(unused_rule_name)
-                error_messages.append(f"{self.filename}:{unused_rule_node.line}:{unused_rule_node.col}:"
+                unused_rule_node: RuleNode = self.ctx.get_rule_by_name(unused_rule_name)  # type: ignore
+                error_messages.append(f"{self.ctx.filename}:{unused_rule_node.line}:{unused_rule_node.col}:"
                                       f" Rule '{unused_rule_name}' defined but not used")
             self.error("\n".join(error_messages))
 
     def wrong_left_recursive_rules(self):
-        for statement in self.root_node.statements:
-            if isinstance(rule := statement, RuleNode):
-                if rule.is_left_recursive:
-                    if len(rule.expression_sequences) == 1:
-                        self.error(f"In the '{rule.name}' name, a left-recursive rule must be at least 2 sequences of expressions", rule)
+        for rule in self.ctx.get_rules():
+            if rule.is_left_recursive:
+                if len(rule.expression_sequences) == 1:
+                    self.error(f"In the '{rule.name}' name, a left-recursive rule must be at least 2 sequences of expressions", rule)
 
     def check_action_presence(self):
-        for statement in self.root_node.statements:
-            if isinstance(rule := statement, RuleNode):
-                is_rule_type_specified = bool(rule.return_type)
-                for parsing_expression_sequence in rule.expression_sequences:
-                    is_var_presence = False
-                    for item in parsing_expression_sequence.items:
-                        if isinstance(group := item, ParsingExpressionGroupNode):
-                            if len(self.get_vars_from_group(group)):
-                                is_var_presence = True
-                                break
-                        if item.ctx.name:
+        for rule in self.ctx.get_rules():
+            is_rule_type_specified = bool(rule.return_type)
+            for parsing_expression_sequence in rule.expression_sequences:
+                is_var_presence = False
+                for item in parsing_expression_sequence.items:
+                    if isinstance(group := item, ParsingExpressionGroupNode):
+                        if len(self.get_vars_from_group(group)):
                             is_var_presence = True
                             break
-                    if is_var_presence and parsing_expression_sequence.action is None:
-                        self.error(f"In the '{rule.name}' rule, variables are declared, but there is no action", parsing_expression_sequence)
-                    if is_rule_type_specified:
-                        if parsing_expression_sequence.action is None:
-                            self.error(f"In the '{rule.name}' rule, the return type is defined, but the action not specified",
-                                       parsing_expression_sequence)
-                        elif "$$" not in parsing_expression_sequence.action:
-                            self.error(f"In the '{rule.name}' rule, the return type is defined, but '$$' variable in the action is not",
-                                       parsing_expression_sequence)
+                    if item.ctx.name:
+                        is_var_presence = True
+                        break
+                if is_var_presence and parsing_expression_sequence.action is None:
+                    self.error(f"In the '{rule.name}' rule, variables are declared, but there is no action", parsing_expression_sequence)
+                if is_rule_type_specified:
+                    if parsing_expression_sequence.action is None:
+                        self.error(f"In the '{rule.name}' rule, the return type is defined, but the action not specified",
+                                    parsing_expression_sequence)
+                    elif "$$" not in parsing_expression_sequence.action:
+                        self.error(f"In the '{rule.name}' rule, the return type is defined, but '$$' variable in the action is not",
+                                    parsing_expression_sequence)
 
     def same_var_names_in_parsing_expr_sequence(self):
         error_message = "In the '{}' rule, variable '{}' is declared multiple times"
-        for statement in self.root_node.statements:
-            if isinstance(rule := statement, RuleNode):
-                for parsing_expression_sequence in rule.expression_sequences:
-                    var_names = []
-                    for item in parsing_expression_sequence.items:
-                        if isinstance(group := item, ParsingExpressionGroupNode):
-                            for var in self.get_vars_from_group(group):
-                                if var in var_names:
-                                    self.error(error_message.format(rule.name, var), parsing_expression_sequence)
-                                var_names.append(var)
-                        if (var := item.ctx.name):
+        for rule in self.ctx.get_rules():
+            for parsing_expression_sequence in rule.expression_sequences:
+                var_names = []
+                for item in parsing_expression_sequence.items:
+                    if isinstance(group := item, ParsingExpressionGroupNode):
+                        for var in self.get_vars_from_group(group):
                             if var in var_names:
                                 self.error(error_message.format(rule.name, var), parsing_expression_sequence)
                             var_names.append(var)
+                    if (var := item.ctx.name):
+                        if var in var_names:
+                            self.error(error_message.format(rule.name, var), parsing_expression_sequence)
+                        var_names.append(var)
 
     def group_with_repetition_has_variables_inside(self):
-        for statement in self.root_node.statements:
-            if isinstance(rule := statement, RuleNode):
-                for parsing_expression_sequence in rule.expression_sequences:
-                    for item in parsing_expression_sequence.items:
-                        if isinstance(group := item, ParsingExpressionGroupNode):
-                            if group.ctx.loop and len(self.get_vars_from_group(group)):
-                                self.error(f"In the '{rule.name}' rule, the group uses variables inside itself"
-                                           " and repetitions operators simultaneously", group)
+        for rule in self.ctx.get_rules():
+            for parsing_expression_sequence in rule.expression_sequences:
+                for item in parsing_expression_sequence.items:
+                    if isinstance(group := item, ParsingExpressionGroupNode):
+                        if group.ctx.loop and len(self.get_vars_from_group(group)):
+                            self.error(f"In the '{rule.name}' rule, the group uses variables inside itself"
+                                        " and repetitions operators simultaneously", group)
 
     def lookahead_false_assigned_to_var(self):
-        for statement in self.root_node.statements:
-            if isinstance(rule := statement, RuleNode):
-                for parsing_expression_sequence in rule.expression_sequences:
-                    for item in parsing_expression_sequence.items:
-                        if item.ctx.lookahead and not item.ctx.lookahead_positive and item.ctx.name:
-                            self.error(f"In the '{rule.name}' rule, a parsing expression with the '!' operator"
-                                       " cannot be assigned to a variable", item)
+        for rule in self.ctx.get_rules():
+            for parsing_expression_sequence in rule.expression_sequences:
+                for item in parsing_expression_sequence.items:
+                    if item.ctx.lookahead and not item.ctx.lookahead_positive and item.ctx.name:
+                        self.error(f"In the '{rule.name}' rule, a parsing expression with the '!' operator"
+                                    " cannot be assigned to a variable", item)
 
     def string_assigned_to_var(self):
-        for statement in self.root_node.statements:
-            if isinstance(rule := statement, RuleNode):
-                for parsing_expression_sequence in rule.expression_sequences:
-                    for item in parsing_expression_sequence.items:
-                        if isinstance(string := item, ParsingExpressionStringNode):
-                            if string.ctx.name:
-                                if string.ctx.lookahead:
-                                    self.error(f"In the '{rule.name}' rule, a string with the '&' operator"
-                                                " cannot be assigned to a variable", string)
-                                if not string.ctx.loop and not string.ctx.optional:
-                                    self.error(f"In the '{rule.name}' rule, simple string cannot be assigned to a variable", string)
+        for rule in self.ctx.get_rules():
+            for parsing_expression_sequence in rule.expression_sequences:
+                for item in parsing_expression_sequence.items:
+                    if isinstance(string := item, ParsingExpressionStringNode):
+                        if string.ctx.name:
+                            if string.ctx.lookahead:
+                                self.error(f"In the '{rule.name}' rule, a string with the '&' operator"
+                                            " cannot be assigned to a variable", string)
+                            if not string.ctx.loop and not string.ctx.optional:
+                                self.error(f"In the '{rule.name}' rule, simple string cannot be assigned to a variable", string)
 
     def check_return_types_in_parsing_expression_sequences(self):
-        for statement in self.root_node.statements:
-            if isinstance(rule := statement, RuleNode):
-                if len(rule.expression_sequences) > 1:
-                    return_type = get_return_type_of_parsing_expression_sequence(rule.expression_sequences[0])
-                    for parsing_expression_sequence in rule.expression_sequences[1:]:
-                        if return_type != get_return_type_of_parsing_expression_sequence(parsing_expression_sequence):
-                            self.error(f"In the '{rule.name}' rule, parsing expression sequences return different types", rule)
+        for rule in self.ctx.get_rules():
+            if len(rule.expression_sequences) > 1:
+                return_type = get_return_type_of_parsing_expression_sequence(rule.expression_sequences[0])
+                for parsing_expression_sequence in rule.expression_sequences[1:]:
+                    if return_type != get_return_type_of_parsing_expression_sequence(parsing_expression_sequence):
+                        self.error(f"In the '{rule.name}' rule, parsing expression sequences return different types", rule)
 
     def check_characters_inside_character_class(self):
-        for statement in self.root_node.statements:
-            if isinstance(rule := statement, RuleNode):
-                for parsing_expression_sequence in rule.expression_sequences:
-                    for item in parsing_expression_sequence.items:
-                        if isinstance(character_class := item, ParsingExpressionCharacterClassNode):
-                            characters = []
-                            ranges: list[tuple[str, str]] = []
-                            i = 0
-                            while i < len(character_class.characters):
-                                ch = character_class.characters[i]
-                                if i + 2 < len(character_class.characters) and character_class.characters[i + 1] == "-":
-                                    from_ = ch
-                                    to = character_class.characters[i + 2]
-                                    error_message = (
-                                            f"In the '{rule.name}' rule, inside the character class"
-                                            f" '[{escape_string(character_class.characters)}]',"
-                                            " {}"
-                                            f" '{escape_string(from_)}-{escape_string(to)}'"
-                                    )
-                                    if from_ == to:
-                                        self.error(error_message.format("the first and second characters in the range are the same"),
-                                                   character_class)
-                                    elif ord(from_) > ord(to):
-                                        self.error(error_message.format("the first character is 'greater' than the second in a range"),
-                                                   character_class)
-                                    i += 2
-                                    ranges.append((from_, to))
-                                else:
-                                    if ch in characters:
-                                        self.error(f"In the '{rule.name}' rule, the character class has the same characters: {escape_string(ch)}",
-                                                   character_class)
-                                    characters.append(ch)
-                                i += 1
+        for rule in self.ctx.get_rules():
+            for parsing_expression_sequence in rule.expression_sequences:
+                for item in parsing_expression_sequence.items:
+                    if isinstance(character_class := item, ParsingExpressionCharacterClassNode):
+                        characters = []
+                        ranges: list[tuple[str, str]] = []
+                        i = 0
+                        while i < len(character_class.characters):
+                            ch = character_class.characters[i]
+                            if i + 2 < len(character_class.characters) and character_class.characters[i + 1] == "-":
+                                from_ = ch
+                                to = character_class.characters[i + 2]
+                                error_message = (
+                                        f"In the '{rule.name}' rule, inside the character class"
+                                        f" '[{escape_string(character_class.characters)}]',"
+                                        " {}"
+                                        f" '{escape_string(from_)}-{escape_string(to)}'"
+                                )
+                                if from_ == to:
+                                    self.error(error_message.format("the first and second characters in the range are the same"),
+                                                character_class)
+                                elif ord(from_) > ord(to):
+                                    self.error(error_message.format("the first character is 'greater' than the second in a range"),
+                                                character_class)
+                                i += 2
+                                ranges.append((from_, to))
+                            else:
+                                if ch in characters:
+                                    self.error(f"In the '{rule.name}' rule, the character class has the same characters: {escape_string(ch)}",
+                                                character_class)
+                                characters.append(ch)
+                            i += 1
 
-                            for from_, to in ranges:
-                                for ch in characters:
-                                    if ord(ch) >= ord(from_) and ord(ch) <= ord(to):
-                                        self.error(
-                                            f"In the '{rule.name}' rule, inside the character class"
-                                            f" '[{escape_string(character_class.characters)}]',"
-                                            f" the character '{escape_string(ch)}' intersects with the range"
-                                            f" '{escape_string(from_)}-{escape_string(to)}'",
-                                            character_class
-                                        )
+                        for from_, to in ranges:
+                            for ch in characters:
+                                if ord(ch) >= ord(from_) and ord(ch) <= ord(to):
+                                    self.error(
+                                        f"In the '{rule.name}' rule, inside the character class"
+                                        f" '[{escape_string(character_class.characters)}]',"
+                                        f" the character '{escape_string(ch)}' intersects with the range"
+                                        f" '{escape_string(from_)}-{escape_string(to)}'",
+                                        character_class
+                                    )
 
     def check_position_vars_in_action(self):
-        for statement in self.root_node.statements:
-            if isinstance(rule := statement, RuleNode):
+        for rule in self.ctx.get_rules():
+            for sequence in rule.expression_sequences:
+                if vars := sequence.position_vars:
+                    for var in vars:
+                        if int(var) > len(sequence.items):
+                            self.error(f"'${var}', the index exceeds the number of expressions", sequence)
+
+    def check_nomemo_attr(self):
+        for rule in self.ctx.get_rules():
+            if rule.is_left_recursive and rule.memo is False:
+                self.error(f"Rule '{rule.name}': the -nomemo attribute has no effect on left-recursive rules", rule)
+
+    def check_inline_attr(self):
+        for rule in self.ctx.get_rules():
+            if rule.inline:
+                if rule.return_type:
+                    self.error(f"Rule '{rule.name}': if the -inline attribute is defined, the rule cannot have a return type", rule)
                 for sequence in rule.expression_sequences:
-                    if vars := sequence.position_vars:
-                        for var in vars:
-                            if int(var) > len(sequence.items):
-                                self.error(f"'${var}', the index exceeds the number of expressions", sequence)
-
-    def get_rule_by_name(self, name: str) -> RuleNode:
-        return find_by_predicate(self.root_node.statements, lambda node: isinstance(node, RuleNode) and node.name == name)  # type: ignore
-
-    def get_rule_names(self) -> list[str]:
-        rule_names = []
-        for statement in self.root_node.statements:
-            if isinstance(rule := statement, RuleNode):
-                rule_names.append(rule.name)
-        return rule_names
-
-    def get_node_count(self, node_type: typing.Type[Node]) -> int:
-        return count_by_predicate(self.root_node.statements, lambda node: isinstance(node, node_type))
-
-    def get_node_or_none(self, node_type: typing.Type[RT]) -> RT | None:
-        for item in self.root_node.statements:
-            if isinstance(item, node_type):
-                return item
+                    if sequence.action or sequence.error_action:
+                        self.error(f"Rule '{rule.name}': if the -inline attribute is defined, the rule cannot have actions", rule)
 
     def get_vars_from_group(self, group: ParsingExpressionGroupNode) -> list[str]:
         vars = []
@@ -1021,7 +1060,7 @@ class StaticAnalyzer:
 
     def error(self, message: str, node: Node | None = None) -> typing.NoReturn:
         if node:
-            print(f"{self.filename}:{node.line}:{node.col}: ", end='', file=sys.stderr)
+            print(f"{self.ctx.filename}:{node.line}:{node.col}: ", end='', file=sys.stderr)
         print(message, file=sys.stderr)
         sys.exit(1)
 
@@ -1030,14 +1069,12 @@ class CodeGenerator:
     cpp_file: TextIOWrapper
     hpp_file: TextIOWrapper
 
-    def __init__(self, root_node: BlockStatementNode, filename: str):
-        self.root_node = root_node
-        self.parser_name = filename.split(".")[0]
-        self.filename = filename
+    def __init__(self, ctx: AstContext):
+        self.ctx = ctx
+        self.parser_name = ctx.filename.split(".")[0]
         self.header_from_directive = ""
         self.code_from_directive = ""
         self.rule_type = "size_t"
-        self.root_rule = ""
         self.rules_return_type: dict[str, CppType] = dict()
 
         if name_node := self.get_node_or_none(NameNode):
@@ -1054,14 +1091,11 @@ class CodeGenerator:
 
         self.type_analysis()  # it should come after processing the %type directive
 
-        if root_rule_node := self.get_node_or_none(RootRuleNode):
-            self.root_rule = root_rule_node.name
-
     def get_node_or_none(self, node_type: typing.Type[RT]) -> RT | None:
-        return find_by_predicate(self.root_node.statements, lambda item: isinstance(item, node_type))
+        return find_by_predicate(self.ctx.root_node.statements, lambda item: isinstance(item, node_type))
 
     def type_analysis(self):
-        for node in self.root_node.statements:
+        for node in self.ctx.root_node.statements:
             if not isinstance(rule := node, RuleNode):
                 continue
             if rule.return_type:
@@ -1073,8 +1107,9 @@ class CodeGenerator:
         self.cpp_file = open(f"{self.parser_name}.cpp", "w", encoding="utf-8-sig")
         self.hpp_file = open(f"{self.parser_name}.hpp", "w", encoding="utf-8-sig")
 
-        copyright_comment = f"// Generated by pparser {VERSION} (https://github.com/romanfedyniak/pparser) from {self.filename}"
-        rule_count = count_by_predicate(self.root_node.statements, lambda item: isinstance(item, RuleNode))
+        copyright_comment = f"// Generated by pparser {VERSION} (https://github.com/romanfedyniak/pparser) from {self.ctx.filename}"
+        memo_size = count_by_predicate(
+            self.ctx.root_node.statements, lambda item: isinstance(item, RuleNode) and item.memo and not item.inline)
 
         write_lines(
             self.cpp_file,
@@ -1159,7 +1194,7 @@ class CodeGenerator:
             "        errorHandler_t errorHandler;",
             "        const std::string_view src;",
             "        size_t position = 0;",
-            f"        std::array<std::unordered_map<size_t, std::tuple<std::any, size_t>>, {rule_count}> memos;",
+            f"        std::array<std::unordered_map<size_t, std::tuple<std::any, size_t>>, {memo_size}> memos;",
             "        std::vector<size_t> lineNumbers;",
             "",
             "        ////////// BEGINNING OF RULES //////////",
@@ -1265,16 +1300,16 @@ class CodeGenerator:
             "        errorHandler = handler;",
             "    }",
             "",
-            f"    {self.rules_return_type[self.root_rule]} Parser::parse() noexcept",
+            f"    {self.rules_return_type[self.ctx.root_rule.name]} Parser::parse() noexcept",
             "    {",
             "        this->calculateLineNumbers();",
             "        this->position = 0;",
             "        try {",
-            f"            return rule__{self.root_rule}();",
+            f"            return rule__{self.ctx.root_rule.name}();",
             "        } catch (const ParsingFail& error) {",
             "            if (errorHandler) errorHandler(error.message, error.position);",
             "            else { std::cerr << \"Error at position \" << error.position << \": \" << error.message << std::endl; }",
-            f"            return {self.rules_return_type[self.root_rule].null};",
+            f"            return {self.rules_return_type[self.ctx.root_rule.name].null};",
             "        }",
             "    }",
             "",
@@ -1298,7 +1333,7 @@ class CodeGenerator:
             "",
             "    public:",
             "        void setErrorHandler(errorHandler_t handler);",
-            f"        {self.rules_return_type[self.root_rule]} parse() noexcept;",
+            f"        {self.rules_return_type[self.ctx.root_rule.name]} parse() noexcept;",
             "",
             "        explicit Parser(std::string_view src);",
             "    };",
@@ -1312,15 +1347,15 @@ class CodeGenerator:
 
     def generate(self):
         rule_id = 0
-        for node in self.root_node.statements:
+        for node in self.ctx.root_node.statements:
             match node:
                 case NameNode() | HeaderBlockNode() | CodeBlockNode() | RuleTypeNode() | RootRuleNode():
                     pass
                 case RuleNode():
-                    if not self.root_rule:
-                        self.root_rule = node.name
-                    self.gen_rule(node, rule_id)
-                    rule_id += 1
+                    if not node.inline:
+                        self.gen_rule(node, rule_id)
+                        if node.memo:
+                            rule_id += 1
                 case _:
                     self.gen_type_error(node)
 
@@ -1338,7 +1373,7 @@ class CodeGenerator:
                 "    {",
             )
         else:
-            write_lines(self.hpp_file, f"        {return_type} rule__{node.name}_();")
+            write_lines(self.hpp_file, f"        {return_type} rule__{node.name}__body();")
             write_lines(
                 self.cpp_file,
                 f"    {return_type} Parser::rule__{node.name}()",
@@ -1361,7 +1396,7 @@ class CodeGenerator:
                 "            for(;;)",
                 "            {",
                 "                this->position = mark;",
-                f"                auto result = rule__{node.name}_();",
+                f"                auto result = rule__{node.name}__body();",
                 "                auto end_position = this->position;",
                 "                if (end_position <= last_position) break;",
                 f"                this->memoSet({rule_id}, result{return_type.getter}, mark);",
@@ -1379,11 +1414,11 @@ class CodeGenerator:
 
             write_lines(
                 self.cpp_file,
-                f"    {return_type} Parser::rule__{node.name}_()",
+                f"    {return_type} Parser::rule__{node.name}__body()",
                 "    {",
             )
         code = ""
-        if not node.is_left_recursive:
+        if not node.is_left_recursive and node.memo:
             code += f"auto __memoized = this->memoGet({rule_id});\n"
             code += f"if (__memoized.has_value())\n"
             code += "{\n"
@@ -1399,7 +1434,7 @@ class CodeGenerator:
                 code += f"NEXT_{i}:\n"
                 code += "this->position = __mark;\n"
             next = f"NEXT_{i + 1}" if i + 1 < len(node.expression_sequences) else "FAIL"
-            code += self.gen_parsing_expr(parsing_expression, next, return_type, i + 1, rule_id, node.is_left_recursive)
+            code += self.gen_parsing_expr(parsing_expression, next, return_type, i + 1, rule_id, node)
             code += "\n"
         self.cpp_file.write(add_indent(code, 8))
 
@@ -1408,26 +1443,33 @@ class CodeGenerator:
             "        this->position = __mark;",
         )
 
-        if not node.is_left_recursive:
+        if not node.is_left_recursive and node.memo:
             write_lines(self.cpp_file, f"        this->memoSet({rule_id}, {{}}, __mark);")
         write_lines(self.cpp_file, f"        return {return_type.null};")
         if not return_type.is_optional:
             write_lines(self.cpp_file, "    SUCCESS:")
-            if not node.is_left_recursive:
+            if not node.is_left_recursive and node.memo:
                 write_lines(self.cpp_file, f"        this->memoSet({rule_id}, true, __mark);")
             write_lines(self.cpp_file, "        return true;")
         write_lines(self.cpp_file, "    }", "")
 
     def gen_parsing_expr(
-            self, node: ParsingExpressionSequence, next: str, return_type: CppType, expr_index: int, rule_id: int, is_left_recursive: bool):
+            self, node: ParsingExpressionSequence, next: str, return_type: CppType, expr_index: int, rule_id: int, rule: RuleNode):
         group_index = 1
         generated_exprs: list[GeneratedExpression | GeneratedGroupExpression] = []
         if node.error_action:
+            real_next = next
             next = f"ERROR_ACTION_{expr_index}"
         for i in node.items:
             match i:
                 case ParsingExpressionRuleNameNode():
-                    generated_exprs.append(self.gen_parsing_expr_rule_name(i, next))
+                    if (rule_ := self.ctx.get_rule_by_name(i.name)) and rule_.inline:
+                        group = ParsingExpressionGroupNode(rule_.expression_sequences)
+                        group.ctx = i.ctx
+                        generated_exprs.append(self.gen_parsing_expr_group(group, next, f"group_{expr_index}_{group_index}"))
+                        group_index += 1
+                    else:
+                        generated_exprs.append(self.gen_parsing_expr_rule_name(i, next))
                 case ParsingExpressionStringNode():
                     generated_exprs.append(self.gen_parsing_expr_string(i, next))
                 case ParsingExpressionCharacterClassNode():
@@ -1478,7 +1520,7 @@ class CodeGenerator:
                 action_code = action_code.replace("$$", "__rule_result")
                 code += set_indent(action_code, 8)
                 code += "\n"
-                if not is_left_recursive:
+                if not rule.is_left_recursive and rule.memo:
                     code += f"        this->memoSet({rule_id}, __rule_result, __mark);\n"
                 code += "        return __rule_result;\n"
             else:
@@ -1494,7 +1536,7 @@ class CodeGenerator:
             code += set_indent(node.error_action, 8)
             code += "\n"
             code += "    } // end of error action\n"
-            code += f"    goto {next};\n"
+            code += f"    goto {real_next};\n"  # type: ignore
         code += "}\n"
         return code
 
@@ -1518,12 +1560,14 @@ class CodeGenerator:
             code += "   position = __tempMark;\n"
             code += "}\n"
         elif node.ctx.optional:
+            code += "{\n"
             if node.ctx.name:
                 var = f"std::optional<{return_type.raw_type}> {node.ctx.name};"
-                code += "auto __result = "
-            code += f"(rule__{node.name}());\n"
+                code += "    auto __result = "
+            code += f"    (rule__{node.name}());\n"
             if node.ctx.name:
-                code += f"if (__result) {node.ctx.name} = __result{return_type.getter};\n"
+                code += f"    if (__result) {node.ctx.name} = __result{return_type.getter};\n"
+            code += "}\n"
         elif node.ctx.loop:
             if node.ctx.name:
                 var = f"std::vector<{return_type.raw_type}> {node.ctx.name};"
@@ -1560,20 +1604,15 @@ class CodeGenerator:
     def gen_parsing_expr_string(self, node: ParsingExpressionStringNode, next: str) -> GeneratedExpression:
         var = None
         code = ""
-        str_bytes = node.value.encode()
+        str_bytes = string_to_bytes(node.value)
         str_len = len(str_bytes)
         str_condition = ""
 
-        i = 0
-        for ch in node.value:
-            if ord(ch) < 128:
-                str_condition += f"   && this->src[this->position + {i}] == '{escape_string(ch)}'\n"
-                i += 1
+        for i, b in enumerate(str_bytes):
+            if b < 128:
+                str_condition += f"   && this->src[this->position + {i}] == '{escape_string(chr(b))}'\n"
             else:
-                str_condition += f"   && this->src[this->position + {i}] == '\\x{ch.encode()[0]:x}' // {escape_string(ch)}\n"
-                for b_i, b in enumerate(ch.encode()[1:], 1):
-                    str_condition += f"   && this->src[this->position + {b_i + i}] == '\\x{b:x}'\n"
-                i += len(ch.encode())
+                str_condition += f"   && this->src[this->position + {i}] == '\\x{b:x}'\n"
 
         if node.ctx.lookahead:
             if node.ctx.lookahead_positive:
@@ -1731,7 +1770,13 @@ class CodeGenerator:
         for i in node.items:
             match i:
                 case ParsingExpressionRuleNameNode():
-                    generated_exprs.append(self.gen_parsing_expr_rule_name(i, next))
+                    if (rule := self.ctx.get_rule_by_name(i.name)) and rule.inline:
+                        group = ParsingExpressionGroupNode(rule.expression_sequences)
+                        group.ctx = i.ctx
+                        generated_exprs.append(self.gen_parsing_expr_group(group, next, f"{prefix}_{expr_index}_{group_index}"))
+                        group_index += 1
+                    else:
+                        generated_exprs.append(self.gen_parsing_expr_rule_name(i, next))
                 case ParsingExpressionStringNode():
                     generated_exprs.append(self.gen_parsing_expr_string(i, next))
                 case ParsingExpressionCharacterClassNode():
@@ -1894,8 +1939,9 @@ def generate_parser(file):
     tokenizer = Tokenizer(file)
     parser = Parser(tokenizer)
     root_node = parser.parse()
-    StaticAnalyzer(root_node, filename).analyze()
-    code_gen = CodeGenerator(root_node, filename)
+    ctx = AstContext(root_node, filename)
+    StaticAnalyzer(ctx).analyze()
+    code_gen = CodeGenerator(ctx)
     code_gen.start()
 
 
