@@ -3,8 +3,7 @@
 
 #include <vector>
 
-#include "expression.h"
-#include "statement.h"
+#include "ast.h"
 #include "vm.h"
 #include "scope.h"
 
@@ -23,7 +22,7 @@ namespace compiler
     class Compiler
     {
     private:
-        parser::BlockStatement* root;
+        ast::BlockStatement* root;
         std::string code;
         vm::CodeObject* codeObject;
         std::vector<CompilerState*> stateStack;
@@ -31,27 +30,27 @@ namespace compiler
         std::vector<Scope*> scopeStack;
         ScopeAnalyzer::scope_info_t scopeInfo;
 
-        void compileBlock(parser::BlockStatement* block);
-        void compileStatement(parser::Statement* statement);
-        void compileExpressionStatement(parser::ExpressionStatement* statement);
-        void compileWhileStatement(parser::WhileStatement* statement);
-        void compileBreakStatement(parser::BreakStatement* statement);
-        void compileContinueStatement(parser::ContinueStatement* statement);
-        void compileIfStatement(parser::IfStatement* statement);
-        void compileFunctionDeclaration(parser::FunctionDeclaration* statement);
-        void compileReturnStatement(parser::ReturnStatement* statement);
-        void compileForEachStatement(parser::ForEachStatement* statement);
+        void compileBlock(ast::BlockStatement* block);
+        void compileStatement(ast::Statement* statement);
+        void compileExpressionStatement(ast::ExpressionStatement* statement);
+        void compileWhileStatement(ast::WhileStatement* statement);
+        void compileBreakStatement(ast::BreakStatement* statement);
+        void compileContinueStatement(ast::ContinueStatement* statement);
+        void compileIfStatement(ast::IfStatement* statement);
+        void compileFunctionDeclaration(ast::FunctionDeclaration* statement);
+        void compileReturnStatement(ast::ReturnStatement* statement);
+        void compileForEachStatement(ast::ForEachStatement* statement);
 
-        void compileExpression(parser::Expression* expression);
-        void compileAssignmentExpression(parser::AssignmentExpression* expression);
-        void compileLiteralExpression(parser::LiteralExpression* expression);
-        void compileVariableExpression(parser::VariableExpression* expression);
-        void compileCallExpression(parser::CallExpression* expression);
-        void compileBinaryExpression(parser::BinaryExpression* expression);
-        void compileUnaryExpression(parser::UnaryExpression* expression);
-        void compileParenthesizedExpression(parser::ParenthesizedExpression* expression);
+        void compileExpression(ast::Expression* expression);
+        void compileAssignmentExpression(ast::AssignmentExpression* expression);
+        void compileLiteralExpression(ast::LiteralExpression* expression);
+        void compileVariableExpression(ast::VariableExpression* expression);
+        void compileCallExpression(ast::CallExpression* expression);
+        void compileBinaryExpression(ast::BinaryExpression* expression);
+        void compileUnaryExpression(ast::UnaryExpression* expression);
+        void compileParenthesizedExpression(ast::ParenthesizedExpression* expression);
         void compileAttributeExpression(
-            parser::AttributeExpression* expression, bool isMethod=false);
+            ast::AttributeExpression* expression, bool isMethod=false);
 
         void compileNameGet(const std::string& name);
         void compileNameSet(const std::string& name);
@@ -66,17 +65,17 @@ namespace compiler
         vm::WORD freeIdx(const std::string& name); // Повертає індекс для Frame->freevars
         vm::WORD localIdx(const std::string& name); // Повертає індекс з CodeObject->locals
         vm::WORD nameIdx(const std::string& name); // Повертає індекс з CodeObject->names
-        void throwCompileError(std::string message, lexer::Token token);
+        void throwCompileError(std::string message, ast::Token token);
         // Встановлює номер стрічки в коді, який зараз компілюється.
         // !!!Викликати перед компіляцією стрічки!!!
-        inline void setLineno(size_t lineno);
+        inline void setLineno(ast::Token token);
         inline vm::WORD emitOpCode(vm::OpCode op);
         inline vm::WORD emitOperand(vm::WORD operand);
         inline vm::WORD getOffset();
         inline void patchJumpAddress(int offset, vm::WORD newAddress);
     public:
         vm::Frame* compile();
-        Compiler(parser::BlockStatement* root, std::string code);
+        Compiler(ast::BlockStatement* root, std::string code);
     };
 }
 

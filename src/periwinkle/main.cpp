@@ -43,7 +43,6 @@ string usage(string programName)
     ss << "Опції:" << std::endl;
     ss << "\t" << "-д, --допомога     Виводить це повідомлення." << std::endl;
 #ifdef DEBUG
-    ss << "\t" << "-т, --токени       Виводить токени на які розбився код. Не запускає програму." << std::endl;
     ss << "\t" << "-а, --асемблер     Виводить згенерований код для віртуальної машини. Не запускає програму." << std::endl;
 #endif
     return ss.str();
@@ -61,7 +60,7 @@ bool cmdOptionExists(vector<string> tokens, string option, string fullOption = "
 }
 
 #define COMPARE_OPTION(token, option, fullOption) \
-    token == option || token == fullOption
+    (token == option || token == fullOption)
 
 #ifdef _WIN32
 int wmain(int argc, wchar_t* w_argv[])
@@ -98,8 +97,7 @@ int main(int argc, char* argv[])
             return 0;
         }
 #ifdef DEBUG
-        else if (COMPARE_OPTION(token, "-т", "--токени")
-                || COMPARE_OPTION(token, "-а", "--асемблер"))
+        else if (COMPARE_OPTION(token, "-а", "--асемблер"))
         {
             continue;
         }
@@ -124,11 +122,6 @@ int main(int argc, char* argv[])
 	periwinkle::Periwinkle interpreter(code);
 
 #ifdef DEBUG
-	if (cmdOptionExists(argsForInterpreter, "-т", "--токени"))
-	{
-		interpreter.printTokens();
-		return 0;
-	}
 	if (cmdOptionExists(argsForInterpreter, "-а", "--асемблер"))
 	{
 		interpreter.printDisassemble();
