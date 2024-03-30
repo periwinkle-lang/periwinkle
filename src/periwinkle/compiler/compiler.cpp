@@ -1,5 +1,6 @@
 ﻿#include <algorithm>
 #include <variant>
+#include <unordered_set>
 
 #include "compiler.h"
 #include "code_object.h"
@@ -218,8 +219,42 @@ void compiler::Compiler::compileIfStatement(IfStatement* statement)
     }
 }
 
+std::optional<Token> checkDuplicateParameters(ast::FunctionDeclaration* func) {
+    std::unordered_set<std::string> parameterNames;
+
+    for (const auto& param : func->parameters) {
+        if (parameterNames.find(param.text) != parameterNames.end()) {
+            return param;
+        }
+        parameterNames.insert(param.text);
+    }
+
+    if (func->variadicParameter.has_value()) {
+        const Token& variadicParam = func->variadicParameter.value();
+        if (parameterNames.find(variadicParam.text) != parameterNames.end()) {
+            return variadicParam;
+        }
+        parameterNames.insert(variadicParam.text);
+    }
+
+    for (const auto& defaultParam : func->defaultParameters) {
+        const Token& param = defaultParam.first;
+        if (parameterNames.find(param.text) != parameterNames.end()) {
+            return param;
+        }
+        parameterNames.insert(param.text);
+    }
+
+    return std::nullopt;
+}
+
 void compiler::Compiler::compileFunctionDeclaration(ast::FunctionDeclaration* statement)
 {
+    if (auto param = checkDuplicateParameters(statement)) {
+        throwCompileError(utils::format(
+            "Параметр з ім'ям \"%s\" повторюється", param.value().text.c_str()),
+            param.value());
+    }
     auto& name = statement->id.text;
     auto fnCodeObject = vm::CodeObject::create(name);
     auto prevCodeObject = codeObject;

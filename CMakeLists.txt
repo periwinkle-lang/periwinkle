@@ -45,7 +45,6 @@ add_library(periwinkle STATIC
     "src/include/types.h"
     "src/include/string_enum.h"
     "src/periwinkle/utils.cpp" "src/include/utils.h"
-     
     "src/periwinkle/object/object.cpp" "src/include/object/object.h"
     "src/periwinkle/object/bool_object.cpp" "src/include/object/bool_object.h"
     "src/periwinkle/object/int_object.cpp" "src/include/object/int_object.h"
