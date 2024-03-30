@@ -12,8 +12,9 @@
 #include "types.h"
 #include "builtins.h"
 #include "plogger.h"
-#include "exception.h"
+#include "utils.h"
 #include "keyword.h"
+#include "periwinkle.h"
 
 using namespace compiler;
 using namespace ast;
@@ -166,7 +167,7 @@ void compiler::Compiler::compileBreakStatement(BreakStatement* statement)
     }
     else
     {
-        throwCompileError("Оператор \"завершити\" знаходиться поза циклом!", statement->break_);
+        throwCompileError("Оператор \"завершити\" знаходиться поза циклом", statement->break_);
     }
 }
 
@@ -181,7 +182,7 @@ void compiler::Compiler::compileContinueStatement(ContinueStatement* statement)
     }
     else
     {
-        throwCompileError("Оператор \"пропустити\" знаходиться поза циклом!", statement->continue_);
+        throwCompileError("Оператор \"пропустити\" знаходиться поза циклом", statement->continue_);
     }
 }
 
@@ -300,7 +301,7 @@ void compiler::Compiler::compileReturnStatement(ast::ReturnStatement* statement)
     }
     else
     {
-        throwCompileError("Оператор \"повернути\" знаходиться поза функцією!", statement->return_);
+        throwCompileError("Оператор \"повернути\" знаходиться поза функцією", statement->return_);
     }
 }
 
@@ -721,8 +722,7 @@ vm::WORD compiler::Compiler::nameIdx(const std::string& name)
 
 void compiler::Compiler::throwCompileError(std::string message, Token token)
 {
-    vm::SyntaxException error(message, token.lineno, token.col);
-    vm::throwSyntaxException(error, code);
+    periwinkle::throwSyntaxError(code, message, token.lineno, token.col - 1);
     exit(1);
 }
 

@@ -24,6 +24,9 @@ namespace periwinkle
 #endif
         Periwinkle(std::string code);
     };
+
+    void throwSyntaxError(const std::string& code, std::string message, size_t position);
+    void throwSyntaxError(const std::string& code, std::string message, size_t lineno, size_t col);
 }
 
 #endif

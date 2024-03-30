@@ -45,7 +45,7 @@ add_library(periwinkle STATIC
     "src/include/types.h"
     "src/include/string_enum.h"
     "src/periwinkle/utils.cpp" "src/include/utils.h"
-    "src/periwinkle/vm/exception.cpp" "src/include/vm/exception.h"
+     
     "src/periwinkle/object/object.cpp" "src/include/object/object.h"
     "src/periwinkle/object/bool_object.cpp" "src/include/object/bool_object.h"
     "src/periwinkle/object/int_object.cpp" "src/include/object/int_object.h"
@@ -73,7 +73,7 @@ add_library(periwinkle STATIC
     "src/include/object/method_with_instance_object.h" "src/periwinkle/object/method_with_instance_object.cpp"
     "src/include/object/string_vector_object.h" "src/periwinkle/object/string_vector_object.cpp"
     "src/include/object/validate_args.h" "src/periwinkle/object/validate_args.cpp"
-)
+ )
 target_compile_features(periwinkle PUBLIC cxx_std_20)
 
 
