@@ -71,7 +71,8 @@ void utils::replaceTabToSpace(std::string& str)
         {
             str[i] = ' ';
             str.insert(i + 1, "   ");
-            strLen += 4;
+            strLen += 3;
+            i += 3;
         }
     }
 }
