@@ -1,7 +1,7 @@
 ﻿%name parser
 
 %hpp {
-    #include "ast.h"
+    #include "ast/ast.hpp"
 }
 
 %cpp {

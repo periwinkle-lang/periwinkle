@@ -10,8 +10,8 @@ if(NOT WIN32)
 endif()
 find_package(Python3 3.10)
 
-configure_file("pconfig.h.in" "pconfig.h")
-include_directories(${CMAKE_CURRENT_BINARY_DIR}) # Для видимості pconfig.h в проекті
+configure_file("include/pconfig.hpp.in" "pconfig.hpp")
+include_directories(${CMAKE_CURRENT_BINARY_DIR}) # Для видимості pconfig.hpp в проекті
 
 
 if(NOT PCRE2_FOUND)
@@ -31,49 +31,47 @@ if (MSVC)
 endif()
 
 
-include_directories(
-    "src/include"
-    "src/include/compiler"
-    "src/include/object"
-    "src/include/ast"
-    "src/include/vm"
-)
-
-
 # Бібліотека з реалізацією Барвінку
-add_library(periwinkle STATIC
-    "src/include/types.h"
-    "src/include/string_enum.h"
-    "src/periwinkle/utils.cpp" "src/include/utils.h"
-    "src/periwinkle/object/object.cpp" "src/include/object/object.h"
-    "src/periwinkle/object/bool_object.cpp" "src/include/object/bool_object.h"
-    "src/periwinkle/object/int_object.cpp" "src/include/object/int_object.h"
-    "src/periwinkle/object/function_object.cpp" "src/include/object/function_object.h"
-    "src/periwinkle/object/native_function_object.cpp" "src/include/object/native_function_object.h"
-    "src/periwinkle/object/null_object.cpp" "src/include/object/null_object.h"
-    "src/periwinkle/object/code_object.cpp" "src/include/object/code_object.h"
-    "src/periwinkle/object/string_object.cpp" "src/include/object/string_object.h"
-    "src/periwinkle/vm/vm.cpp" "src/include/vm/vm.h"
-    "src/periwinkle/compiler/scope.cpp" "src/include/compiler/scope.h"
-    "src/periwinkle/compiler/compiler.cpp" "src/include/compiler/compiler.h"
-    "src/periwinkle/compiler/disassembler.cpp" "src/include/compiler/disassembler.h"
-    "src/include/ast/ast.h"
-    "src/include/ast/keyword.h"
-    "src/include/plogger.h"
-    "src/periwinkle/vm/builtins.cpp" "src/include/vm/builtins.h"
-    "src/periwinkle/periwinkle.cpp" "src/include/periwinkle.h"
-    "src/include/object/real_object.h" "src/periwinkle/object/real_object.cpp"
-    "src/include/object/exception_object.h" "src/periwinkle/object/exception_object.cpp"
-    "src/include/object/cell_object.h" "src/periwinkle/object/cell_object.cpp"
-    "src/include/object/native_method_object.h" "src/periwinkle/object/native_method_object.cpp"
-    "src/include/object/list_object.h" "src/periwinkle/object/list_object.cpp"
-    "src/include/object/end_iteration_object.h" "src/periwinkle/object/end_iteration_object.cpp"
-    "src/include/vm/argument_parser.h" "src/periwinkle/vm/argument_parser.cpp"
-    "src/include/object/method_with_instance_object.h" "src/periwinkle/object/method_with_instance_object.cpp"
-    "src/include/object/string_vector_object.h" "src/periwinkle/object/string_vector_object.cpp"
-    "src/include/object/validate_args.h" "src/periwinkle/object/validate_args.cpp"
- )
-target_compile_features(periwinkle PUBLIC cxx_std_20)
+add_library(periwinkle-lib STATIC
+    "include/types.hpp"
+    "include/string_enum.hpp"
+    "periwinkle/utils.cpp" "include/utils.hpp"
+    "periwinkle/object/object.cpp" "include/object/object.hpp"
+    "periwinkle/object/bool_object.cpp" "include/object/bool_object.hpp"
+    "periwinkle/object/int_object.cpp" "include/object/int_object.hpp"
+    "periwinkle/object/function_object.cpp" "include/object/function_object.hpp"
+    "periwinkle/object/native_function_object.cpp" "include/object/native_function_object.hpp"
+    "periwinkle/object/null_object.cpp" "include/object/null_object.hpp"
+    "periwinkle/object/code_object.cpp" "include/object/code_object.hpp"
+    "periwinkle/object/string_object.cpp" "include/object/string_object.hpp"
+    "periwinkle/vm/vm.cpp" "include/vm/vm.hpp"
+    "periwinkle/compiler/scope.cpp" "include/compiler/scope.hpp"
+    "periwinkle/compiler/compiler.cpp" "include/compiler/compiler.hpp"
+    "periwinkle/compiler/disassembler.cpp" "include/compiler/disassembler.hpp"
+    "include/ast/ast.hpp"
+    "include/ast/keyword.hpp"
+    "include/plogger.hpp"
+    "periwinkle/vm/builtins.cpp" "include/vm/builtins.hpp"
+    "periwinkle/periwinkle.cpp" "include/periwinkle.hpp"
+    "periwinkle/object/real_object.cpp" "include/object/real_object.hpp"
+    "periwinkle/object/exception_object.cpp" "include/object/exception_object.hpp"
+    "periwinkle/object/cell_object.cpp" "include/object/cell_object.hpp"
+    "periwinkle/object/native_method_object.cpp" "include/object/native_method_object.hpp"
+    "periwinkle/object/list_object.cpp" "include/object/list_object.hpp"
+    "periwinkle/object/end_iteration_object.cpp" "include/object/end_iteration_object.hpp"
+    "periwinkle/vm/argument_parser.cpp" "include/vm/argument_parser.hpp"
+    "periwinkle/object/method_with_instance_object.cpp" "include/object/method_with_instance_object.hpp"
+    "periwinkle/object/string_vector_object.cpp" "include/object/string_vector_object.hpp"
+    "periwinkle/object/validate_args.cpp" "include/object/validate_args.hpp"
+)
+target_include_directories(periwinkle-lib PUBLIC
+    "include"
+    "include/compiler"
+    "include/object"
+    "include/ast"
+    "include/vm"
+)
+target_compile_features(periwinkle-lib PUBLIC cxx_std_20)
 
 
 # Парсер
@@ -81,6 +79,7 @@ add_library(parser STATIC
     "parser.hpp"
     "parser.cpp"
 )
+target_include_directories(parser PUBLIC "include/")
 target_compile_features(parser PUBLIC cxx_std_17)
 
 
@@ -95,29 +94,30 @@ add_custom_command(
 
 
 # Виконуваний файл
-add_executable(periwinkle-bin "src/periwinkle/main.cpp")
-target_compile_features(periwinkle-bin PUBLIC cxx_std_20)
-set_target_properties(periwinkle-bin PROPERTIES OUTPUT_NAME барвінок)
+add_executable(launcher "launcher/launcher.cpp")
+target_include_directories(launcher PUBLIC "include/")
+target_compile_features(launcher PUBLIC cxx_std_20)
+set_target_properties(launcher PROPERTIES OUTPUT_NAME барвінок)
 
 
 # Додавання бібліотек до виконуваного файлу
-target_include_directories(periwinkle PUBLIC ${PCRE2_INCLUDE_DIRS} ${JPCRE2_INCLUDE_DIRS})
-target_link_libraries(periwinkle ${PCRE2_LIBRARIES})
-target_link_libraries(periwinkle parser)
-target_link_libraries(periwinkle-bin periwinkle)
+target_include_directories(periwinkle-lib PUBLIC ${PCRE2_INCLUDE_DIRS} ${JPCRE2_INCLUDE_DIRS})
+target_link_libraries(periwinkle-lib ${PCRE2_LIBRARIES})
+target_link_libraries(periwinkle-lib parser)
+target_link_libraries(launcher periwinkle-lib)
 
 
 # Додаткові параметри компілятора
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        target_compile_options(periwinkle PUBLIC -Wall -Wpedantic)
-        target_compile_options(periwinkle-bin PUBLIC -Wall -Wpedantic)
+        target_compile_options(periwinkle-lib PUBLIC -Wall -Wpedantic)
+        target_compile_options(launcher PUBLIC -Wall -Wpedantic)
     endif()
 endif()
 
 
 # Визначення DEBUG макроса
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_definitions(periwinkle PRIVATE DEBUG)
-    target_compile_definitions(periwinkle-bin PRIVATE DEBUG)
+    target_compile_definitions(periwinkle-lib PRIVATE DEBUG)
+    target_compile_definitions(launcher PRIVATE DEBUG)
 endif()
