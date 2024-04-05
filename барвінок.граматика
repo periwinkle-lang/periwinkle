@@ -25,7 +25,7 @@
 
 %type "ast::Node*"
 
-program<ast::BlockStatement*> = shebang? _? s:statement* _? EOF
+program<ast::BlockStatement*> = BOM? shebang? _? s:statement* _? EOF
     { $$ = newBlockStatementExcludeOptional(s); }
     ~{ parseError("Неправильний синтаксис."); }
 
@@ -211,3 +211,4 @@ multiline_comment =
 _ -nomemo = [ \t\r\n]+
 EOL -nomemo = "\n" / "\r" / "\r\n"
 EOF -inline = !.
+BOM -inline = "\xEF\xBB\xBF"  # UTF-8 byte oreder mask for
