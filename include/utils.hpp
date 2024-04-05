@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <memory>
 
+#include "exports.hpp"
+
 namespace utils
 {
     std::string escapeString(const std::string& str);
@@ -44,8 +46,8 @@ namespace utils
     }
 
 #ifdef _WIN32
-    std::wstring convertUtf8ToWide(const std::string& str);
-    std::string convertWideToUtf8(const std::wstring& wstr);
+    API std::wstring convertUtf8ToWide(const std::string& str);
+    API std::string convertWideToUtf8(const std::wstring& wstr);
 #endif
 
     std::string readline();

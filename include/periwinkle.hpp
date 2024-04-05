@@ -3,9 +3,11 @@
 
 #include <string>
 
+#include "exports.hpp"
+
 namespace periwinkle
 {
-    class Periwinkle
+    class API Periwinkle
     {
     private:
         std::string code;

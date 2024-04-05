@@ -2,6 +2,7 @@
 
 project(Барвінок VERSION 0.0.0 LANGUAGES CXX)
 
+include(GenerateExportHeader)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
 find_package(PCRE2)
 find_package(JPCRE2)
@@ -32,7 +33,7 @@ endif()
 
 
 # Бібліотека з реалізацією Барвінку
-add_library(periwinkle-lib STATIC
+add_library(periwinkle SHARED
     "include/types.hpp"
     "include/string_enum.hpp"
     "periwinkle/utils.cpp" "include/utils.hpp"
@@ -64,14 +65,19 @@ add_library(periwinkle-lib STATIC
     "periwinkle/object/string_vector_object.cpp" "include/object/string_vector_object.hpp"
     "periwinkle/object/validate_args.cpp" "include/object/validate_args.hpp"
 )
-target_include_directories(periwinkle-lib PUBLIC
+target_include_directories(periwinkle PUBLIC
     "include"
     "include/compiler"
     "include/object"
     "include/ast"
     "include/vm"
 )
-target_compile_features(periwinkle-lib PUBLIC cxx_std_20)
+target_compile_features(periwinkle PUBLIC cxx_std_20)
+generate_export_header(periwinkle
+    BASE_NAME periwinkle
+    EXPORT_MACRO_NAME API
+    EXPORT_FILE_NAME exports.hpp
+)
 
 
 # Парсер
@@ -81,6 +87,7 @@ add_library(parser STATIC
 )
 target_include_directories(parser PUBLIC "include/")
 target_compile_features(parser PUBLIC cxx_std_17)
+set_property(TARGET parser PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 
 # Генерація парсера
@@ -101,16 +108,16 @@ set_target_properties(launcher PROPERTIES OUTPUT_NAME барвінок)
 
 
 # Додавання бібліотек до виконуваного файлу
-target_include_directories(periwinkle-lib PUBLIC ${PCRE2_INCLUDE_DIRS} ${JPCRE2_INCLUDE_DIRS})
-target_link_libraries(periwinkle-lib ${PCRE2_LIBRARIES})
-target_link_libraries(periwinkle-lib parser)
-target_link_libraries(launcher periwinkle-lib)
+target_include_directories(periwinkle PUBLIC ${PCRE2_INCLUDE_DIRS} ${JPCRE2_INCLUDE_DIRS})
+target_link_libraries(periwinkle ${PCRE2_LIBRARIES})
+target_link_libraries(periwinkle parser)
+target_link_libraries(launcher periwinkle)
 
 
 # Додаткові параметри компілятора
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        target_compile_options(periwinkle-lib PUBLIC -Wall -Wpedantic)
+        target_compile_options(periwinkle PUBLIC -Wall -Wpedantic)
         target_compile_options(launcher PUBLIC -Wall -Wpedantic)
     endif()
 endif()
@@ -118,6 +125,6 @@ endif()
 
 # Визначення DEBUG макроса
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_definitions(periwinkle-lib PRIVATE DEBUG)
+    target_compile_definitions(periwinkle PRIVATE DEBUG)
     target_compile_definitions(launcher PRIVATE DEBUG)
 endif()
