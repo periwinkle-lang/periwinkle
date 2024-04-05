@@ -7,8 +7,7 @@
 #include <vector>
 #include <string>
 
-#include "node.h"
-#include "statement.h"
+#include "ast.h"
 #include "vm.h"
 
 namespace compiler
@@ -48,16 +47,16 @@ namespace compiler
     class ScopeAnalyzer
     {
     public:
-        using scope_info_t = std::map<const parser::Node*, Scope*>;
+        using scope_info_t = std::map<const ast::Node*, Scope*>;
     private:
         scope_info_t scopeInfo;
-        parser::BlockStatement* rootNode;
+        ast::BlockStatement* rootNode;
 
-        void _analyze(parser::Node* node, Scope* parent);
+        void _analyze(ast::Node* node, Scope* parent);
     public:
         scope_info_t analyze();
 
-        ScopeAnalyzer(parser::BlockStatement* root);
+        ScopeAnalyzer(ast::BlockStatement* root);
     };
 }
 
