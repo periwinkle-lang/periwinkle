@@ -31,8 +31,8 @@ static Object* name(Object* a, Object* b)     \
     return IntObject::create(result);         \
 }
 
-static IntObject ten = { {.objectType = &intObjectType}, 10 };
-static DefaultParameters intInitDefaults = { {"основа"}, { &ten } };
+static DefaultParameters intInitDefaults = {
+    {"основа"}, { new IntObject{ {.objectType = &intObjectType}, -1 } } };
 
 static Object* intInit(Object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
 {
