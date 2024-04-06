@@ -7,8 +7,11 @@
 #include "vm.hpp"
 #include "list_object.hpp"
 
-#define NATIVE_METHOD(name, arity, variadic, method, classType, defaults)  \
-    vm::NativeMethodObject{&vm::nativeMethodObjectType, arity + 1,         \
+#define NATIVE_METHOD(name, arity, variadic, method, classType, defaults) \
+    vm::NativeMethodObject{&vm::nativeMethodObjectType,                   \
+                           [](size_t a, DefaultParameters* d) constexpr { \
+                                return a + 1 + (d ? d->names.size() : 0); \
+                           }(arity, defaults),                            \
                            variadic, name, method, &classType, defaults}
 
 #define OBJECT_METHOD(name, arity, variadic, method, classType, defaults) \

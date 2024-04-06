@@ -53,7 +53,7 @@ void vm::ArgParser::parse(const std::span<Object*> args, DefaultParameters* defa
                 }
             }
 
-            for (size_t i = arity - argc - 1, j = namedArgIndexes.size(); i < arity; ++i)
+            for (size_t i = 0, j = namedArgIndexes.size(); i < arity - argc; ++i)
             {
                 if (j)
                 {
@@ -61,20 +61,20 @@ void vm::ArgParser::parse(const std::span<Object*> args, DefaultParameters* defa
                     if (it != namedArgIndexes.end())
                     {
                         auto index = it - namedArgIndexes.begin();
-                        CHECK_SET_ARG(description[i], na->values[index]);
+                        CHECK_SET_ARG(description[i + argc], na->values[index]);
                         j--;
                         continue;
                     }
                 }
 
-                SET_ARG(description[i], defaults->values[i - (arity - argc - 1)]);
+                SET_ARG(description[i + argc], defaults->values[i]);
             }
         }
         else
         {
-            for (size_t i = arity - argc - 1; i < arity; ++i)
+            for (size_t i = 0; i < arity - argc; ++i)
             {
-                SET_ARG(description[i], defaults->values[i - (arity - argc - 1)]);
+                SET_ARG(description[i + argc], defaults->values[i]);
             }
         }
     }

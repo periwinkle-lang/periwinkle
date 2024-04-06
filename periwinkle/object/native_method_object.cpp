@@ -44,7 +44,7 @@ NativeMethodObject* vm::NativeMethodObject::create(
 {
     auto nativeMethod =
         (NativeMethodObject*)allocObject(&nativeMethodObjectType);
-    nativeMethod->arity = arity + 1; // +1 для екземляра класу
+    nativeMethod->arity = arity + 1 + (defaults ? defaults->names.size() : 0); // +1 для екземляра класу
     nativeMethod->isVariadic = isVariadic;
     nativeMethod->name = name;
     nativeMethod->method = method;
@@ -83,7 +83,7 @@ Object* vm::callNativeMethod(Object* instance, NativeMethodObject* method, std::
     }
 
     auto result = method->method(
-        instance, { data(args), method->arity - 1 }, variadicParameter, namedArgs);
+        instance, args, variadicParameter, namedArgs);
     delete variadicParameter;
     return result;
 }

@@ -11,7 +11,7 @@
 
 using namespace vm;
 
-static Object* typeCall(TypeObject* type, Object**& sp, WORD argc)
+static Object* typeCall(TypeObject* type, Object**& sp, WORD argc, NamedArgs* na)
 {
     if (type->constructor == nullptr)
     {
@@ -22,7 +22,7 @@ static Object* typeCall(TypeObject* type, Object**& sp, WORD argc)
         );
     }
 
-    auto instance = callNativeMethod(nullptr, type->constructor, {sp - argc + 1, argc});
+    auto instance = callNativeMethod(type, type->constructor, {sp - argc + 1, argc}, na);
     sp -= argc + 1;
     return instance;
 }
