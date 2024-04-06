@@ -31,12 +31,12 @@ static std::u32string joinObjectString(
 {
     if (objects.size())
     {
-        auto& str = ((StringObject*)Object::toString(objects[0]))->value;
+        auto& str = ((StringObject*)objects[0]->toString())->value;
         std::u32string result = std::accumulate(
             ++objects.begin(), objects.end(), str,
             [sep](const std::u32string& a, Object* o)
             {
-                auto& str = ((StringObject*)Object::toString(o))->value;
+                auto& str = ((StringObject*)o->toString())->value;
                 return a + sep + str;
             });
         return result;
@@ -82,7 +82,7 @@ static Object* readLineNative(std::span<Object*> args, ListObject* va, NamedArgs
 
 static Object* getIterator(std::span<Object*> args, ListObject* va, NamedArgs* na)
 {
-    return Object::getIter(args[0]);
+    return args[0]->getIter();
 }
 
 builtin_t* vm::getBuiltin()

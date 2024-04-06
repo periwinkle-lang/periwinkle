@@ -55,7 +55,7 @@ static Object* intInit(Object* o, std::span<Object*> args, ListObject* va, Named
             &ValueErrorObjectType, "Основа може бути задана лише якщо перший аргумент є стрічкою");
     }
 
-    return Object::toInteger(args[0]);
+    return args[0]->toInteger();
 }
 
 static Object* intComparison(Object* o1, Object* o2, ObjectCompOperator op)

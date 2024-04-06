@@ -45,7 +45,7 @@ static inline bool listObjectEqual(ListObject* a, ListObject* b, bool notEqual=f
 
     for (size_t i = 0; i < a->items.size(); ++i)
     {
-        if (((BoolObject*)Object::compare(a->items[i], b->items[i],
+        if (((BoolObject*)a->items[i]->compare(b->items[i],
             notEqual ? ObjectCompOperator::NE : ObjectCompOperator::EQ))->value == false)
         {
             return false;
@@ -89,7 +89,7 @@ static Object* listToString(Object* o)
         }
         else
         {
-            auto stringObject = (StringObject*)Object::toString(*it);
+            auto stringObject = (StringObject*)(*it)->toString();
             str << stringObject->asUtf8();
         }
 
@@ -140,8 +140,8 @@ METHOD_TEMPLATE(listRemove, ListObject)
     auto it = std::find_if(
         o->items.begin(),
         o->items.end(),
-        [&args](Object* o) { return ((BoolObject*)Object::compare(
-            o, args[0], ObjectCompOperator::EQ))->value; }
+        [&args](Object* o) { return ((BoolObject*)o->compare(
+            args[0], ObjectCompOperator::EQ))->value; }
     );
 
     if (it != o->items.end())
@@ -156,8 +156,8 @@ METHOD_TEMPLATE(listRemoveAll, ListObject)
 {
     auto erased = std::erase_if(
         o->items,
-        [&args](Object* o) { return ((BoolObject*)Object::compare(
-            o, args[0], ObjectCompOperator::EQ))->value; }
+        [&args](Object* o) { return ((BoolObject*)o->compare(
+            args[0], ObjectCompOperator::EQ))->value; }
     );
 
     return P_BOOL(erased);
@@ -212,7 +212,7 @@ METHOD_TEMPLATE(listReplace, ListObject)
 
     for (auto it = o->items.begin(); it != o->items.end(); ++it)
     {
-        if (((BoolObject*)Object::compare(*it, args[0], ObjectCompOperator::EQ))->value)
+        if (((BoolObject*)(*it)->compare(args[0], ObjectCompOperator::EQ))->value)
         {
             *it = args[1];
             ++replaceCount;
@@ -227,8 +227,8 @@ METHOD_TEMPLATE(listFindItem, ListObject)
     auto it = std::find_if(
         o->items.begin(),
         o->items.end(),
-        [&args](Object* obj) { return ((BoolObject*)Object::compare(
-            obj, args[0], ObjectCompOperator::EQ))->value; }
+        [&args](Object* obj) { return ((BoolObject*)obj->compare(
+            args[0], ObjectCompOperator::EQ))->value; }
     );
 
     size_t index = -1;
@@ -251,8 +251,8 @@ METHOD_TEMPLATE(listCount, ListObject)
     auto count = std::count_if(
         o->items.begin(),
         o->items.end(),
-        [&args](Object* obj) { return ((BoolObject*)Object::compare(
-            obj, args[0], ObjectCompOperator::EQ))->value; }
+        [&args](Object* obj) { return ((BoolObject*)obj->compare(
+            args[0], ObjectCompOperator::EQ))->value; }
     );
     return IntObject::create(count);
 }
@@ -262,8 +262,8 @@ METHOD_TEMPLATE(listContains, ListObject)
     auto it = std::find_if(
         o->items.begin(),
         o->items.end(),
-        [&args](Object* obj) { return ((BoolObject*)Object::compare(
-            obj, args[0], ObjectCompOperator::EQ))->value; }
+        [&args](Object* obj) { return ((BoolObject*)obj->compare(
+            args[0], ObjectCompOperator::EQ))->value; }
     );
 
     i64 index = -1;

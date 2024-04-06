@@ -32,7 +32,7 @@ case OpCode::name:                                      \
 {                                                       \
     auto arg1 = POP();                                  \
     auto arg2 = POP();                                  \
-    auto result = Object::op_name(arg1, arg2);          \
+    auto result = arg1->op_name(arg2);                  \
     PUSH(result);                                       \
     break;                                              \
 }
@@ -41,7 +41,7 @@ case OpCode::name:                                      \
 case OpCode::name:                                      \
 {                                                       \
     auto arg = POP();                                   \
-    auto result = Object::op_name(arg);                 \
+    auto result = arg->op_name();                       \
     PUSH(result);                                       \
     break;                                              \
 }
@@ -51,8 +51,8 @@ case OpCode::name:                                      \
 {                                                       \
     auto o1 = POP();                                    \
     auto o2 = POP();                                    \
-    auto arg1 = (BoolObject*)Object::toBool(o1);        \
-    auto arg2 = (BoolObject*)Object::toBool(o2);        \
+    auto arg1 = (BoolObject*)o1->toBool();              \
+    auto arg2 = (BoolObject*)o2->toBool();              \
     PUSH(P_BOOL(arg1->value op arg2->value));           \
     break;                                              \
 }
@@ -112,7 +112,7 @@ Object* VirtualMachine::execute()
         {
             auto arg1 = POP();
             auto arg2 = POP();
-            auto result = Object::compare(arg1, arg2, (ObjectCompOperator)READ());
+            auto result = arg1->compare(arg2, (ObjectCompOperator)READ());
             PUSH(result);
             break;
         }
@@ -121,7 +121,7 @@ Object* VirtualMachine::execute()
         case NOT:
         {
             auto o = POP();
-            auto arg = (BoolObject*)Object::toBool(o);
+            auto arg = (BoolObject*)o->toBool();
             PUSH(P_BOOL(!arg->value));
             break;
         }
@@ -133,7 +133,7 @@ Object* VirtualMachine::execute()
         case JMP_IF_TRUE:
         {
             auto o = POP();
-            auto condition = (BoolObject*)Object::toBool(o);
+            auto condition = (BoolObject*)o->toBool();
             if ((condition)->value)
             {
                 JUMP();
@@ -147,7 +147,7 @@ Object* VirtualMachine::execute()
         case JMP_IF_FALSE:
         {
             auto o = POP();
-            auto condition = (BoolObject*)Object::toBool(o);
+            auto condition = (BoolObject*)o->toBool();
             if (((BoolObject*)condition)->value == false)
             {
                 JUMP();
@@ -163,7 +163,7 @@ Object* VirtualMachine::execute()
             auto argc = READ();
             auto callable = *(sp - argc);
 
-            auto result = Object::call(callable, sp, argc);
+            auto result = callable->call(sp, argc);
             PUSH(result);
             break;
         }
@@ -182,7 +182,7 @@ Object* VirtualMachine::execute()
                 namedArgs->values.push_back(*(sp--));
             }
 
-            auto result = Object::call(callable, sp, argc - namedArgCount, namedArgs);
+            auto result = callable->call(sp, argc - namedArgCount, namedArgs);
             PUSH(result);
             delete namedArgs;
             break;
@@ -196,7 +196,7 @@ Object* VirtualMachine::execute()
         {
             auto iterator = PEEK();
             auto nextMethod =
-                (NativeMethodObject*)Object::getAttr(iterator, "наступний");
+                (NativeMethodObject*)iterator->getAttr("наступний");
             if (nextMethod == nullptr)
             {
                 throwException(
@@ -279,7 +279,7 @@ Object* VirtualMachine::execute()
         {
             auto object = POP();
             auto& name = names[READ()];
-            auto value = Object::getAttr(object, name);
+            auto value = object->getAttr(name);
             if (value == nullptr)
             {
                 throwException(&AttributeErrorObjectType,
@@ -293,7 +293,7 @@ Object* VirtualMachine::execute()
         {
             auto object = POP();
             auto& name = names[READ()];
-            auto function = Object::getAttr(object, name);
+            auto function = object->getAttr(name);
             if (function == nullptr)
             {
                 throwException(&AttributeErrorObjectType,
@@ -329,7 +329,7 @@ Object* VirtualMachine::execute()
             }
             else
             {
-                result = Object::call(callable, sp, argc);
+                result = callable->call(sp, argc);
             }
             PUSH(result);
             break;

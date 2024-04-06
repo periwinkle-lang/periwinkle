@@ -19,7 +19,7 @@ static bool tryConvertToString(Object* o, std::u32string& str)
 {
     if (o->objectType->operators.toString != NULL)
     {
-        str = ((StringObject*)Object::toString(o))->value;
+        str = ((StringObject*)o->toString())->value;
         return true;
     }
     return false;
@@ -50,7 +50,7 @@ static bool tryConvertToString(Object* o, std::u32string& str)
 
 static Object* strInit(Object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
 {
-    return Object::toString(args[0]);
+    return args[0]->toString();
 }
 
 static Object* strComparison(Object* o1, Object* o2, ObjectCompOperator op)
@@ -244,12 +244,12 @@ Object* strJoin(std::span<Object*> args, ListObject* va)
 
     if (items.size())
     {
-        auto& str = ((StringObject*)Object::toString(objects->items[0]))->value;
+        auto& str = ((StringObject*)objects->items[0]->toString())->value;
         std::u32string result = std::accumulate(
             ++items.begin(), items.end(), str,
             [separator](const std::u32string& a, Object* o)
             {
-                auto& str = ((StringObject*)Object::toString(o))->value;
+                auto& str = ((StringObject*)o->toString())->value;
                 return a + separator->value + str;
             });
         return StringObject::create(result);

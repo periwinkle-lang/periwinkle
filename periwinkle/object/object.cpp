@@ -148,48 +148,48 @@ static Object* callCompareOperator(Object* o1, Object* o2, ObjectCompOperator op
 }
 
 #define UNARY_OPERATOR(op_name, op)                                           \
-    Object* vm::Object::op_name(Object* o)                                    \
+    Object* vm::Object::op_name()                                             \
     {                                                                         \
-        auto op_ = GET_OPERATOR(o, op_name);                                  \
+        auto op_ = GET_OPERATOR(this, op_name);                               \
         if (op_ == nullptr)                                                   \
         {                                                                     \
             VirtualMachine::currentVm->throwException(&TypeErrorObjectType,   \
                 utils::format(                                                \
                 "Неправильний тип операнда \"%s\" для унарного оператора %s", \
-                o->objectType->name.c_str(), #op));                           \
+                objectType->name.c_str(), #op));                              \
         }                                                                     \
-        return op_(o);                                                        \
+        return op_(this);                                                     \
     }
 
 #define UNARY_OPERATOR_WITH_MESSAGE(op_name, message)                       \
-    Object* vm::Object::op_name(Object* o)                                  \
+    Object* vm::Object::op_name()                                           \
     {                                                                       \
-        auto op_ = GET_OPERATOR(o, op_name);                                \
+        auto op_ = GET_OPERATOR(this, op_name);                             \
         if (op_ == nullptr)                                                 \
         {                                                                   \
             VirtualMachine::currentVm->throwException(&TypeErrorObjectType, \
-                utils::format(message, o->objectType->name.c_str()));       \
+                utils::format(message, objectType->name.c_str()));          \
         }                                                                   \
-        return op_(o);                                                      \
+        return op_(this);                                                   \
     }
 
 #define BINARY_OPERATOR(op_name, op)                                               \
-    Object* vm::Object::op_name(Object* o1, Object* o2)                            \
+    Object* vm::Object::op_name(Object* o)                                         \
     {                                                                              \
-        auto result = callBinaryOperator(o1, o2, OPERATOR_OFFSET(op_name));        \
+        auto result = callBinaryOperator(this, o, OPERATOR_OFFSET(op_name));       \
         if (result == &P_NotImplemented)                                           \
         {                                                                          \
             VirtualMachine::currentVm->throwException(&TypeErrorObjectType,        \
                 utils::format(                                                     \
                 "Непідтримувані типи операндів \"%s\" та \"%s\" для оператора %s", \
-                o1->objectType->name.c_str(), o2->objectType->name.c_str(), #op)); \
+                objectType->name.c_str(), o->objectType->name.c_str(), #op));      \
         }                                                                          \
         return result;                                                             \
     }
 
-Object* vm::Object::compare(Object* o1, Object* o2, ObjectCompOperator op)
+Object* vm::Object::compare(Object* o, ObjectCompOperator op)
 {
-    auto result = callCompareOperator(o1, o2, op);
+    auto result = callCompareOperator(this, o, op);
     if (result == &P_NotImplemented)
     {
         std::string opName;
@@ -197,8 +197,8 @@ Object* vm::Object::compare(Object* o1, Object* o2, ObjectCompOperator op)
         switch (op)
         {
         // Якщо оператор порівння нереалізовано, то вони порівнюються за посиланням.
-        case EQ: return P_BOOL(o1 == o2); break;
-        case NE: return P_BOOL(o1 != o2); break;
+        case EQ: return P_BOOL(this == o); break;
+        case NE: return P_BOOL(this != o); break;
 
         case GT: opName = "більше"; break;
         case GE: opName = "більше="; break;
@@ -207,45 +207,45 @@ Object* vm::Object::compare(Object* o1, Object* o2, ObjectCompOperator op)
         }
         VirtualMachine::currentVm->throwException(&TypeErrorObjectType, utils::format(
             "Неможливо порівняти об'єкти типів \"%s\" та \"%s\" за допомогою оператора %s",
-            o1->objectType->name.c_str(), o2->objectType->name.c_str(), opName.c_str()));
+            objectType->name.c_str(), o->objectType->name.c_str(), opName.c_str()));
     }
     return result;
 }
 
-Object* vm::Object::call(Object* callable, Object**& sp, WORD argc, NamedArgs* namedArgs)
+Object* vm::Object::call(Object**& sp, WORD argc, NamedArgs* namedArgs)
 {
-    auto callOp = GET_OPERATOR(callable, call);
+    auto callOp = GET_OPERATOR(this, call);
     if (callOp == nullptr)
     {
         VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
             utils::format("Об'єкт типу \"%s\" не може бути викликаний",
-                callable->objectType->name.c_str())
+                objectType->name.c_str())
         );
     }
 
-    auto result = callOp(callable, sp, argc, namedArgs);
+    auto result = callOp(this, sp, argc, namedArgs);
     return result;
 }
 
-Object* vm::Object::toString(Object* o)
+Object* vm::Object::toString()
 {
-    auto op = GET_OPERATOR(o, toString);
+    auto op = GET_OPERATOR(this, toString);
     if (op == nullptr)
     {
         return StringObject::create(
-            utils::format("<екземпляр класу %s %p>", o->objectType->name.c_str(), o));
+            utils::format("<екземпляр класу %s %p>", objectType->name.c_str(), this));
     }
-    return op(o);
+    return op(this);
 }
 
-Object* vm::Object::toBool(Object* o)
+Object* vm::Object::toBool()
 {
-    auto op = GET_OPERATOR(o, toBool);
+    auto op = GET_OPERATOR(this, toBool);
     if (op == nullptr)
     {
         return &P_true;
     }
-    return op(o);
+    return op(this);
 }
 
 UNARY_OPERATOR_WITH_MESSAGE(toInteger, "Неможливо конвертувати об'єкт типу \"%s\" в число")
@@ -260,15 +260,15 @@ UNARY_OPERATOR(pos, +)
 UNARY_OPERATOR(neg, -)
 UNARY_OPERATOR_WITH_MESSAGE(getIter, "Для об'єкта типу \"%s\" неможливо отримати ітератор")
 
-Object* vm::Object::getAttr(Object* o, const std::string& name)
+Object* vm::Object::getAttr(const std::string& name)
 {
-    if (o->objectType->attributes.contains(name))
+    if (objectType->attributes.contains(name))
     {
-        return o->objectType->attributes[name];
+        return objectType->attributes[name];
     }
-    else if (OBJECT_IS(o, &objectObjectType))
+    else if (OBJECT_IS(this, &objectObjectType))
     {
-        auto type = (TypeObject*)o;
+        auto type = (TypeObject*)this;
         if (type->attributes.contains(name))
         {
             return type->attributes[name];

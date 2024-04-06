@@ -77,51 +77,52 @@ namespace vm
         TypeObject* objectType = &typeObjectType;
 
         // Викликає об'єкт
-        static Object* call(Object* callable, Object**& sp, u64 argc, NamedArgs* namedArgs=nullptr);
+        Object* call(Object**& sp, u64 argc, NamedArgs* namedArgs=nullptr);
 
         // Викликає операції порівяння для вхідних об'єктів
-        static Object* compare(Object* o1, Object* o2, ObjectCompOperator op);
+        Object* compare(Object* o, ObjectCompOperator op);
 
         // Приведення об'єкту до типу StringObject
-        static Object* toString(Object* o);
+        Object* toString();
 
         // Приведення об'єкту до типу IntObject
-        static Object* toInteger(Object* o);
+        Object* toInteger();
 
         // Приведення об'єкту до типу RealObject
-        static Object* toReal(Object* o);
+        Object* toReal();
 
         // Приведення об'єкту до типу BoolObject
-        static Object* toBool(Object* o);
+        Object* toBool();
 
         // Викликає операцію + для вхідних об'єктів
-        static Object* add(Object* o1, Object* o2);
+        Object* add(Object* o);
 
         // Викликає операцію - для вхідних об'єктів
-        static Object* sub(Object* o1, Object* o2);
+        Object* sub(Object* o);
 
         // Викликає операцію * для вхідних об'єктів
-        static Object* mul(Object* o1, Object* o2);
+        Object* mul(Object* o);
 
         // Викликає операцію / для вхідних об'єктів
-        static Object* div(Object* o1, Object* o2);
+        Object* div(Object* o);
 
         // Викликає операцію \ для вхідних об'єктів
-        static Object* floorDiv(Object* o1, Object* o2);
+        Object* floorDiv(Object* o);
 
         // Викликає операцію % для вхідних об'єктів
-        static Object* mod(Object* o1, Object* o2);
+        Object* mod(Object* o);
 
         // Викликає операцію унарного + для об'єкта
-        static Object* pos(Object* o);
+        Object* pos();
 
         // Викликає операцію унарного - для об'єкта
-        static Object* neg(Object* o);
+        Object* neg();
 
         // Повертає ітератор об'єкта
-        static Object* getIter(Object* o);
+        Object* getIter();
 
-        static Object* getAttr(Object* o, const std::string& name);
+        // Отримання атрибута за його іменем
+        Object* getAttr(const std::string& name);
     };
 
     struct TypeObject : Object
