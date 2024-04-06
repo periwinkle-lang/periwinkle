@@ -12,7 +12,7 @@ std::string utils::escapeString(const std::string& str)
     static std::map<char, std::string> charToEscapeChar =
     {
         {'\a', "\\а"}, {'\b', "\\б"}, {'\t', "\\т"}, {'\n', "\\н"}, {'\v', "\\в"}, {'\f', "\\ф"},
-        {'\r', "\\р"}, {'\"', "\\\""}, {'\?', "\\\?"}, {'\\', "\\\\"},
+        {'\r', "\\р"}, {'\"', "\\\""}, {'\\', "\\\\"},
     };
 
     std::stringstream ss;
