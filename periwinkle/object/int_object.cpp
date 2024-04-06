@@ -36,18 +36,25 @@ static DefaultParameters intInitDefaults = { {"основа"}, { &ten } };
 
 static Object* intInit(Object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
 {
-    if (OBJECT_IS(args[0], &stringObjectType))
+    Object* x;
+    IntObject* base;
+    ArgParser argParser{
+        {&x, objectObjectType, "значення"},
+        {&base, intObjectType, "основа"}
+    };
+    argParser.parse(args, &intInitDefaults, na);
+
+    if (OBJECT_IS(x, &stringObjectType))
     {
-        StringObject* x;
-        IntObject* base;
-        ArgParser argParser{
-            {&x, stringObjectType, "х"},
-            {&base, intObjectType, "основа"}
-        };
-        argParser.parse(args, &intInitDefaults, na);
-        auto value = stringObjectToInt(x, base->value);
+        auto value = stringObjectToInt((StringObject*)x, (base->value == -1 ? 10 : base->value));
         return IntObject::create(value);
     }
+    else if (base->value != -1)
+    {
+        VirtualMachine::currentVm->throwException(
+            &ValueErrorObjectType, "Основа може бути задана лише якщо перший аргумент є стрічкою");
+    }
+
     return Object::toInteger(args[0]);
 }
 
