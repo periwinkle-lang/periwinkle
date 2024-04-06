@@ -12,6 +12,7 @@ namespace vm
     extern TypeObject AttributeErrorObjectType;
     extern TypeObject IndexErrorObjectType;
     extern TypeObject DivisionByZeroErrorObjectType;
+    extern TypeObject ValueErrorObjectType;
 
     struct ExceptionObject : Object
     {
@@ -39,6 +40,10 @@ namespace vm
     };
 
     struct DivisionByZeroErrorObject : ExceptionObject
+    {
+    };
+
+    struct ValueErrorObject : ExceptionObject
     {
     };
 

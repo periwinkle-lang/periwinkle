@@ -17,6 +17,7 @@ namespace vm
     };
 
     extern StringObject P_emptyStr;
+    i64 stringObjectToInt(StringObject* str, int base = 10);
 
     struct StringIterObject : Object
     {

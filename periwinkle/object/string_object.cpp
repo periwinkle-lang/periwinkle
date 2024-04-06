@@ -11,6 +11,7 @@
 #include "utils.hpp"
 #include "argument_parser.hpp"
 #include "native_function_object.hpp"
+#include "real_object.hpp"
 
 using namespace vm;
 
@@ -76,6 +77,35 @@ static Object* strComparison(Object* o1, Object* o2, ObjectCompOperator op)
 static Object* strToString(Object* o)
 {
     return o;
+}
+
+static Object* strToInteger(StringObject* o)
+{
+    return IntObject::create(stringObjectToInt(o));
+}
+
+static Object* strToReal(StringObject* o)
+{
+    double value;
+    try
+    {
+        value = std::stod(o->asUtf8());
+    }
+    catch (const std::invalid_argument& e)
+    {
+        VirtualMachine::currentVm->throwException(
+            &ValueErrorObjectType, utils::format(
+                "Неможливо перетворити стрічку \"%s\" в дійсне число",
+                utils::escapeString(o->asUtf8()).c_str()));
+    }
+    catch (const std::out_of_range& e)
+    {
+        VirtualMachine::currentVm->throwException(
+            &ValueErrorObjectType, utils::format(
+                "Число \"%s\" не входить в діапазон можливих значень дійсного числа",
+                o->asUtf8().c_str()));
+    }
+    return RealObject::create(value);
 }
 
 static Object* strToBool(StringObject* o)
@@ -400,6 +430,8 @@ namespace vm
         .operators =
         {
             .toString = strToString,
+            .toInteger = (unaryFunction)strToInteger,
+            .toReal = (unaryFunction)strToReal,
             .toBool = (unaryFunction)strToBool,
             .add = strAdd,
             .getIter = (unaryFunction)strGetIter,
@@ -441,6 +473,30 @@ namespace vm
     };
 
     StringObject P_emptyStr = { {.objectType = &stringObjectType}, U"" };
+
+    i64 stringObjectToInt(StringObject* str, int base)
+    {
+        i64 value;
+        try
+        {
+            value = std::stoll(str->asUtf8(), nullptr, base);
+        }
+        catch (const std::invalid_argument& e)
+        {
+            VirtualMachine::currentVm->throwException(
+                &ValueErrorObjectType, utils::format(
+                    "Неможливо перетворити стрічку \"%s\" в число",
+                    utils::escapeString(str->asUtf8()).c_str()));
+        }
+        catch (const std::out_of_range& e)
+        {
+            VirtualMachine::currentVm->throwException(
+                &ValueErrorObjectType, utils::format(
+                    "Число \"%s\" не входить в діапазон можливих значень числа",
+                    str->asUtf8().c_str()));
+        }
+        return value;
+    }
 }
 
 std::string vm::StringObject::asUtf8() const

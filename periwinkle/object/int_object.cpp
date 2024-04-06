@@ -8,6 +8,7 @@
 #include "real_object.hpp"
 #include "exception_object.hpp"
 #include "native_method_object.hpp"
+#include "argument_parser.hpp"
 
 using namespace vm;
 
@@ -30,8 +31,23 @@ static Object* name(Object* a, Object* b)     \
     return IntObject::create(result);         \
 }
 
+static IntObject ten = { {.objectType = &intObjectType}, 10 };
+static DefaultParameters intInitDefaults = { {"основа"}, { &ten } };
+
 static Object* intInit(Object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
 {
+    if (OBJECT_IS(args[0], &stringObjectType))
+    {
+        StringObject* x;
+        IntObject* base;
+        ArgParser argParser{
+            {&x, stringObjectType, "х"},
+            {&base, intObjectType, "основа"}
+        };
+        argParser.parse(args, &intInitDefaults, na);
+        auto value = stringObjectToInt(x, base->value);
+        return IntObject::create(value);
+    }
     return Object::toInteger(args[0]);
 }
 
@@ -128,7 +144,7 @@ namespace vm
         .base = &objectObjectType,
         .name = "Число",
         .alloc = DEFAULT_ALLOC(IntObject),
-        .constructor = new NATIVE_METHOD("конструктор", 1, false, intInit, intObjectType, nullptr),
+        .constructor = new NATIVE_METHOD("конструктор", 1, false, intInit, intObjectType, &intInitDefaults),
         .operators =
         {
             .toString = intToString,
