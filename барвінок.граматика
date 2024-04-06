@@ -139,6 +139,7 @@ term<ast::Expression*> =
     / e:factor { $$ = e; }
 
 factor<ast::Expression*> =
+    / num:number { $$ = num; }  # Для коректного оброблення чисел з вказаним знаком
     / op:("+" / "-") _? e:factor { $$ = new UnaryExpression(newToken(op, $1), e); }
     / e:primary { $$ = e; }
 
@@ -154,7 +155,14 @@ primary<ast::Expression*> =
             }
         }
     / v:("істина" / "хиба") { $$ = new LiteralExpression(newToken(v, $1), LiteralExpression::Type::BOOLEAN, v == "істина"); }
-    / num:((("0" / [1-9][0-9]*) "." [0-9]*) / ([1-9]* "." [0-9]+))
+    / num:number { $$ = num; }
+    / s:("\"" body:("\\\""? !"\"" .)* "\"") { $$ = new LiteralExpression(newToken(s, $1), LiteralExpression::Type::STRING, body); }
+    / "ніц" { $$ = new LiteralExpression(newToken("ніц", $1), LiteralExpression::Type::NULL_, {}); }
+    / id:identifier { $$ = new VariableExpression(newToken(id, $1)); }
+    / "(" e:rhs ")" { $$ = new ParenthesizedExpression(e); }
+
+number<ast::LiteralExpression*> =
+    / num:([-+]? (("0" / [1-9][0-9]*) "." [0-9]*) / ([1-9]* "." [0-9]+))
         {
             try {
                 $$ = new LiteralExpression(newToken(num, $1), LiteralExpression::Type::REAL, std::stod(num));
@@ -162,7 +170,7 @@ primary<ast::Expression*> =
                 parseError("Число не входить в діапазон можливих значень дійсного числа");
             }
         }
-    / num:(("0" / [1-9][0-9]*))
+    / num:([-+]? ("0" / [1-9][0-9]*))
         {
             try {
                 $$ = new LiteralExpression(newToken(num, $1), LiteralExpression::Type::NUMBER, std::stoll(num));
@@ -170,10 +178,6 @@ primary<ast::Expression*> =
                 parseError("Число не входить в діапазон можливих значень числа");
             }
         }
-    / s:("\"" body:("\\\""? !"\"" .)* "\"") { $$ = new LiteralExpression(newToken(s, $1), LiteralExpression::Type::STRING, body); }
-    / "ніц" { $$ = new LiteralExpression(newToken("ніц", $1), LiteralExpression::Type::NULL_, {}); }
-    / id:identifier { $$ = new VariableExpression(newToken(id, $1)); }
-    / "(" e:rhs ")" { $$ = new ParenthesizedExpression(e); }
 
 call_arguments<
     std::tuple<
