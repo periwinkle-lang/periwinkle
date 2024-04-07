@@ -538,20 +538,29 @@ void compiler::Compiler::compileCallExpression(CallExpression* expression)
 
 void compiler::Compiler::compileBinaryExpression(BinaryExpression* expression)
 {
+    using enum vm::ObjectCompOperator;
+    auto& op = expression->op.text;
+
+    if (op == Keyword::AND || op == Keyword::OR)
+    {
+        compileExpression(expression->left);
+        setLineno(expression->op);
+        emitOpCode(op == Keyword::AND ? JMP_IF_FALSE_OR_POP : JMP_IF_TRUE_OR_POP);
+        auto end = emitOperand(0);
+        compileExpression(expression->right);
+        patchJumpAddress(end, getOffset());
+        return;
+    }
     compileExpression(expression->right);
     compileExpression(expression->left);
     setLineno(expression->op);
 
-    using enum vm::ObjectCompOperator;
-    auto& op = expression->op.text;
     if      (op == Keyword::ADD) emitOpCode(ADD);
     else if (op == Keyword::SUB) emitOpCode(SUB);
     else if (op == Keyword::DIV) emitOpCode(DIV);
     else if (op == Keyword::MUL) emitOpCode(MUL);
     else if (op == Keyword::MOD) emitOpCode(MOD);
     else if (op == Keyword::FLOOR_DIV) emitOpCode(FLOOR_DIV);
-    else if (op == Keyword::AND) emitOpCode(AND);
-    else if (op == Keyword::OR) emitOpCode(OR);
     else if (op == Keyword::IS) emitOpCode(IS);
     else if (op == Keyword::EQUAL_EQUAL) { emitOpCode(COMPARE); emitOperand((vm::WORD)EQ); }
     else if (op == Keyword::NOT_EQUAL) { emitOpCode(COMPARE); emitOperand((vm::WORD)NE); }

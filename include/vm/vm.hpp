@@ -26,10 +26,11 @@ namespace vm
         BIN_AND, BIN_OR, BIN_NOT, XOR, SHL, SHR, IS, COMPARE,
 
         // Логічні операції
-        AND, OR, NOT,
+        NOT,
 
         // Операції контролю потоку виконання
-        JMP, JMP_IF_TRUE, JMP_IF_FALSE, CALL, CALL_NA, RETURN, FOR_EACH,
+        JMP, JMP_IF_TRUE, JMP_IF_FALSE, JMP_IF_TRUE_OR_POP, JMP_IF_FALSE_OR_POP,
+        CALL, CALL_NA, RETURN, FOR_EACH,
 
         // Операції для роботи з пам'яттю
         LOAD_CONST, LOAD_GLOBAL, STORE_GLOBAL, LOAD_LOCAL, STORE_LOCAL,

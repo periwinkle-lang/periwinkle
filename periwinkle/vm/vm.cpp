@@ -46,17 +46,6 @@ case OpCode::name:                                      \
     break;                                              \
 }
 
-#define BOOLEAN_OP(name, op)                            \
-case OpCode::name:                                      \
-{                                                       \
-    auto o1 = POP();                                    \
-    auto o2 = POP();                                    \
-    auto arg1 = (BoolObject*)o1->toBool();              \
-    auto arg2 = (BoolObject*)o2->toBool();              \
-    PUSH(P_BOOL(arg1->value op arg2->value));           \
-    break;                                              \
-}
-
 void VirtualMachine::throwException(
     TypeObject * exception, std::string message, WORD lineno)
 {
@@ -116,8 +105,6 @@ Object* VirtualMachine::execute()
             PUSH(result);
             break;
         }
-        BOOLEAN_OP(AND, &&)
-        BOOLEAN_OP(OR, ||)
         case NOT:
         {
             auto o = POP();
@@ -134,27 +121,45 @@ Object* VirtualMachine::execute()
         {
             auto o = POP();
             auto condition = (BoolObject*)o->toBool();
-            if ((condition)->value)
-            {
+            if (condition->value)
                 JUMP();
-            }
             else
-            {
                 ip++;
-            }
             break;
         }
         case JMP_IF_FALSE:
         {
             auto o = POP();
             auto condition = (BoolObject*)o->toBool();
-            if (((BoolObject*)condition)->value == false)
-            {
+            if (condition->value == false)
                 JUMP();
-            }
+            else
+                ip++;
+            break;
+        }
+        case JMP_IF_TRUE_OR_POP:
+        {
+            auto o = PEEK();
+            auto condition = (BoolObject*)o->toBool();
+            if (condition->value)
+                JUMP();
             else
             {
                 ip++;
+                (void)POP();
+            }
+            break;
+        }
+        case JMP_IF_FALSE_OR_POP:
+        {
+            auto o = PEEK();
+            auto condition = (BoolObject*)o->toBool();
+            if (condition->value == false)
+                JUMP();
+            else
+            {
+                ip++;
+                (void)POP();
             }
             break;
         }

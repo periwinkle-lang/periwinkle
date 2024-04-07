@@ -28,6 +28,8 @@ int compiler::Disassembler::opCodeLenArguments(OpCode code)
     case JMP:
     case JMP_IF_FALSE:
     case JMP_IF_TRUE:
+    case JMP_IF_FALSE_OR_POP:
+    case JMP_IF_TRUE_OR_POP:
     case LOAD_CONST:
     case LOAD_GLOBAL:
     case STORE_GLOBAL:
@@ -117,7 +119,7 @@ std::string compiler::Disassembler::disassemble(vm::CodeObject* codeObject)
         }
 
         out << std::right << std::setw(4) << ip << " ";
-        out << std::left << std::setw(16);
+        out << std::left << std::setw(20);
         out << vm::stringEnum::enumToString(op);
 
         switch (opCodeLenArguments(op))
