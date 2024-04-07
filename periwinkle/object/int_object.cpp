@@ -19,15 +19,14 @@ using namespace vm;
     CHECK_INT(object)                \
     i = ((IntObject*)object)->value;
 
-#define BINARY_OP(name, op)                   \
-static Object* name(Object* a, Object* b)     \
-{                                             \
-    CHECK_INT(a);                             \
-    CHECK_INT(b);                             \
-    auto arg1 = (IntObject*)a;                \
-    auto arg2 = (IntObject*)b;                \
-    auto result = arg1->value op arg2->value; \
-    return IntObject::create(result);         \
+#define BINARY_OP(name, op)                 \
+static Object* name(Object* o1, Object* o2) \
+{                                           \
+    i64 a, b;                               \
+    TO_INT(o1, a);                          \
+    TO_INT(o2, b);                          \
+    auto result = a op b;                   \
+    return IntObject::create(result);       \
 }
 
 static Object* intInit(Object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
@@ -85,28 +84,26 @@ BINARY_OP(intSub, -)
 BINARY_OP(intMul, *)
 BINARY_OP(intMod, %)
 
-static Object* intDiv(Object* a, Object* b)
+static Object* intDiv(Object* o1, Object* o2)
 {
-    CHECK_INT(a);
-    CHECK_INT(b);
-    if (((IntObject*)b)->value == 0)
+    i64 a, b;
+    TO_INT(o1, a);
+    TO_INT(o2, b);
+    if (b == 0)
     {
         VirtualMachine::currentVm->throwException(
             &DivisionByZeroErrorObjectType, "Ділення на нуль");
     }
-    auto arg1 = (IntObject*)a;
-    auto arg2 = (IntObject*)b;
-    auto result = (double)arg1->value / (double)arg2->value;
+    auto result = (double)a / (double)b;
     return RealObject::create(result);
 }
 
-static Object* intFloorDiv(Object* a, Object* b)
+static Object* intFloorDiv(Object* o1, Object* o2)
 {
-    CHECK_INT(a);
-    CHECK_INT(b);
-    auto arg1 = (IntObject*)a;
-    auto arg2 = (IntObject*)b;
-    auto result = arg1->value / arg2->value;
+    i64 a, b;
+    TO_INT(o1, a);
+    TO_INT(o1, b);
+    auto result = a / b;
     return IntObject::create(result);
 }
 
