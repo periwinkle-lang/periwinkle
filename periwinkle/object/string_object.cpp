@@ -410,6 +410,21 @@ METHOD_TEMPLATE(strSplit, StringObject)
     return strs;
 }
 
+static DefaultParameters toIntDefaults = {
+    {"основа"}, { new IntObject{ {.objectType = &intObjectType}, -1 } } };
+
+METHOD_TEMPLATE(toIntMethod, StringObject)
+{
+    IntObject* base;
+    ArgParser argParser{
+        {&base, intObjectType, "основа"}
+    };
+    argParser.parse(args, &toIntDefaults, na);
+
+    auto value = stringObjectToInt(o, (base->value == -1 ? 10 : base->value));
+    return IntObject::create(value);
+}
+
 METHOD_TEMPLATE(strIterNext, StringIterObject)
 {
     if (o->position < o->length)
@@ -457,6 +472,7 @@ namespace vm
             OBJECT_METHOD("причепуритиСправа",  0, false, strRightTrim,  stringObjectType, nullptr),
             OBJECT_METHOD("підстрічка",         2, false, strSubstr,     stringObjectType, nullptr),
             OBJECT_METHOD("розділити",          1, false, strSplit,      stringObjectType, nullptr),
+            OBJECT_METHOD("доЧисла",            0, false, toIntMethod,   stringObjectType, &toIntDefaults),
             OBJECT_STATIC_METHOD("зліпити",     2, false, strJoin, nullptr),
         },
     };

@@ -337,7 +337,37 @@ Object* VirtualMachine::execute()
         }
         case CALL_METHOD_NA:
         {
-            plog::fatal << "CALL_METHOD_NA ще не реалізовано";
+            auto argc = READ();
+            auto namedArgNames = (StringVectorObject*)GET_CONST();
+            auto callable = *(sp - argc);
+            auto namedArgs = new NamedArgs;
+            auto namedArgCount = namedArgNames->value.size();
+
+            namedArgs->names = &namedArgNames->value;
+            namedArgs->count = namedArgCount;
+            for (size_t i = 0; i < namedArgCount; ++i)
+            {
+                namedArgs->values.push_back(*(sp--));
+            }
+
+            Object* result;
+            if (OBJECT_IS(callable, &methodWithInstanceObjectType))
+            {
+                argc -= namedArgCount;
+                auto methodWithInstance = (MethodWithInstanceObject*)callable;
+                result = callNativeMethod(
+                    methodWithInstance->instance,
+                    (NativeMethodObject*)methodWithInstance->callable,
+                    { sp - argc + 1, argc}, namedArgs);
+                sp -= argc + 1; // Метод
+            }
+            else
+            {
+                result = callable->call(sp, argc - namedArgCount, namedArgs);
+            }
+            PUSH(result);
+
+            delete namedArgs;
             break;
         }
         case MAKE_FUNCTION:

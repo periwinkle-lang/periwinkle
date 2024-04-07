@@ -8,7 +8,6 @@
 #include "real_object.hpp"
 #include "exception_object.hpp"
 #include "native_method_object.hpp"
-#include "argument_parser.hpp"
 
 using namespace vm;
 
@@ -31,30 +30,8 @@ static Object* name(Object* a, Object* b)     \
     return IntObject::create(result);         \
 }
 
-static DefaultParameters intInitDefaults = {
-    {"основа"}, { new IntObject{ {.objectType = &intObjectType}, -1 } } };
-
 static Object* intInit(Object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
 {
-    Object* x;
-    IntObject* base;
-    ArgParser argParser{
-        {&x, objectObjectType, "значення"},
-        {&base, intObjectType, "основа"}
-    };
-    argParser.parse(args, &intInitDefaults, na);
-
-    if (OBJECT_IS(x, &stringObjectType))
-    {
-        auto value = stringObjectToInt((StringObject*)x, (base->value == -1 ? 10 : base->value));
-        return IntObject::create(value);
-    }
-    else if (base->value != -1)
-    {
-        VirtualMachine::currentVm->throwException(
-            &ValueErrorObjectType, "Основа може бути задана лише якщо перший аргумент є стрічкою");
-    }
-
     return args[0]->toInteger();
 }
 
@@ -151,7 +128,7 @@ namespace vm
         .base = &objectObjectType,
         .name = "Число",
         .alloc = DEFAULT_ALLOC(IntObject),
-        .constructor = new NATIVE_METHOD("конструктор", 1, false, intInit, intObjectType, &intInitDefaults),
+        .constructor = new NATIVE_METHOD("конструктор", 1, false, intInit, intObjectType, nullptr),
         .operators =
         {
             .toString = intToString,
