@@ -140,6 +140,7 @@ namespace vm
 
     Object* allocObject(TypeObject* objectType);
     bool isInstance(const Object* o, const TypeObject& type);
+    bool objectToBool(Object* o);
 }
 
 #endif

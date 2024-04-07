@@ -8,6 +8,8 @@
 #include "string_object.hpp"
 #include "native_method_object.hpp"
 #include "string_vector_object.hpp"
+#include "int_object.hpp"
+#include "real_object.hpp"
 
 using namespace vm;
 
@@ -77,6 +79,17 @@ bool vm::isInstance(const Object* o, const TypeObject& type)
 
         oType = oType->base;
     }
+}
+
+bool vm::objectToBool(Object* o)
+{
+    if (o == &P_true) return true;
+    if (o == &P_false) return false;
+    if (OBJECT_IS(o, &intObjectType)) return static_cast<IntObject*>(o)->value;
+    if (OBJECT_IS(o, &realObjectType)) return static_cast<RealObject*>(o)->value;
+    if (OBJECT_IS(o, &stringObjectType)) return !static_cast<StringObject*>(o)->value.empty();
+    if (OBJECT_IS(o, &listObjectType)) return !static_cast<ListObject*>(o)->items.empty();
+    return static_cast<BoolObject*>(o->toBool())->value;
 }
 
 #define GET_OPERATOR(object, op) (object)->objectType->operators.op

@@ -120,8 +120,7 @@ Object* VirtualMachine::execute()
         case JMP_IF_TRUE:
         {
             auto o = POP();
-            auto condition = (BoolObject*)o->toBool();
-            if (condition->value)
+            if (objectToBool(o))
                 JUMP();
             else
                 ip++;
@@ -130,8 +129,7 @@ Object* VirtualMachine::execute()
         case JMP_IF_FALSE:
         {
             auto o = POP();
-            auto condition = (BoolObject*)o->toBool();
-            if (condition->value == false)
+            if (objectToBool(o) == false)
                 JUMP();
             else
                 ip++;
@@ -140,8 +138,7 @@ Object* VirtualMachine::execute()
         case JMP_IF_TRUE_OR_POP:
         {
             auto o = PEEK();
-            auto condition = (BoolObject*)o->toBool();
-            if (condition->value)
+            if (objectToBool(o))
                 JUMP();
             else
             {
@@ -153,8 +150,7 @@ Object* VirtualMachine::execute()
         case JMP_IF_FALSE_OR_POP:
         {
             auto o = PEEK();
-            auto condition = (BoolObject*)o->toBool();
-            if (condition->value == false)
+            if (objectToBool(o) == false)
                 JUMP();
             else
             {
