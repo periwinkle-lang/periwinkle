@@ -411,7 +411,7 @@ METHOD_TEMPLATE(strSplit, StringObject)
 }
 
 static DefaultParameters toIntDefaults = {
-    {"основа"}, { new IntObject{ {.objectType = &intObjectType}, -1 } } };
+    {"основа"}, { new IntObject{ {.objectType = &intObjectType}, 10 } } };
 
 METHOD_TEMPLATE(toIntMethod, StringObject)
 {
@@ -421,7 +421,13 @@ METHOD_TEMPLATE(toIntMethod, StringObject)
     };
     argParser.parse(args, &toIntDefaults, na);
 
-    auto value = stringObjectToInt(o, (base->value == -1 ? 10 : base->value));
+    if (!((base->value >= 2 && base->value <= 36) || base->value == 0))
+    {
+        VirtualMachine::currentVm->throwException(
+            &ValueErrorObjectType, "Основа повинна бути в діапазоні 2-36(включно) або 0");
+    }
+
+    auto value = stringObjectToInt(o, base->value);
     return IntObject::create(value);
 }
 
