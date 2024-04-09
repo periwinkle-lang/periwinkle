@@ -2,15 +2,17 @@
 #define PERIWINKLE_H
 
 #include <string>
+#include <filesystem>
 
 #include "exports.hpp"
+#include "program_source.hpp"
 
 namespace periwinkle
 {
     class API Periwinkle
     {
     private:
-        std::string code;
+        ProgramSource* source;
     public:
         // Повертає версію як число, 2 цифри на значення.
         //  Наприклад: версія 1.10.2, то повернеться чило 11002
@@ -24,11 +26,10 @@ namespace periwinkle
 #ifdef DEBUG
         void printDisassemble();
 #endif
-        Periwinkle(std::string code);
+        Periwinkle(const std::string& code);
+        Periwinkle(const std::filesystem::path& path);
+        Periwinkle(const ProgramSource& source);
     };
-
-    void throwSyntaxError(const std::string& code, std::string message, size_t position);
-    void throwSyntaxError(const std::string& code, std::string message, size_t lineno, size_t col);
 }
 
 #endif

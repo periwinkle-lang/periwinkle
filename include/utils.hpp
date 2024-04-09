@@ -8,15 +8,16 @@
 #include <memory>
 
 #include "exports.hpp"
+#include "program_source.hpp"
 
 namespace utils
 {
     std::string escapeString(const std::string& str);
-    std::string getLineFromString(const std::string& str, int line);
-    size_t linenoFromPosition(const std::string& str, size_t position);
+    std::string getLineFromString(std::string_view str, int line);
+    size_t linenoFromPosition(std::string_view str, size_t position);
 
     // Визначає позицію в стрічці із загальної позиції символа в стрічці
-    size_t positionInLineFromPosition(const std::string& str, size_t position);
+    size_t positionInLineFromPosition(std::string_view str, size_t position);
     void replaceTabToSpace(std::string& str);
 
     // Повертає кількість символів в utf8 стрічці
@@ -45,9 +46,12 @@ namespace utils
         return std::string(buf.get(), buf.get() + size - 1); // - 1, щоб видалити '\0'
     }
 
+    void throwSyntaxError(periwinkle::ProgramSource* source, std::string message, size_t position);
+    void throwSyntaxError(periwinkle::ProgramSource* source, std::string message, size_t lineno, size_t col);
+
 #ifdef _WIN32
-    API std::wstring convertUtf8ToWide(const std::string& str);
-    API std::string convertWideToUtf8(const std::wstring& wstr);
+    API std::wstring convertUtf8ToWide(std::string_view str);
+    API std::string convertWideToUtf8(std::wstring_view wstr);
 #endif
 
     std::string readline();

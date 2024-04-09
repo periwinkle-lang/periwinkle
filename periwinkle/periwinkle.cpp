@@ -24,11 +24,12 @@ int periwinkle::Periwinkle::patchVersion() { return PERIWINKLE_VERSION_PATCH; }
 void periwinkle::Periwinkle::execute()
 {
     using namespace std::placeholders;
-    PParser::Parser parser(code);
-    parser.setErrorHandler(std::bind(static_cast<void(*)(const std::string&, std::string, size_t)>(throwSyntaxError), code, _1, _2));
+    PParser::Parser parser(source->getText());
+    parser.setErrorHandler(std::bind(
+        static_cast<void(*)(ProgramSource*, std::string, size_t)>(utils::throwSyntaxError), source, _1, _2));
     auto ast = parser.parse();
     if (!ast.has_value()) { exit(1); }
-    compiler::Compiler comp(ast.value(), code);
+    compiler::Compiler comp(ast.value(), source);
     std::array<vm::Object*, 512> stack{};
     auto frame = comp.compile();
     frame->sp = &stack[0];
@@ -44,34 +45,26 @@ void periwinkle::Periwinkle::execute()
 
 void periwinkle::Periwinkle::printDisassemble()
 {
-    PParser::Parser parser(code);
+    PParser::Parser parser(source->getText());
     auto ast = parser.parse();
     if (!ast.has_value()) { exit(1); }
-    compiler::Compiler comp(ast.value(), code);
+    compiler::Compiler comp(ast.value(), source);
     compiler::Disassembler disassembler;
     std::cout << disassembler.disassemble(comp.compile()->codeObject);
 }
 #endif
 
-periwinkle::Periwinkle::Periwinkle(std::string code)
+periwinkle::Periwinkle::Periwinkle(const std::string& code)
+    : source(new ProgramSource(code))
 {
-    //utils::replaceTabToSpace(code);
-    this->code = code;
-};
-
-void periwinkle::throwSyntaxError(const std::string& code, std::string message, size_t position)
-{
-    auto lineno = utils::linenoFromPosition(code, position);
-    auto positionInLine = utils::positionInLineFromPosition(code, position);
-    throwSyntaxError(code, message, lineno, positionInLine);
 }
 
-void periwinkle::throwSyntaxError(const std::string& code, std::string message, size_t lineno, size_t col)
+periwinkle::Periwinkle::Periwinkle(const std::filesystem::path& path)
+    : source(new ProgramSource(path))
 {
-    std::cerr << "Синтаксична помилка: ";
-    std::cerr << message << " (знайнено на " << lineno << " рядку)\n";
-    const auto& line = utils::getLineFromString(code, lineno);
-    std::cerr << utils::indent(4) << line << std::endl;
-    auto offset = utils::utf8Size(line.substr(0, col));
-    std::cerr << utils::indent(4 + offset) << "^\n";
+}
+
+periwinkle::Periwinkle::Periwinkle(const ProgramSource& source)
+    : source(new ProgramSource(source))
+{
 }

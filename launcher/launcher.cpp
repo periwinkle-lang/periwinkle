@@ -11,29 +11,6 @@
 
 using std::string;
 using std::vector;
-using std::wstring;
-
-string readCode(string filename)
-{
-#ifdef _WIN32
-    std::ifstream filestream(utils::convertUtf8ToWide(filename));
-#else
-    std::ifstream filestream(filename);
-#endif
-
-    std::stringstream ss;
-    if (filestream.is_open())
-    {
-        ss << filestream.rdbuf();
-        filestream.close();
-        return ss.str();
-    }
-    else
-    {
-        std::cerr << "Неможливо відкрити файл \"" << filename << "\"." << std::endl;
-        exit(1);
-    }
-}
 
 string usage(string programName)
 {
@@ -68,7 +45,7 @@ int wmain(int argc, wchar_t* w_argv[])
 	char** argv = new char* [argc];
 	for (int i = 0; i < argc; ++i)
 	{
-		auto utf8String = utils::convertWideToUtf8(wstring(w_argv[i]));
+		auto utf8String = utils::convertWideToUtf8(w_argv[i]);
 		argv[i] = new char[utf8String.size()];
 		strcpy(argv[i], utf8String.c_str());
 	}
@@ -118,8 +95,7 @@ int main(int argc, char* argv[])
         }
     }
 
-	auto code = readCode(argsForInterpreter.back());
-	periwinkle::Periwinkle interpreter(code);
+	periwinkle::Periwinkle interpreter(std::filesystem::path(argsForInterpreter.back()));
 
 #ifdef DEBUG
 	if (cmdOptionExists(argsForInterpreter, "-а", "--асемблер"))
@@ -130,5 +106,8 @@ int main(int argc, char* argv[])
 #endif
 	interpreter.execute();
 
+#ifdef _WIN32
+    delete[] argv;
+#endif
 	return 0;
 }

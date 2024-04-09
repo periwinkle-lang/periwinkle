@@ -6,6 +6,7 @@
 #include "ast.hpp"
 #include "vm.hpp"
 #include "scope.hpp"
+#include "program_source.hpp"
 
 namespace compiler
 {
@@ -23,7 +24,7 @@ namespace compiler
     {
     private:
         ast::BlockStatement* root;
-        std::string code;
+        periwinkle::ProgramSource* source;
         vm::CodeObject* codeObject;
         std::vector<CompilerState*> stateStack;
         vm::WORD currentLineno = 0; // Номер лінії коду, який зараз компілюється
@@ -75,7 +76,7 @@ namespace compiler
         inline void patchJumpAddress(int offset, vm::WORD newAddress);
     public:
         vm::Frame* compile();
-        Compiler(ast::BlockStatement* root, std::string code);
+        Compiler(ast::BlockStatement* root, periwinkle::ProgramSource* source);
     };
 }
 

@@ -766,7 +766,7 @@ vm::WORD compiler::Compiler::nameIdx(const std::string& name)
 
 void compiler::Compiler::throwCompileError(std::string message, Token token)
 {
-    periwinkle::throwSyntaxError(code, message, token.lineno, token.col - 1);
+    utils::throwSyntaxError(source, message, token.lineno, token.col - 1);
     exit(1);
 }
 
@@ -799,10 +799,10 @@ void compiler::Compiler::patchJumpAddress(int offset, vm::WORD newAddress)
     codeObject->code[offset] = newAddress;
 }
 
-compiler::Compiler::Compiler(BlockStatement* root, std::string code)
+compiler::Compiler::Compiler(BlockStatement* root, periwinkle::ProgramSource* source)
     :
     root(root),
-    code(code)
+    source(source)
 {
     codeObject = vm::CodeObject::create("TODO");
 }

@@ -30,9 +30,9 @@ std::string utils::escapeString(const std::string& str)
     return ss.str();
 }
 
-std::string utils::getLineFromString(const std::string& str, int line)
+std::string utils::getLineFromString(std::string_view str, int line)
 {
-    std::istringstream iss(str);
+    std::istringstream iss(str.data());
     std::string result;
     for (int i = 0; i < line; ++i)
     {
@@ -41,12 +41,12 @@ std::string utils::getLineFromString(const std::string& str, int line)
     return result;
 }
 
-size_t utils::linenoFromPosition(const std::string& str, size_t position)
+size_t utils::linenoFromPosition(std::string_view str, size_t position)
 {
     return std::count(str.begin(), str.begin() + position, '\n') + 1;
 }
 
-size_t utils::positionInLineFromPosition(const std::string& str, size_t position)
+size_t utils::positionInLineFromPosition(std::string_view str, size_t position)
 {
     auto lineno = linenoFromPosition(str, position);
     if (lineno == 1)
@@ -209,8 +209,25 @@ std::string utils::indent(int width)
     return std::string(width, ' ');
 }
 
+void utils::throwSyntaxError(periwinkle::ProgramSource* source, std::string message, size_t position)
+{
+    auto lineno = utils::linenoFromPosition(source->getText(), position);
+    auto positionInLine = utils::positionInLineFromPosition(source->getText(), position);
+    throwSyntaxError(source, message, lineno, positionInLine);
+}
+
+void utils::throwSyntaxError(periwinkle::ProgramSource* source, std::string message, size_t lineno, size_t col)
+{
+    std::cerr << "Синтаксична помилка: ";
+    std::cerr << message << " (знайнено на " << lineno << " рядку)\n";
+    const auto& line = utils::getLineFromString(source->getText(), lineno);
+    std::cerr << utils::indent(4) << line << std::endl;
+    auto offset = utils::utf8Size(line.substr(0, col));
+    std::cerr << utils::indent(4 + offset) << "^\n";
+}
+
 #ifdef _WIN32
-std::wstring utils::convertUtf8ToWide(const std::string& str)
+std::wstring utils::convertUtf8ToWide(std::string_view str)
 {
     int count = MultiByteToWideChar(CP_UTF8, 0, data(str), (int)str.length(), NULL, 0);
     std::wstring wstr(count, 0);
@@ -218,7 +235,7 @@ std::wstring utils::convertUtf8ToWide(const std::string& str)
     return wstr;
 }
 
-std::string utils::convertWideToUtf8(const std::wstring& wstr)
+std::string utils::convertWideToUtf8(std::wstring_view wstr)
 {
     int count = WideCharToMultiByte(CP_UTF8, 0, data(wstr), (int)wstr.length(), NULL, 0, NULL, NULL);
     std::string str(count, 0);
