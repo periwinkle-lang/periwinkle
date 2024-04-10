@@ -21,8 +21,9 @@ void vm::validateCall(
     {
         VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
             utils::format(
-                "%s \"%s\" очікує %u аргументів, натомість передано %u",
-                CALLABLE_NAME, fnName.c_str(), arityWithoutDefaults, argc)
+                "%s \"%s\" очікує %u %s, натомість передано %u",
+                CALLABLE_NAME, fnName.c_str(), arityWithoutDefaults,
+                utils::wordDeclension(arityWithoutDefaults, "аргумент").c_str(), argc)
         );
     }
 
@@ -48,8 +49,9 @@ void vm::validateCall(
         {
             VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
                 utils::format(
-                    "%s \"%s\" очікує %u аргументів, натомість передано %u",
-                    CALLABLE_NAME, fnName.c_str(), arityWithoutDefaults, argc)
+                    "%s \"%s\" очікує %u %s, натомість передано %u",
+                    CALLABLE_NAME, fnName.c_str(), arityWithoutDefaults,
+                    utils::wordDeclension(arityWithoutDefaults, "аргумент").c_str(), argc)
             );
         }
     }

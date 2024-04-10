@@ -1,4 +1,6 @@
 ﻿#include <iostream>
+#include <unordered_map>
+#include <cassert>
 #ifdef _WIN32
     #include <windows.h>
 #endif
@@ -224,6 +226,25 @@ void utils::throwSyntaxError(periwinkle::ProgramSource* source, std::string mess
     std::cerr << utils::indent(4) << line << std::endl;
     auto offset = utils::utf8Size(line.substr(0, col));
     std::cerr << utils::indent(4 + offset) << "^\n";
+}
+
+std::unordered_map<std::string, std::pair<std::string, std::string>> words
+{
+    {"аргумент", {"аргумента", "аргументів"}},
+};
+
+std::string utils::wordDeclension(i64 n, const std::string& word)
+{
+    assert(words.contains(word) && "Такого слова немає в словнику для відмінювання");
+
+    if (n % 10 == 1 && n % 100 != 11)
+        return word;
+
+    const auto& w = words.at(word);
+    if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20))
+        return w.first;
+    else
+        return w.second;
 }
 
 #ifdef _WIN32

@@ -9,6 +9,7 @@
 
 #include "exports.hpp"
 #include "program_source.hpp"
+#include "types.hpp"
 
 namespace utils
 {
@@ -48,6 +49,9 @@ namespace utils
 
     void throwSyntaxError(periwinkle::ProgramSource* source, std::string message, size_t position);
     void throwSyntaxError(periwinkle::ProgramSource* source, std::string message, size_t lineno, size_t col);
+
+    // Відмнює слова в залежності від числа
+    std::string wordDeclension(i64 n, const std::string& word);
 
 #ifdef _WIN32
     API std::wstring convertUtf8ToWide(std::string_view str);
