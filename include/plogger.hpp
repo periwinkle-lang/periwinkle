@@ -69,54 +69,62 @@ namespace plog
         PloggerDebug(const std::source_location& location)
             : Plogger(std::cout, location, "DEBUG") {}
 
-        // Якщо збірка релізна, то перепризначається метод, щоб нічого не виводилось
-#ifndef DEBUG
-        void preMessage() override {}
-#endif
-
-        template <typename T>
-        PloggerDebug& operator<<(T const& obj)
-        {
-#ifdef DEBUG
-            dest << obj;
-#endif
-            return *this;
-        }
-
-        PloggerDebug& operator<<(std::ostream& (*os)(std::ostream&))
-        {
-#ifdef DEBUG
-            dest << os;
-#endif
-            return *this;
-        }
-
         // Спрацьовує, коли повідомлення повністю вивелось
         ~PloggerDebug()
         {
-#ifdef DEBUG
             dest << std::endl;
-#endif
         }
+    };
+
+    class PloggerAssert : public Plogger
+    {
+    private:
+        bool condition;
+    public:
+        PloggerAssert(const std::source_location& location, bool condition)
+            : condition(condition), Plogger(std::cerr, location, "ASSERT") {}
+
+        template <typename T>
+        Plogger& operator<<(T const& obj)
+        {
+            if (!condition) dest << obj;
+            return *this;
+        }
+
+        Plogger& operator<<(std::ostream& (*os)(std::ostream&))
+        {
+            if (!condition) dest << os;
+            return *this;
+        }
+
+        ~PloggerAssert()
+        {
+            if (!condition)
+            {
+                dest << std::endl;
+                exit(EXIT_FAILURE);
+            }
+        }
+    };
+
+    // Допоміжна структура, яка дозволяє отримати правильний source_location в перевантажених операторах,
+    // так як в них неможливо додати аргумент за замовчуванням
+    template <typename T>
+    struct located_reference
+    {
+        located_reference(const T& v, std::source_location l = std::source_location::current())
+            : location(l), value(v) {};
+
+        std::source_location location;
+        T& value;
     };
 
     // Допоміжний клас для створення екземплярів логеру
     template <typename loggerT>
     class Starter
     {
-    private:
-        // Допоміжна структура, яка дозволяє отримати правильний source_location в перевантажених операторах,
-        // так як в них неможливо додати аргумент за замовчуванням
-        template <typename T>
-        struct located_reference
-        {
-            located_reference(const T& v, std::source_location l = std::source_location::current())
-                : location(l), value(v) {};
-
-            std::source_location location;
-            T& value;
-        };
     public:
+#ifdef DEBUG
         template <typename T>
         friend loggerT operator<<(located_reference<plog::Starter<loggerT>&> starter, T const& obj)
         {
@@ -135,15 +143,68 @@ namespace plog
             logger << os;
             return logger;
         }
+#else
+        // Якщо збірка release, то нічого не працює
+        template <typename T> Starter& operator<<(T const& obj) { return *this; }
+        Starter& operator<<(std::ostream& (*os)(std::ostream&)) { return *this; }
+#endif
     };
 
-    // Виводить повідомлення в консоль та завершує програму
-    // !!!Використовувати лише для помилок, які можуть виникати при неправильній розробці,
-    // кінцевий користувач програми не повинен бачити цих повідомлень!!!
+    class AssertStarter
+    {
+#ifdef DEBUG
+    private:
+        bool condition;
+    public:
+        template <typename T>
+        friend PloggerAssert operator<<(located_reference<plog::AssertStarter&> starter, T const& obj)
+        {
+            PloggerAssert logger(starter.location, starter.value.condition);
+            if (!starter.value.condition)
+            {
+                logger.preMessage();
+                logger << obj;
+            }
+            return logger;
+        }
+
+        friend PloggerAssert operator<<(located_reference<plog::AssertStarter&> starter,
+            std::ostream& (*os)(std::ostream&))
+        {
+            PloggerAssert logger(starter.location, starter.value.condition);
+            if (!starter.value.condition)
+            {
+                logger.preMessage();
+                logger << os;
+            }
+            return logger;
+        }
+
+        AssertStarter& operator()(bool condition)
+        {
+            this->condition = condition;
+            return *this;
+        }
+#else
+    public:
+        template <typename T> AssertStarter& operator<<(T const& obj) { return *this; }
+        AssertStarter& operator<<(std::ostream& (*os)(std::ostream&)) { return *this; }
+        AssertStarter& operator()(bool condition) { return *this; }
+#endif
+    };
+
+    // Виводить повідомлення в консоль та завершує програму. Працює лише в debug збірці.
     [[maybe_unused]] static Starter<PloggerFatal> fatal;
 
-    // Виводить повідомлення в консоль, але лише в debug збірці
+    // Виводить повідомлення в консоль. Працює лише в debug збірці.
+    // Працює як cout:
+    //     plog::debug << "Повідомлення";
     [[maybe_unused]] static Starter<PloggerDebug> debug;
+
+    // Аналог assert(). Працює лише в debug збірці.
+    // Приклад:
+    //     plog::passert(condition) << "Повідомлення";
+    [[maybe_unused]] static AssertStarter passert;
 }
 
 #endif
