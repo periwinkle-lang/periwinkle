@@ -406,10 +406,6 @@ Object* VirtualMachine::execute()
             PUSH(functionObject);
             break;
         }
-        case HALT:
-        {
-            return &P_null;
-        }
         default:
             plog::fatal << "Опкод не реалізовано: \"" << stringEnum::enumToString((OpCode)a) << "\"";
         }

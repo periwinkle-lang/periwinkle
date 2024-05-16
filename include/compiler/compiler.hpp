@@ -30,6 +30,9 @@ namespace compiler
         vm::WORD currentLineno = 0; // Номер лінії коду, який зараз компілюється
         std::vector<Scope*> scopeStack;
         ScopeAnalyzer::scope_info_t scopeInfo;
+        bool isRootBlock = false;
+        bool isLastStatementInBlock = false;
+        bool isRootBlockHasReturn = false;
 
         void compileBlock(ast::BlockStatement* block);
         void compileStatement(ast::Statement* statement);

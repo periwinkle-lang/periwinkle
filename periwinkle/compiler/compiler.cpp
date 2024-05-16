@@ -68,9 +68,19 @@ vm::Frame* compiler::Compiler::compile()
     ScopeAnalyzer scopeAnalyzer(root);
     scopeInfo = scopeAnalyzer.analyze();
     PUSH_SCOPE(root);
-    compileBlock(root);
+    for (auto statement = root->statements.begin(); statement != root->statements.end(); ++statement)
+    {
+        isRootBlock = true;
+        isLastStatementInBlock = statement == root->statements.end() - 1;
+        compileStatement(*statement);
+    }
     SCOPE_POP();
-    emitOpCode(HALT);
+    if (!isRootBlockHasReturn)
+    {
+        emitOpCode(LOAD_CONST);
+        emitOperand(nullConstIdx());
+        emitOpCode(RETURN);
+    }
     auto frame = new vm::Frame;
     frame->codeObject = codeObject;
     frame->globals = new vm::Frame::object_map_t;
@@ -80,6 +90,7 @@ vm::Frame* compiler::Compiler::compile()
 
 void compiler::Compiler::compileBlock(BlockStatement* block)
 {
+    isRootBlock = false;
     for (auto statement : block->statements)
     {
         compileStatement(statement);
@@ -103,7 +114,13 @@ void compiler::Compiler::compileStatement(Statement* statement)
         // так як він не залишає нічого на стеку після себе
         if (expStatement->expression->kind != ASSIGNMENT_EXPRESSION)
         {
-            emitOpCode(POP);
+            if (isRootBlock && isLastStatementInBlock)
+            {
+                emitOpCode(RETURN);
+                isRootBlockHasReturn = true;
+            }
+            else
+                emitOpCode(POP);
         }
         break;
     }
@@ -220,7 +237,7 @@ void compiler::Compiler::compileIfStatement(IfStatement* statement)
     }
 }
 
-std::optional<Token> checkDuplicateParameters(ast::FunctionDeclaration* func) {
+static std::optional<Token> checkDuplicateParameters(ast::FunctionDeclaration* func) {
     std::unordered_set<std::string> parameterNames;
 
     for (const auto& param : func->parameters) {

@@ -39,8 +39,6 @@ namespace vm
         LOAD_METHOD, CALL_METHOD, CALL_METHOD_NA,
 
         MAKE_FUNCTION,
-
-        HALT, // Завершення роботи віртуальної машини
         COUNT // Кількість операцій
     )
 
