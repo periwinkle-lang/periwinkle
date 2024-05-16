@@ -104,7 +104,8 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 #endif
-	interpreter.execute();
+    auto result = interpreter.execute();
+    if (result == nullptr) { interpreter.printException(); };
 
 #ifdef _WIN32
     delete[] argv;

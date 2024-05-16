@@ -13,6 +13,7 @@
 #include "end_iteration_object.hpp"
 #include "argument_parser.hpp"
 #include "utils.hpp"
+#include "periwinkle.hpp"
 
 using namespace vm;
 
@@ -24,8 +25,9 @@ using namespace vm;
 #define CHECK_INDEX(index, listObject)                                \
     if (std::cmp_greater_equal(index, listObject->items.size()))      \
     {                                                                 \
-        VirtualMachine::currentVm->throwException(                    \
+        getCurrentState()->setException(                              \
             &IndexErrorObjectType, "Індекс виходить за межі списку"); \
+        return nullptr;                                               \
     }
 
 
@@ -171,7 +173,7 @@ METHOD_TEMPLATE(listInsert, ListObject)
         {&index, intObjectType, "індекс"},
         {&element, objectObjectType, "елемент"},
     };
-    argParser.parse(args);
+    if (!argParser.parse(args)) return nullptr;
 
     auto listObject = (ListObject*)o;
     CHECK_INDEX(index->value, listObject);
@@ -187,7 +189,7 @@ METHOD_TEMPLATE(listSetItem, ListObject)
         {&index, intObjectType, "індекс"},
         {&element, objectObjectType, "елемент"},
     };
-    argParser.parse(args);
+    if (!argParser.parse(args)) return nullptr;
 
     auto listObject = (ListObject*)o;
     CHECK_INDEX(index->value, listObject);
@@ -287,7 +289,7 @@ METHOD_TEMPLATE(listGetItem, ListObject)
     ArgParser argParser{
         {&index, intObjectType, "індекс"},
     };
-    argParser.parse(args);
+    if (!argParser.parse(args)) return nullptr;
 
     CHECK_INDEX(index->value, o);
     return o->items[index->value];
@@ -306,7 +308,7 @@ METHOD_TEMPLATE(listSublist, ListObject)
         {&start, intObjectType, "початок"},
         {&count, intObjectType, "кількість"},
     };
-    argParser.parse(args);
+    if (!argParser.parse(args)) return nullptr;
 
     CHECK_INDEX(start->value, o);
     CHECK_INDEX(start->value + count->value - (count->value == 0 ? 0 : 1), o);

@@ -10,6 +10,7 @@
 #include "string_vector_object.hpp"
 #include "int_object.hpp"
 #include "real_object.hpp"
+#include "periwinkle.hpp"
 
 using namespace vm;
 
@@ -17,14 +18,16 @@ static Object* typeCall(TypeObject* type, Object**& sp, WORD argc, NamedArgs* na
 {
     if (type->constructor == nullptr)
     {
-        VirtualMachine::currentVm->throwException(
+        getCurrentState()->setException(
             &TypeErrorObjectType,
             utils::format("Неможливо створити екземпляр з типом \"%s\"",
                 type->name.c_str())
         );
+        return nullptr;
     }
 
     auto instance = callNativeMethod(type, type->constructor, {sp - argc + 1, argc}, na);
+    if (!instance) return nullptr;
     sp -= argc + 1;
     return instance;
 }
@@ -94,7 +97,7 @@ bool vm::objectToBool(Object* o)
 
 #define GET_OPERATOR(object, op) (object)->objectType->operators.op
 
-// Повертає посилання на binaryFunction з структуки ObjectOperators за зсувом
+// Повертає посилання на binaryFunction з структури ObjectOperators за зсувом
 #define GET_BINARY_OPERATOR_BY_OFFSET(object, operatorOffset) \
     (*(binaryFunction*)(&((char*)&object->objectType->operators)[operatorOffset]));
 
@@ -166,24 +169,26 @@ static Object* callCompareOperator(Object* o1, Object* o2, ObjectCompOperator op
         auto op_ = GET_OPERATOR(this, op_name);                               \
         if (op_ == nullptr)                                                   \
         {                                                                     \
-            VirtualMachine::currentVm->throwException(&TypeErrorObjectType,   \
+            getCurrentState()->setException(&TypeErrorObjectType,             \
                 utils::format(                                                \
                 "Неправильний тип операнда \"%s\" для унарного оператора %s", \
                 objectType->name.c_str(), #op));                              \
+            return nullptr;                                                   \
         }                                                                     \
         return op_(this);                                                     \
     }
 
-#define UNARY_OPERATOR_WITH_MESSAGE(op_name, message)                       \
-    Object* vm::Object::op_name()                                           \
-    {                                                                       \
-        auto op_ = GET_OPERATOR(this, op_name);                             \
-        if (op_ == nullptr)                                                 \
-        {                                                                   \
-            VirtualMachine::currentVm->throwException(&TypeErrorObjectType, \
-                utils::format(message, objectType->name.c_str()));          \
-        }                                                                   \
-        return op_(this);                                                   \
+#define UNARY_OPERATOR_WITH_MESSAGE(op_name, message)              \
+    Object* vm::Object::op_name()                                  \
+    {                                                              \
+        auto op_ = GET_OPERATOR(this, op_name);                    \
+        if (op_ == nullptr)                                        \
+        {                                                          \
+            getCurrentState()->setException(&TypeErrorObjectType,  \
+                utils::format(message, objectType->name.c_str())); \
+            return nullptr;                                        \
+        }                                                          \
+        return op_(this);                                          \
     }
 
 #define BINARY_OPERATOR(op_name, op)                                               \
@@ -192,10 +197,11 @@ static Object* callCompareOperator(Object* o1, Object* o2, ObjectCompOperator op
         auto result = callBinaryOperator(this, o, OPERATOR_OFFSET(op_name));       \
         if (result == &P_NotImplemented)                                           \
         {                                                                          \
-            VirtualMachine::currentVm->throwException(&TypeErrorObjectType,        \
+            getCurrentState()->setException(&TypeErrorObjectType,                  \
                 utils::format(                                                     \
                 "Непідтримувані типи операндів \"%s\" та \"%s\" для оператора %s", \
                 objectType->name.c_str(), o->objectType->name.c_str(), #op));      \
+            return nullptr;                                                        \
         }                                                                          \
         return result;                                                             \
     }
@@ -218,9 +224,10 @@ Object* vm::Object::compare(Object* o, ObjectCompOperator op)
         case LT: opName = "менше"; break;
         case LE: opName = "менше="; break;
         }
-        VirtualMachine::currentVm->throwException(&TypeErrorObjectType, utils::format(
+        getCurrentState()->setException(&TypeErrorObjectType, utils::format(
             "Неможливо порівняти об'єкти типів \"%s\" та \"%s\" за допомогою оператора %s",
             objectType->name.c_str(), o->objectType->name.c_str(), opName.c_str()));
+        return nullptr;
     }
     return result;
 }
@@ -230,14 +237,14 @@ Object* vm::Object::call(Object**& sp, WORD argc, NamedArgs* namedArgs)
     auto callOp = GET_OPERATOR(this, call);
     if (callOp == nullptr)
     {
-        VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
+        getCurrentState()->setException(&TypeErrorObjectType,
             utils::format("Об'єкт типу \"%s\" не може бути викликаний",
                 objectType->name.c_str())
         );
+        return nullptr;
     }
 
-    auto result = callOp(this, sp, argc, namedArgs);
-    return result;
+    return callOp(this, sp, argc, namedArgs);
 }
 
 Object* vm::Object::toString()

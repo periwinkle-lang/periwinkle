@@ -9,7 +9,7 @@
 namespace vm
 {
     // Перевіряє чи передана правильна кількість аргументів для виклику функції
-    void validateCall(
+    bool validateCall(
         WORD arity, const std::vector<std::string>* defaultNames,
         bool isVariadic, std::string fnName, bool isMethod,
         WORD argc, vm::NamedArgs* namedArgs,

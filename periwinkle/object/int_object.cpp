@@ -8,6 +8,7 @@
 #include "real_object.hpp"
 #include "exception_object.hpp"
 #include "native_method_object.hpp"
+#include "periwinkle.hpp"
 
 using namespace vm;
 
@@ -91,8 +92,9 @@ static Object* intDiv(Object* o1, Object* o2)
     TO_INT(o2, b);
     if (b == 0)
     {
-        VirtualMachine::currentVm->throwException(
+        getCurrentState()->setException(
             &DivisionByZeroErrorObjectType, "Ділення на нуль");
+        return nullptr;
     }
     auto result = (double)a / (double)b;
     return RealObject::create(result);

@@ -53,6 +53,10 @@ namespace utils
     // Відмнює слова в залежності від числа
     std::string wordDeclension(i64 n, const std::string& word);
 
+    std::string trim(std::string_view str);
+    std::string ltrim(std::string_view str);
+    std::string rtrim(std::string_view str);
+
 #ifdef _WIN32
     API std::wstring convertUtf8ToWide(std::string_view str);
     API std::string convertWideToUtf8(std::wstring_view wstr);

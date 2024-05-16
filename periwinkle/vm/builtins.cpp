@@ -50,7 +50,7 @@ static Object* printNative(std::span<Object*> args, ListObject* va, NamedArgs* n
     ArgParser argParser{
         {&separator, stringObjectType, "роздільник"}
     };
-    argParser.parse(args, &printDefaults, na);
+    if (!argParser.parse(args, &printDefaults, na)) return nullptr;
     auto str = joinObjectString(separator->value, va->items);
     std::cout << utils::utf32to8(str) << std::flush;
     return &P_null;
@@ -62,7 +62,7 @@ static Object* printLnNative(std::span<Object*> args, ListObject* va, NamedArgs*
     ArgParser argParser{
         {&separator, stringObjectType, "роздільник"}
     };
-    argParser.parse(args, &printDefaults, na);
+    if (!argParser.parse(args, &printDefaults, na)) return nullptr;
     auto str = joinObjectString(separator->value, va->items);
     std::cout << utils::utf32to8(str) << std::endl;
     return &P_null;
@@ -74,7 +74,7 @@ static Object* readLineNative(std::span<Object*> args, ListObject* va, NamedArgs
     ArgParser argParser{
         {&prompt, stringObjectType, "підказка"},
     };
-    argParser.parse(args, &readLineDefaults, na);
+    if (!argParser.parse(args, &readLineDefaults, na)) return nullptr;
     std::cout << prompt->asUtf8();
     std::string line = utils::readline();
     return StringObject::create(line);

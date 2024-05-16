@@ -3,12 +3,13 @@
 #include "validate_args.hpp"
 #include "vm.hpp"
 #include "utils.hpp"
+#include "periwinkle.hpp"
 
 #define CALLABLE_NAME (isMethod ? "Метод" : "Функція")
 
 using namespace vm;
 
-void vm::validateCall(
+bool vm::validateCall(
     WORD arity, const std::vector<std::string>* defaultNames,
     bool isVariadic, std::string fnName, bool isMethod,
     WORD argc, vm::NamedArgs* namedArgs,
@@ -19,19 +20,21 @@ void vm::validateCall(
 
     if (argc < arityWithoutDefaults)
     {
-        VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
+        getCurrentState()->setException(&TypeErrorObjectType,
             utils::format(
                 "%s \"%s\" очікує %u %s, натомість передано %u",
                 CALLABLE_NAME, fnName.c_str(), arityWithoutDefaults,
                 utils::wordDeclension(arityWithoutDefaults, "аргумент").c_str(), argc)
         );
+        return false;
     }
 
     if (namedArgs && defaultCount == 0 && namedArgs->count != 0)
     {
-        VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
+        getCurrentState()->setException(&TypeErrorObjectType,
             utils::format("%s \"%s\" не має параметрів за замовчуванням", CALLABLE_NAME, fnName.c_str())
         );
+        return false;
     }
 
     if (isVariadic)
@@ -47,12 +50,13 @@ void vm::validateCall(
     {
         if (argc > arity && defaultCount == 0)
         {
-            VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
+            getCurrentState()->setException(&TypeErrorObjectType,
                 utils::format(
                     "%s \"%s\" очікує %u %s, натомість передано %u",
                     CALLABLE_NAME, fnName.c_str(), arityWithoutDefaults,
                     utils::wordDeclension(arityWithoutDefaults, "аргумент").c_str(), argc)
             );
+            return false;
         }
     }
 
@@ -60,11 +64,12 @@ void vm::validateCall(
     {
         if (argc > arity)
         {
-            VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
+            getCurrentState()->setException(&TypeErrorObjectType,
                 utils::format(
                     "%s \"%s\" очікує від %u до %u аргументів, натомість передано %u",
                     CALLABLE_NAME, fnName.c_str(), arityWithoutDefaults, arity, argc)
             );
+            return false;
         }
 
         if (namedArgs != nullptr)
@@ -79,11 +84,12 @@ void vm::validateCall(
                 }
                 else
                 {
-                    VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
+                    getCurrentState()->setException(&TypeErrorObjectType,
                         utils::format(
                             "%s \"%s\" не має параметра за замовчуванням з іменем \"%s\"",
                             CALLABLE_NAME, fnName.c_str(), argName.c_str())
                     );
+                    return false;
                 }
             }
 
@@ -95,15 +101,17 @@ void vm::validateCall(
 
                 if (max_it != namedArgIndexes->end())
                 {
-                    VirtualMachine::currentVm->throwException(&TypeErrorObjectType,
+                    getCurrentState()->setException(&TypeErrorObjectType,
                         utils::format(
                             "%s \"%s\", аргумент \"%s\" приймає два значення",
                             CALLABLE_NAME, fnName.c_str(),
                             namedArgs->names->at(max_it - namedArgIndexes->begin()).c_str()
                         )
                     );
+                    return false;
                 }
             }
         }
     }
+    return true;
 }

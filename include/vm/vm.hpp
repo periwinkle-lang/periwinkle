@@ -71,8 +71,8 @@ namespace vm
         Object**& bp;
         Object**& freevars;
 
+        size_t getLineno(WORD* ip) const;
     public:
-        void throwException(TypeObject* exception, std::string message, WORD lineno=0);
         Object* execute();
         Frame* getFrame() const;
 

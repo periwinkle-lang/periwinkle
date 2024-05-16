@@ -74,6 +74,7 @@ vm::Frame* compiler::Compiler::compile()
     auto frame = new vm::Frame;
     frame->codeObject = codeObject;
     frame->globals = new vm::Frame::object_map_t;
+    codeObject->source = source;
     return frame;
 }
 
@@ -262,6 +263,7 @@ void compiler::Compiler::compileFunctionDeclaration(ast::FunctionDeclaration* st
     PUSH_FUNCTION_STATE(fnCodeObject);
     PUSH_SCOPE(statement);
 
+    codeObject->source = source;
     codeObject->locals = SCOPE_BACK()->locals;
     codeObject->cells = SCOPE_BACK()->cells;
     codeObject->freevars = SCOPE_BACK()->freeVariables;
@@ -804,5 +806,5 @@ compiler::Compiler::Compiler(BlockStatement* root, periwinkle::ProgramSource* so
     root(root),
     source(source)
 {
-    codeObject = vm::CodeObject::create("TODO");
+    codeObject = vm::CodeObject::create("");
 }

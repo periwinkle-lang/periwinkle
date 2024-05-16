@@ -7,6 +7,7 @@
 
 #include "object.hpp"
 #include "vm.hpp"
+#include "program_source.hpp"
 
 namespace vm
 {
@@ -17,6 +18,7 @@ namespace vm
         std::string name;
         WORD arity=0; // Не враховує варіативний аргумент
         bool isVariadic=false;
+        periwinkle::ProgramSource* source;
         std::vector<WORD> code;
         std::vector<Object*> constants;
         std::vector<std::string> names; // Імена змінних

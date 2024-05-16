@@ -12,6 +12,7 @@
 #include "argument_parser.hpp"
 #include "native_function_object.hpp"
 #include "real_object.hpp"
+#include "periwinkle.hpp"
 
 using namespace vm;
 
@@ -44,8 +45,9 @@ static bool tryConvertToString(Object* o, std::u32string& str)
     if (std::cmp_greater_equal(index, strObject->value.size())         \
         || index < 0)                                                  \
     {                                                                  \
-        VirtualMachine::currentVm->throwException(                     \
+        getCurrentState()->setException(                               \
             &IndexErrorObjectType, "Індекс виходить за межі стрічки"); \
+        return nullptr;                                                \
     }
 
 static Object* strInit(Object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
@@ -81,7 +83,11 @@ static Object* strToString(Object* o)
 
 static Object* strToInteger(StringObject* o)
 {
-    return IntObject::create(stringObjectToInt(o));
+    if (auto value = stringObjectToInt(o))
+    {
+        return IntObject::create(value.value());
+    }
+    return nullptr;
 }
 
 static Object* strToReal(StringObject* o)
@@ -93,17 +99,19 @@ static Object* strToReal(StringObject* o)
     }
     catch (const std::invalid_argument& e)
     {
-        VirtualMachine::currentVm->throwException(
+        getCurrentState()->setException(
             &ValueErrorObjectType, utils::format(
                 "Неможливо перетворити стрічку \"%s\" в дійсне число",
                 utils::escapeString(o->asUtf8()).c_str()));
+        return nullptr;
     }
     catch (const std::out_of_range& e)
     {
-        VirtualMachine::currentVm->throwException(
+        getCurrentState()->setException(
             &ValueErrorObjectType, utils::format(
                 "Число \"%s\" не входить в діапазон можливих значень дійсного числа",
                 o->asUtf8().c_str()));
+        return nullptr;
     }
     return RealObject::create(value);
 }
@@ -133,7 +141,7 @@ METHOD_TEMPLATE(removeEnd, StringObject)
     ArgParser argParser{
         {&end, stringObjectType, "закінчення"}
     };
-    argParser.parse(args);
+    if (!argParser.parse(args)) return nullptr;
 
     auto strSize = o->value.size(), endSize = end->value.size();
     if (endSize && o->value.ends_with(end->value))
@@ -150,7 +158,7 @@ METHOD_TEMPLATE(removePrefix, StringObject)
     ArgParser argParser{
         {&prefix, stringObjectType, "префікс"},
     };
-    argParser.parse(args);
+    if (!argParser.parse(args)) return nullptr;
 
     auto prefixSize = prefix->value.size();
     if (prefixSize && o->value.starts_with(prefix->value))
@@ -169,7 +177,7 @@ METHOD_TEMPLATE(strInsert, StringObject)
         {&index, intObjectType, "індекс"},
         {&str, stringObjectType, "значення"},
     };
-    argParser.parse(args);
+    if (!argParser.parse(args)) return nullptr;
 
     CHECK_INDEX(index->value, str);
     auto newStr = o->value;
@@ -184,7 +192,7 @@ METHOD_TEMPLATE(strSet, StringObject)
         {&index, intObjectType, "індекс"},
         {&str, stringObjectType, "значення"},
     };
-    argParser.parse(args);
+    if (!argParser.parse(args)) return nullptr;
 
     CHECK_INDEX(index->value, str);
     auto newStr = o->value;
@@ -203,7 +211,7 @@ METHOD_TEMPLATE(strEndsWith, StringObject)
     ArgParser argParser{
         {&value, stringObjectType, "значення"},
     };
-    argParser.parse(args);
+    if (!argParser.parse(args)) return nullptr;
 
     return P_BOOL(value->value.size() && o->value.ends_with(value->value));
 }
@@ -215,7 +223,7 @@ METHOD_TEMPLATE(strReplace, StringObject)
         {&what, stringObjectType, "що"},
         {&with, stringObjectType, "чим"},
     };
-    argParser.parse(args);
+    if (!argParser.parse(args)) return nullptr;
 
     auto newStr = o->value;
     auto whatSize = what->value.size(), withSize = with->value.size();
@@ -238,7 +246,7 @@ Object* strJoin(std::span<Object*> args, ListObject* va)
         {&separator, stringObjectType, "роздільник"},
         {&objects, listObjectType, "обєкти"},
     };
-    argParser.parse(args);
+    if (!argParser.parse(args)) return nullptr;
 
     auto& items = objects->items;
 
@@ -264,7 +272,7 @@ METHOD_TEMPLATE(strFind, StringObject)
     ArgParser argParser{
         {&value, stringObjectType, "значення"},
     };
-    argParser.parse(args);
+    if (!argParser.parse(args)) return nullptr;
 
     auto pos = o->value.find(value->value);
     return IntObject::create(pos == std::string::npos ? -1 : pos);
@@ -281,7 +289,7 @@ METHOD_TEMPLATE(strCount, StringObject)
     ArgParser argParser{
         {&value, stringObjectType, "значення"},
     };
-    argParser.parse(args);
+    if (!argParser.parse(args)) return nullptr;
 
     size_t pos = 0, count = 0;
 
@@ -300,7 +308,7 @@ METHOD_TEMPLATE(strContains, StringObject)
     ArgParser argParser{
         {&value, stringObjectType, "значення"},
     };
-    argParser.parse(args);
+    if (!argParser.parse(args)) return nullptr;
 
     auto pos = o->value.find(value->value);
     return P_BOOL(pos != std::string::npos);
@@ -312,7 +320,7 @@ METHOD_TEMPLATE(strGet, StringObject)
     ArgParser argParser{
         {&index, intObjectType, "індекс"},
     };
-    argParser.parse(args);
+    if (!argParser.parse(args)) return nullptr;
 
     CHECK_INDEX(index->value, o);
     return StringObject::create(std::u32string{ o->value[index->value] });
@@ -324,7 +332,7 @@ METHOD_TEMPLATE(strStartsWith, StringObject)
     ArgParser argParser{
         {&value, stringObjectType, "значення"},
     };
-    argParser.parse(args);
+    if (!argParser.parse(args)) return nullptr;
 
     return P_BOOL(o->value.size() && o->value.starts_with(value->value));
 }
@@ -334,12 +342,12 @@ METHOD_TEMPLATE(strTrim, StringObject)
     auto start = o->value.begin();
     auto end = o->value.end();
 
-    while (start != end && std::isspace(*start))
+    while (start != end && *start >= 0 && *start <= 255 && std::isspace(*start))
     {
         start++;
     }
 
-    while (end != start && std::isspace(*(end - 1)))
+    while (end != start && *start >= 0 && *start <= 255 && std::isspace(*(end - 1)))
     {
         end--;
     }
@@ -352,7 +360,7 @@ METHOD_TEMPLATE(strLeftTrim, StringObject)
     auto start = o->value.begin();
     auto end = o->value.end();
 
-    while (start != end && std::isspace(*start))
+    while (start != end && *start >= 0 && *start <= 255 && std::isspace(*start))
     {
         start++;
     }
@@ -365,7 +373,7 @@ METHOD_TEMPLATE(strRightTrim, StringObject)
     auto start = o->value.begin();
     auto end = o->value.end();
 
-    while (end != start && std::isspace(*(end - 1)))
+    while (end != start && *start >= 0 && *start <= 255 && std::isspace(*(end - 1)))
     {
         end--;
     }
@@ -380,7 +388,7 @@ METHOD_TEMPLATE(strSubstr, StringObject)
         {&start, intObjectType, "початок"},
         {&count, intObjectType, "кількість"},
     };
-    argParser.parse(args);
+    if (!argParser.parse(args)) return nullptr;
 
     CHECK_INDEX(start->value, o);
     CHECK_INDEX(start->value + count->value - (count->value == 0 ? 0 : 1), o);
@@ -393,7 +401,7 @@ METHOD_TEMPLATE(strSplit, StringObject)
     ArgParser argParser{
         {&delimiter, stringObjectType, "роздільник"},
     };
-    argParser.parse(args);
+    if (!argParser.parse(args)) return nullptr;
 
    auto strs = ListObject::create();
     size_t start = 0, end = o->value.find(delimiter->value);
@@ -419,16 +427,18 @@ METHOD_TEMPLATE(toIntMethod, StringObject)
     ArgParser argParser{
         {&base, intObjectType, "основа"}
     };
-    argParser.parse(args, &toIntDefaults, na);
+    if (!argParser.parse(args, &toIntDefaults, na)) return nullptr;
 
     if (!((base->value >= 2 && base->value <= 36) || base->value == 0))
     {
-        VirtualMachine::currentVm->throwException(
+        getCurrentState()->setException(
             &ValueErrorObjectType, "Основа повинна бути в діапазоні 2-36(включно) або 0");
+        return nullptr;
     }
 
     auto value = stringObjectToInt(o, base->value);
-    return IntObject::create(value);
+    if (!value) return nullptr;
+    return IntObject::create(value.value());
 }
 
 METHOD_TEMPLATE(strIterNext, StringIterObject)
@@ -496,7 +506,7 @@ namespace vm
 
     StringObject P_emptyStr = { {.objectType = &stringObjectType}, U"" };
 
-    i64 stringObjectToInt(StringObject* str, int base)
+    std::optional<i64> stringObjectToInt(StringObject* str, int base)
     {
         i64 value;
         try
@@ -505,17 +515,19 @@ namespace vm
         }
         catch (const std::invalid_argument& e)
         {
-            VirtualMachine::currentVm->throwException(
+            getCurrentState()->setException(
                 &ValueErrorObjectType, utils::format(
                     "Неможливо перетворити стрічку \"%s\" в число",
                     utils::escapeString(str->asUtf8()).c_str()));
+            return std::nullopt;
         }
         catch (const std::out_of_range& e)
         {
-            VirtualMachine::currentVm->throwException(
+            getCurrentState()->setException(
                 &ValueErrorObjectType, utils::format(
                     "Число \"%s\" не входить в діапазон можливих значень числа",
                     str->asUtf8().c_str()));
+            return std::nullopt;
         }
         return value;
     }
