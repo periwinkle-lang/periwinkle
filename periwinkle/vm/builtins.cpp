@@ -19,6 +19,9 @@
 #define BUILTIN_TYPE(type) \
     {type.name, &type}
 
+#define BUILTIN_OBJECT(name, object) \
+    {name, &object}
+
 using namespace vm;
 
 static StringObject strWithSpace = { {.objectType = &stringObjectType}, U" " };
@@ -104,7 +107,17 @@ builtin_t* vm::getBuiltin()
             BUILTIN_TYPE(realObjectType),
             BUILTIN_TYPE(listObjectType),
 
-            {"КінецьІтерації", &P_endIter},
+            BUILTIN_TYPE(ExceptionObjectType),
+            BUILTIN_TYPE(NameErrorObjectType),
+            BUILTIN_TYPE(TypeErrorObjectType),
+            BUILTIN_TYPE(NotImplementedErrorObjectType),
+            BUILTIN_TYPE(AttributeErrorObjectType),
+            BUILTIN_TYPE(IndexErrorObjectType),
+            BUILTIN_TYPE(DivisionByZeroErrorObjectType),
+            BUILTIN_TYPE(ValueErrorObjectType),
+            BUILTIN_TYPE(InternalErrorObjectType),
+
+            BUILTIN_OBJECT("КінецьІтерації", P_endIter),
         }
         );
     }

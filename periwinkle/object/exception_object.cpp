@@ -1,7 +1,11 @@
-﻿#include "exception_object.hpp"
+﻿#include <span>
+
+#include "exception_object.hpp"
 #include "string_object.hpp"
 #include "utils.hpp"
 #include "code_object.hpp"
+#include "native_method_object.hpp"
+#include "argument_parser.hpp"
 
 using namespace vm;
 
@@ -11,8 +15,24 @@ using namespace vm;
         .base = &baseType,                              \
         .name = excName,                                \
         .alloc = exceptionAlloc,                        \
+        .constructor = &exceptionInitMethod,            \
         .operators = excOperators,                      \
     };
+
+static DefaultParameters exceptionInitDefaults = { {"повідомлення"}, {&P_emptyStr} };
+
+METHOD_TEMPLATE(exceptionInit, TypeObject)
+{
+    StringObject* message;
+    ArgParser argParser{
+        {&message, stringObjectType, "повідомлення"},
+    };
+    if (!argParser.parse(args, &exceptionInitDefaults, na)) return nullptr;
+    return ExceptionObject::create(o, message->asUtf8());
+}
+
+auto exceptionInitMethod = NATIVE_METHOD(
+    "конструктор", 1, false, reinterpret_cast<nativeMethod>(exceptionInit), ExceptionObjectType, nullptr);
 
 static Object* exceptionAlloc()
 {
