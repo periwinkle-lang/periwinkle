@@ -2,6 +2,7 @@
 #include "string_vector_object.hpp"
 #include "utils.hpp"
 #include "validate_args.hpp"
+#include "periwinkle.hpp"
 
 using namespace vm;
 
@@ -12,14 +13,16 @@ static Object* nativeMethodCall(NativeMethodObject* callable, Object**& sp, WORD
 
     if ((*firstArg)->objectType != callable->classType)
     {
-        VirtualMachine::currentVm->throwException(
+        getCurrentState()->setException(
             &TypeErrorObjectType,
             "Першим аргументом має бути переданий екземпляр класу,"
             " до якого відноситься метод");
+        return nullptr;
     }
 
     std::span<Object*> args{ firstArg + 1, argc - 1 };
     auto result = callNativeMethod(*firstArg, callable, args, namedArgs);
+    if (!result) return nullptr;
     sp -= argc + 1; // +1 для методу
     return result;
 }
@@ -67,10 +70,10 @@ Object* vm::callNativeMethod(Object* instance, NativeMethodObject* method, std::
     }
     std::vector<size_t> namedArgIndexes;
 
-    validateCall(
+    if (!validateCall(
         method->arity, defaultNames, method->isVariadic,
         method->name, true, argc, namedArgs, &namedArgIndexes
-    );
+    )) return nullptr;
 
     auto variadicParameter = ListObject::create();
     if (method->isVariadic)

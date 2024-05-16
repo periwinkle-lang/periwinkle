@@ -247,6 +247,50 @@ std::string utils::wordDeclension(i64 n, const std::string& word)
         return w.second;
 }
 
+std::string utils::trim(std::string_view str)
+{
+    auto start = str.begin();
+    auto end = str.end();
+
+    while (start != end && *start >= 0 && *start <= 255 && std::isspace(*start))
+    {
+        start++;
+    }
+
+    while (end != start && *start >= 0 && *start <= 255 && std::isspace(*(end - 1)))
+    {
+        end--;
+    }
+
+    return std::string{ start, end };
+}
+
+std::string utils::ltrim(std::string_view str)
+{
+    auto start = str.begin();
+    auto end = str.end();
+
+    while (start != end && *start >= 0 && *start <= 255 && std::isspace(*start))
+    {
+        start++;
+    }
+
+    return std::string{ start, end };
+}
+
+std::string utils::rtrim(std::string_view str)
+{
+    auto start = str.begin();
+    auto end = str.end();
+
+    while (end != start && *start >= 0 && *start <= 255 && std::isspace(*(end - 1)))
+    {
+        end--;
+    }
+
+    return std::string{ start, end };
+}
+
 #ifdef _WIN32
 std::wstring utils::convertUtf8ToWide(std::string_view str)
 {

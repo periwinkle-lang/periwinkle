@@ -51,10 +51,10 @@ Object* fnCall(Object* callable, Object**& sp, WORD argc, NamedArgs* namedArgs)
     auto defaultCount = fn->code->defaults.size();
     std::vector<size_t> namedArgIndexes;
 
-    validateCall(
+    if (!validateCall(
         fn->code->arity, &fn->code->defaults, fn->code->isVariadic, fn->code->name,
         false, argc, namedArgs, &namedArgIndexes
-    );
+    )) return nullptr;
 
     if (fn->code->isVariadic)
     {

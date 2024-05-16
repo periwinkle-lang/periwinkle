@@ -14,6 +14,7 @@
 #include "builtins.hpp"
 #include "plogger.hpp"
 #include "utils.hpp"
+#include "periwinkle.hpp"
 
 using namespace vm;
 
@@ -23,9 +24,6 @@ using namespace vm;
 #define PEEK() *sp
 #define POP() *sp--
 #define JUMP() ip = &code->code[*ip]
-#define GET_LINENO(ip_) \
-    (frame->codeObject->ipToLineno.contains(ip_ - &frame->codeObject->code[0]) ? \
-    0 : frame->codeObject->ipToLineno[(ip_ - &frame->codeObject->code[0]) - 1])
 
 #define BINARY_OP(name, op_name)                        \
 case OpCode::name:                                      \
@@ -33,6 +31,7 @@ case OpCode::name:                                      \
     auto arg1 = POP();                                  \
     auto arg2 = POP();                                  \
     auto result = arg1->op_name(arg2);                  \
+    if (!result) goto error;                            \
     PUSH(result);                                       \
     break;                                              \
 }
@@ -42,20 +41,18 @@ case OpCode::name:                                      \
 {                                                       \
     auto arg = POP();                                   \
     auto result = arg->op_name();                       \
+    if (!result) goto error;                            \
     PUSH(result);                                       \
     break;                                              \
 }
 
-void VirtualMachine::throwException(
-    TypeObject * exception, std::string message, WORD lineno)
+size_t VirtualMachine::getLineno(WORD* ip) const
 {
-    if (!lineno)
+    while (!frame->codeObject->ipToLineno.contains(ip - frame->codeObject->code.data()))
     {
-        lineno = GET_LINENO(ip - 1);
+        ip--;
     }
-    std::cerr << "На стрічці " << lineno << " знайдено помилку" << std::endl;
-    std::cerr << exception->name << ": " << message << std::endl;
-    exit(1);
+    return frame->codeObject->ipToLineno[ip - frame->codeObject->code.data()];
 }
 
 Object* VirtualMachine::execute()
@@ -102,6 +99,7 @@ Object* VirtualMachine::execute()
             auto arg1 = POP();
             auto arg2 = POP();
             auto result = arg1->compare(arg2, (ObjectCompOperator)READ());
+            if (!result) goto error;
             PUSH(result);
             break;
         }
@@ -109,6 +107,7 @@ Object* VirtualMachine::execute()
         {
             auto o = POP();
             auto arg = (BoolObject*)o->toBool();
+            if (!arg) goto error;
             PUSH(P_BOOL(!arg->value));
             break;
         }
@@ -120,7 +119,9 @@ Object* VirtualMachine::execute()
         case JMP_IF_TRUE:
         {
             auto o = POP();
-            if (objectToBool(o))
+            bool condition = objectToBool(o);
+            if (getCurrentState()->exceptionOccurred()) goto error;
+            if (condition)
                 JUMP();
             else
                 ip++;
@@ -129,7 +130,9 @@ Object* VirtualMachine::execute()
         case JMP_IF_FALSE:
         {
             auto o = POP();
-            if (objectToBool(o) == false)
+            bool condition = objectToBool(o);
+            if (getCurrentState()->exceptionOccurred()) goto error;
+            if (condition == false)
                 JUMP();
             else
                 ip++;
@@ -138,7 +141,9 @@ Object* VirtualMachine::execute()
         case JMP_IF_TRUE_OR_POP:
         {
             auto o = PEEK();
-            if (objectToBool(o))
+            bool condition = objectToBool(o);
+            if (getCurrentState()->exceptionOccurred()) goto error;
+            if (condition)
                 JUMP();
             else
             {
@@ -150,7 +155,9 @@ Object* VirtualMachine::execute()
         case JMP_IF_FALSE_OR_POP:
         {
             auto o = PEEK();
-            if (objectToBool(o) == false)
+            bool condition = objectToBool(o);
+            if (getCurrentState()->exceptionOccurred()) goto error;
+            if (condition == false)
                 JUMP();
             else
             {
@@ -165,6 +172,7 @@ Object* VirtualMachine::execute()
             auto callable = *(sp - argc);
 
             auto result = callable->call(sp, argc);
+            if (!result) goto error;
             PUSH(result);
             break;
         }
@@ -184,6 +192,7 @@ Object* VirtualMachine::execute()
             }
 
             auto result = callable->call(sp, argc - namedArgCount, namedArgs);
+            if (!result) goto error;
             PUSH(result);
             delete namedArgs;
             break;
@@ -200,13 +209,15 @@ Object* VirtualMachine::execute()
                 (NativeMethodObject*)iterator->getAttr("наступний");
             if (nextMethod == nullptr)
             {
-                throwException(
+                getCurrentState()->setException(
                     &TypeErrorObjectType,
                     utils::format("Тип \"%s\" не є ітератором",
                         iterator->objectType->name.c_str()));
+                goto error;
             }
 
             auto nextElement = callNativeMethod(iterator, nextMethod, {});
+            if (!nextElement) goto error;
             if (nextElement != &P_endIter)
             {
                 PUSH(nextElement);
@@ -237,8 +248,9 @@ Object* VirtualMachine::execute()
             }
             else
             {
-                throwException(&NameErrorObjectType,
-                    utils::format("Імені \"%s\" не існує", name.c_str()), GET_LINENO(ip-1));
+                getCurrentState()->setException(&NameErrorObjectType,
+                    utils::format("Імені \"%s\" не існує", name.c_str()));
+                goto error;
             }
             break;
         }
@@ -283,9 +295,10 @@ Object* VirtualMachine::execute()
             auto value = object->getAttr(name);
             if (value == nullptr)
             {
-                throwException(&AttributeErrorObjectType,
+                getCurrentState()->setException(&AttributeErrorObjectType,
                     utils::format("Об'єкт \"%s\" не має атрибута \"%s\"",
                         object->objectType->name.c_str(), name.c_str()));
+                goto error;
             }
             PUSH(value);
             break;
@@ -297,9 +310,10 @@ Object* VirtualMachine::execute()
             auto function = object->getAttr(name);
             if (function == nullptr)
             {
-                throwException(&AttributeErrorObjectType,
+                getCurrentState()->setException(&AttributeErrorObjectType,
                     utils::format("Об'єкт \"%s\" не має атрибута \"%s\"",
                         object->objectType->name.c_str(), name.c_str()));
+                goto error;
             }
 
             if (OBJECT_IS(function, &nativeMethodObjectType))
@@ -326,11 +340,13 @@ Object* VirtualMachine::execute()
                     methodWithInstance->instance,
                     (NativeMethodObject*)methodWithInstance->callable,
                     { sp - argc + 1, argc });
+                if (!result) goto error;
                 sp -= argc + 1; // Метод
             }
             else
             {
                 result = callable->call(sp, argc);
+                if (!result) goto error;
             }
             PUSH(result);
             break;
@@ -358,12 +374,14 @@ Object* VirtualMachine::execute()
                 result = callNativeMethod(
                     methodWithInstance->instance,
                     (NativeMethodObject*)methodWithInstance->callable,
-                    { sp - argc + 1, argc}, namedArgs);
+                    { sp - argc + 1, argc }, namedArgs);
+                if (!result) goto error;
                 sp -= argc + 1; // Метод
             }
             else
             {
                 result = callable->call(sp, argc - namedArgCount, namedArgs);
+                if (!result) goto error;
             }
             PUSH(result);
 
@@ -396,6 +414,13 @@ Object* VirtualMachine::execute()
             plog::fatal << "Опкод не реалізовано: \"" << stringEnum::enumToString((OpCode)a) << "\"";
         }
     }
+
+    error:
+        auto exception = getCurrentState()->exceptionOccurred();
+        plog::passert(exception) << "Віртуальна машина перейшла в блок обробки помилок без викинутої помилки.";
+        auto lineno = getLineno(ip - 1);
+        exception->addStackTraceItem(frame, lineno);
+        return nullptr;
 }
 
 Frame* vm::VirtualMachine::getFrame() const

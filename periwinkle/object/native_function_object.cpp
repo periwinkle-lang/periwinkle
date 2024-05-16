@@ -18,10 +18,10 @@ Object* nativeCall(NativeFunctionObject* nativeFunction, Object**& sp, WORD argc
     }
     std::vector<size_t> namedArgIndexes;
 
-    validateCall(
+    if (!validateCall(
         nativeFunction->arity, defaultNames, nativeFunction->isVariadic,
         nativeFunction->name, false, argc, namedArgs, &namedArgIndexes
-    );
+    )) return nullptr;
 
     auto variadicParameter = ListObject::create();
     if (nativeFunction->isVariadic)

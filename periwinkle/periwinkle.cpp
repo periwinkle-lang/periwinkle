@@ -11,6 +11,8 @@
 
 using namespace periwinkle;
 
+static Periwinkle* _currentState = nullptr;
+
 int periwinkle::Periwinkle::getVersionAsInt()
 {
     return PERIWINKLE_VERSION_MAJOR * 10000 + PERIWINKLE_VERSION_MINOR * 100 + PERIWINKLE_VERSION_PATCH;
@@ -21,7 +23,7 @@ int periwinkle::Periwinkle::majorVersion() { return PERIWINKLE_VERSION_MAJOR; }
 int periwinkle::Periwinkle::minorVersion() { return PERIWINKLE_VERSION_MINOR; }
 int periwinkle::Periwinkle::patchVersion() { return PERIWINKLE_VERSION_PATCH; }
 
-void periwinkle::Periwinkle::execute()
+vm::Object* periwinkle::Periwinkle::execute()
 {
     using namespace std::placeholders;
     PParser::Parser parser(source->getText());
@@ -35,7 +37,45 @@ void periwinkle::Periwinkle::execute()
     frame->sp = &stack[0];
     frame->bp = &stack[0];
     vm::VirtualMachine virtualMachine(frame);
-    virtualMachine.execute();
+    return virtualMachine.execute();
+}
+
+void periwinkle::Periwinkle::setException(vm::TypeObject* type, const std::string& message)
+{
+    if (!vm::isException(type))
+    {
+        setException(&vm::InternalErrorObjectType,
+            utils::format("Тип \"%s\" не є підкласом ExceptionObjectType", type->name.c_str()));
+        return;
+    }
+    currentException = vm::ExceptionObject::create(type, message);
+}
+
+void periwinkle::Periwinkle::setException(vm::Object* o)
+{
+    if (!vm::isException(o->objectType))
+    {
+        setException(&vm::InternalErrorObjectType,
+            utils::format("Тип \"%s\" не є підкласом ExceptionObjectType", o->objectType->name.c_str()));
+        return;
+    }
+    currentException = static_cast<vm::ExceptionObject*>(o);
+}
+
+vm::ExceptionObject* periwinkle::Periwinkle::exceptionOccurred() const
+{
+    return currentException;
+}
+
+void periwinkle::Periwinkle::exceptionClear()
+{
+    currentException = nullptr;
+}
+
+void periwinkle::Periwinkle::printException() const
+{
+    std::cerr << currentException->objectType->name << ": " << currentException->message << "\n";
+    std::cerr << currentException->formatStackTrace();
 }
 
 #ifdef DEBUG
@@ -57,14 +97,27 @@ void periwinkle::Periwinkle::printDisassemble()
 periwinkle::Periwinkle::Periwinkle(const std::string& code)
     : source(new ProgramSource(code))
 {
+    _currentState = this;
 }
 
 periwinkle::Periwinkle::Periwinkle(const std::filesystem::path& path)
     : source(new ProgramSource(path))
 {
+    _currentState = this;
 }
 
 periwinkle::Periwinkle::Periwinkle(const ProgramSource& source)
     : source(new ProgramSource(source))
 {
+    _currentState = this;
+}
+
+periwinkle::Periwinkle::~Periwinkle()
+{
+    delete source;
+}
+
+Periwinkle* getCurrentState()
+{
+    return _currentState;
 }

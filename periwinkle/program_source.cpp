@@ -29,9 +29,8 @@ bool ProgramSource::hasFile() const
 };
 
 ProgramSource::ProgramSource(const std::filesystem::path& path)
+    : path(path), name(path.string())
 {
-    this->name = path.string();
-
 #ifdef _WIN32
     std::ifstream filestream(utils::convertUtf8ToWide(path.string()));
 #else
@@ -46,7 +45,7 @@ ProgramSource::ProgramSource(const std::filesystem::path& path)
     }
     else
     {
-        std::cerr << "Неможливо відкрити файл \"" << path << "\"." << std::endl;
+        std::cerr << "Неможливо відкрити файл \"" << path.string() << "\"." << std::endl;
         exit(1);
     }
 

@@ -2,6 +2,7 @@
 #include "vm.hpp"
 #include "exception_object.hpp"
 #include "utils.hpp"
+#include "periwinkle.hpp"
 
 using namespace vm;
 
@@ -16,7 +17,7 @@ using namespace vm;
     }                                                                                               \
     else                                                                                            \
     {                                                                                               \
-        VirtualMachine::currentVm->throwException(                                                  \
+        getCurrentState()->setException(                                                            \
             &TypeErrorObjectType,                                                                   \
             utils::format(                                                                          \
                 "Тип аргументу \"%s\" має бути \"%s\", натомість був переданий об'єкт типу \"%s\"", \
@@ -24,9 +25,10 @@ using namespace vm;
                 desc.type.name.c_str(),                                                             \
                 value->objectType->name.c_str())                                                    \
         );                                                                                          \
+        return false;                                                                               \
     }
 
-void vm::ArgParser::parse(const std::span<Object*> args, DefaultParameters* defaults, NamedArgs* na)
+bool vm::ArgParser::parse(const std::span<Object*> args, DefaultParameters* defaults, NamedArgs* na)
 {
     auto argc = args.size();
     auto defaultCount = defaults != nullptr ? defaults->names.size() : 0;
@@ -78,4 +80,5 @@ void vm::ArgParser::parse(const std::span<Object*> args, DefaultParameters* defa
             }
         }
     }
+    return true;
 }

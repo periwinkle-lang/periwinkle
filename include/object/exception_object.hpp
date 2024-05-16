@@ -2,9 +2,13 @@
 #define EXCEPTION_OBJECT_H
 
 #include "object.hpp"
+#include "program_source.hpp"
+#include "vm.hpp"
 
 namespace vm
 {
+    struct Frame;
+
     extern TypeObject ExceptionObjectType;
     extern TypeObject NameErrorObjectType;
     extern TypeObject TypeErrorObjectType;
@@ -13,41 +17,30 @@ namespace vm
     extern TypeObject IndexErrorObjectType;
     extern TypeObject DivisionByZeroErrorObjectType;
     extern TypeObject ValueErrorObjectType;
+    extern TypeObject InternalErrorObjectType;
 
+    struct StackTraceItem
+    {
+        periwinkle::ProgramSource* source;
+        i64 lineno;
+        std::string functionName;
+    };
+
+    // Для всіх винятків буде використовуватись лише ця структура,
+    // буде змінюватись лише тип об'єкта в полі objectType
     struct ExceptionObject : Object
     {
         std::string message; // Повідомлення винятку
+        std::vector<StackTraceItem> stackTrace;
+
+        std::string formatStackTrace() const;
+        void addStackTraceItem(Frame* frame, i64 lineno);
+
+        static ExceptionObject* create(TypeObject* type, const std::string& message);
     };
 
-    struct NameErrorObject : ExceptionObject
-    {
-    };
-
-    struct TypeErrorObject : ExceptionObject
-    {
-    };
-
-    struct NotImplementedErrorObject : ExceptionObject
-    {
-    };
-
-    struct AttributeErrorObject : ExceptionObject
-    {
-    };
-
-    struct IndexErrorObject : ExceptionObject
-    {
-    };
-
-    struct DivisionByZeroErrorObject : ExceptionObject
-    {
-    };
-
-    struct ValueErrorObject : ExceptionObject
-    {
-    };
-
-    extern NotImplementedErrorObject P_NotImplemented;
+    extern ExceptionObject P_NotImplemented;
+    bool isException(TypeObject* type);
 }
 
 #endif

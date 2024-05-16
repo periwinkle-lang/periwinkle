@@ -1,6 +1,8 @@
 ﻿#ifndef STRING_OBJECT_H
 #define STRING_OBJECT_H
 
+#include <optional>
+
 #include "object.hpp"
 
 namespace vm
@@ -17,7 +19,7 @@ namespace vm
     };
 
     extern StringObject P_emptyStr;
-    i64 stringObjectToInt(StringObject* str, int base = 10);
+    std::optional<i64> stringObjectToInt(StringObject* str, int base = 10);
 
     struct StringIterObject : Object
     {

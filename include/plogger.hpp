@@ -82,7 +82,7 @@ namespace plog
         bool condition;
     public:
         PloggerAssert(const std::source_location& location, bool condition)
-            : condition(condition), Plogger(std::cerr, location, "ASSERT") {}
+            : Plogger(std::cerr, location, "ASSERT"), condition(condition) {}
 
         template <typename T>
         Plogger& operator<<(T const& obj)

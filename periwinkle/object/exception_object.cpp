@@ -1,5 +1,7 @@
 ﻿#include "exception_object.hpp"
 #include "string_object.hpp"
+#include "utils.hpp"
+#include "code_object.hpp"
 
 using namespace vm;
 
@@ -8,9 +10,15 @@ using namespace vm;
     {                                                   \
         .base = &baseType,                              \
         .name = excName,                                \
-        .alloc = DEFAULT_ALLOC(exc##Object),            \
+        .alloc = exceptionAlloc,                        \
         .operators = excOperators,                      \
     };
+
+static Object* exceptionAlloc()
+{
+    auto o = new ExceptionObject;
+    return (Object*)o;
+}
 
 static Object* exceptionToString(Object* a)
 {
@@ -24,7 +32,7 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "Виняток",
-        .alloc = DEFAULT_ALLOC(ExceptionObject),
+        .alloc = exceptionAlloc,
         .operators =
         {
             .toString = exceptionToString,
@@ -52,5 +60,55 @@ namespace vm
     EXCEPTION_EXTEND(ExceptionObjectType, ValueError, "ПомилкаЗначення",
         { .toString = exceptionToString } );
 
-    NotImplementedErrorObject P_NotImplemented{ {{.objectType = &NotImplementedErrorObjectType}} };
+    EXCEPTION_EXTEND(ExceptionObjectType, InternalError, "ВнутрішняПомилка",
+        { .toString = exceptionToString });
+
+    ExceptionObject P_NotImplemented{ {{&NotImplementedErrorObjectType}} };
+
+    std::string vm::ExceptionObject::formatStackTrace() const
+    {
+        std::stringstream format;
+        for (const auto& item : stackTrace)
+        {
+            format << "    \"";
+            if (item.source->hasFile()) format << item.source->getPath().relative_path().string();
+            else format << item.source->getFilename();
+            format << "\" на лінії " << item.lineno;
+            if (!item.functionName.empty())
+            {
+                format << " в " << item.functionName;
+            }
+            format << "\n";
+            format << "        ";
+            format << utils::trim(utils::getLineFromString(item.source->getText(), item.lineno));
+            format << "\n";
+        }
+        return format.str();
+    }
+
+    void vm::ExceptionObject::addStackTraceItem(vm::Frame* frame, i64 lineno)
+    {
+        stackTrace.emplace_back(frame->codeObject->source, lineno, frame->codeObject->name);
+    }
+
+
+    ExceptionObject* vm::ExceptionObject::create(TypeObject* type, const std::string& message)
+    {
+        auto exceptionObject = (ExceptionObject*)allocObject(type);
+        exceptionObject->message = message;
+        return exceptionObject;
+    }
+
+    bool isException(TypeObject* type)
+    {
+        auto t = type;
+        for (;;)
+        {
+            if (&ExceptionObjectType == t)
+              return true;
+            t = t->base;
+            if (t == &objectObjectType || t == nullptr)
+                return false;
+        }
+    }
 }
