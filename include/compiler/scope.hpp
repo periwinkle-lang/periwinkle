@@ -42,6 +42,7 @@ namespace compiler
 
         vm::OpCode getVarGetter(const std::string& name);
         vm::OpCode getVarSetter(const std::string& name);
+        vm::OpCode getVarDeleter(const std::string& name);
     };
 
     class ScopeAnalyzer

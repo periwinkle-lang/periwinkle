@@ -80,7 +80,6 @@ void periwinkle::Periwinkle::printException() const
 
 #ifdef DEBUG
 
-#include <iomanip>
 #include "disassembler.hpp"
 
 void periwinkle::Periwinkle::printDisassemble()

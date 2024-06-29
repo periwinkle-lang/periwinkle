@@ -11,7 +11,6 @@
 #include "null_object.hpp"
 #include "string_vector_object.hpp"
 #include "types.hpp"
-#include "builtins.hpp"
 #include "plogger.hpp"
 #include "utils.hpp"
 #include "keyword.hpp"
@@ -144,6 +143,9 @@ void compiler::Compiler::compileStatement(Statement* statement)
         break;
     case FOR_EACH_STATEMENT:
         compileForEachStatement((ForEachStatement*)statement);
+        break;
+    case TRY_CATCH_STATEMENT:
+        compileTryCatchStatement((TryCatchStatement*)statement);
         break;
     default:
         plog::fatal << "Неможливо обробити вузол \""
@@ -379,6 +381,66 @@ void compiler::Compiler::compileForEachStatement(ForEachStatement* statement)
         patchJumpAddress(address, getOffset());
     }
     STATE_POP();
+}
+
+void compiler::Compiler::compileTryCatchStatement(TryCatchStatement* statement)
+{
+    vm::ExceptionHandler excHandler{};
+    excHandler.startAddress = getOffset();
+    setLineno(statement->try_);
+    emitOpCode(TRY);
+    compileBlock(statement->block);
+    emitOpCode(JMP);
+    std::vector<vm::WORD> ends;
+    ends.reserve(statement->catchBlocks.size()
+        + 1 // Для JMP в блоці TRY
+        - 1 // Останньому обробнику не потрібен JMP
+    );
+    ends.push_back(emitOperand(0));
+    excHandler.firstHandlerAddress = getOffset();
+    for (auto i = statement->catchBlocks.cbegin(); i != statement->catchBlocks.cend(); ++i)
+    {
+        auto catchBlock = *i;
+        setLineno(catchBlock->exceptionName);
+        compileNameGet(catchBlock->exceptionName.text);
+        setLineno(catchBlock->catch_);
+        emitOpCode(CATCH);
+        auto endCatchBlock = emitOperand(0);
+        if (catchBlock->variableName.has_value())
+        {
+            setLineno(catchBlock->as.value());
+            compileNameSet(catchBlock->variableName.value().text);
+        }
+        else
+        {
+            emitOpCode(POP);
+        }
+        compileBlock(catchBlock->block);
+        if (catchBlock->variableName.has_value())
+        {
+            compileNameDelete(catchBlock->variableName.value().text);
+        }
+        patchJumpAddress(endCatchBlock, getOffset());
+        if (i != statement->catchBlocks.cend())
+        {
+            emitOpCode(JMP);
+        }
+        ends.push_back(emitOperand(0));
+    }
+    for (auto a : ends)
+    {
+        patchJumpAddress(a, getOffset());
+    }
+    if (statement->finallyBlock.has_value())
+    {
+        excHandler.finallyAddress = getOffset();
+        auto finallyBlock = statement->finallyBlock.value();
+        setLineno(finallyBlock->finally_);
+        compileBlock(finallyBlock->block);
+    }
+    excHandler.endAddress = getOffset();
+    emitOpCode(END_TRY);
+    codeObject->exceptionHandlers.push_back(excHandler);
 }
 
 void compiler::Compiler::compileExpression(Expression* expression)
@@ -651,6 +713,22 @@ void compiler::Compiler::compileNameSet(const std::string& name)
         emitOperand(freeIdx(name));
     }
     else if (varSetter == STORE_GLOBAL)
+    {
+        emitOperand(nameIdx(name));
+    }
+}
+
+void compiler::Compiler::compileNameDelete(const std::string& name)
+{
+    auto scope = SCOPE_BACK();
+    auto varDeleter = scope->getVarDeleter(name);
+
+    emitOpCode(varDeleter);
+    if (varDeleter == DELETE_LOCAL)
+    {
+        emitOperand(localIdx(name));
+    }
+    else if (varDeleter == DELETE_GLOBAL)
     {
         emitOperand(nameIdx(name));
     }

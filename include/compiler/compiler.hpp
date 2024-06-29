@@ -44,6 +44,7 @@ namespace compiler
         void compileFunctionDeclaration(ast::FunctionDeclaration* statement);
         void compileReturnStatement(ast::ReturnStatement* statement);
         void compileForEachStatement(ast::ForEachStatement* statement);
+        void compileTryCatchStatement(ast::TryCatchStatement* statement);
 
         void compileExpression(ast::Expression* expression);
         void compileAssignmentExpression(ast::AssignmentExpression* expression);
@@ -58,6 +59,7 @@ namespace compiler
 
         void compileNameGet(const std::string& name);
         void compileNameSet(const std::string& name);
+        void compileNameDelete(const std::string& name);
 
         CompilerState* unwindStateStack(CompilerStateType type);
         vm::WORD booleanConstIdx(bool value);

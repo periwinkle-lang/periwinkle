@@ -32,6 +32,9 @@ namespace vm
     {
         std::string message; // Повідомлення винятку
         std::vector<StackTraceItem> stackTrace;
+        // Рядок, на якій було викинуто помилку, потрібно для правильного відображення рядка,
+        // при обробці помилок
+        i64 lineno = 0;
 
         std::string formatStackTrace() const;
         void addStackTraceItem(Frame* frame, i64 lineno);

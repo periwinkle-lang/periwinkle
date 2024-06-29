@@ -33,12 +33,15 @@ namespace vm
         CALL, CALL_NA, RETURN, FOR_EACH,
 
         // Операції для роботи з пам'яттю
-        LOAD_CONST, LOAD_GLOBAL, STORE_GLOBAL, LOAD_LOCAL, STORE_LOCAL,
+        LOAD_CONST,
+        LOAD_GLOBAL, STORE_GLOBAL, DELETE_GLOBAL,
+        LOAD_LOCAL, STORE_LOCAL, DELETE_LOCAL,
         GET_CELL, LOAD_CELL, STORE_CELL, GET_ATTR,
 
         LOAD_METHOD, CALL_METHOD, CALL_METHOD_NA,
 
         MAKE_FUNCTION,
+        TRY, CATCH, END_TRY,
         COUNT // Кількість операцій
     )
 
@@ -69,7 +72,7 @@ namespace vm
         Object**& bp;
         Object**& freevars;
 
-        size_t getLineno(WORD* ip) const;
+        i64 getLineno(WORD* ip) const;
     public:
         Object* execute();
         Frame* getFrame() const;

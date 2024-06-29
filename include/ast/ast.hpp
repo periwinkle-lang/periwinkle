@@ -25,6 +25,7 @@ namespace ast
         FUNCTION_STATEMENT,
         RETURN_STATEMENT,
         FOR_EACH_STATEMENT,
+        TRY_CATCH_STATEMENT,
 
         // Expression
         ASSIGNMENT_EXPRESSION,
@@ -173,6 +174,35 @@ namespace ast
             :
             Statement(NodeKind::FOR_EACH_STATEMENT), forEach(forEach), variable(variable),
             expression(expression), block(block) {};
+    };
+
+    struct CatchBlock
+    {
+        Token catch_;
+        Token exceptionName;
+        std::optional<Token> as;
+        std::optional<Token> variableName;
+        BlockStatement* block;
+    };
+
+    struct FinallyBlock
+    {
+        Token finally_;
+        BlockStatement* block;
+    };
+
+    struct TryCatchStatement : Statement
+    {
+        Token try_;
+        BlockStatement* block;
+        std::vector<CatchBlock*> catchBlocks;
+        std::optional<FinallyBlock*> finallyBlock;
+
+        TryCatchStatement(Token try_, BlockStatement* block, std::vector<CatchBlock*> catchBlocks,
+            std::optional<FinallyBlock*> finallyBlock)
+            :
+            Statement(NodeKind::TRY_CATCH_STATEMENT), try_(try_), block(block),
+            catchBlocks(catchBlocks), finallyBlock(finallyBlock) {};
     };
 
     struct AssignmentExpression : Expression

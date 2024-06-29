@@ -119,6 +119,20 @@ vm::OpCode Scope::getVarSetter(const std::string& name)
     }
 }
 
+vm::OpCode Scope::getVarDeleter(const std::string& name)
+{
+    using enum VariableType;
+    switch (variableInfo[name])
+    {
+    case GLOBAL:
+        return vm::OpCode::DELETE_GLOBAL;
+    case LOCAL:
+        return vm::OpCode::DELETE_LOCAL;
+    default:
+        plog::fatal << "Невідомий тип змінної \"" << (int)variableInfo[name] << "\"";
+    }
+}
+
 void ScopeAnalyzer::_analyze(ast::Node* node, Scope* parent)
 {
     using enum ast::NodeKind;
@@ -195,6 +209,21 @@ void ScopeAnalyzer::_analyze(ast::Node* node, Scope* parent)
         auto forEach = (ast::ForEachStatement*)node;
         parent->addLocal(forEach->variable.text);
         _analyze(forEach->block, parent);
+        break;
+    }
+    case TRY_CATCH_STATEMENT:
+    {
+        auto tryStatement = (ast::TryCatchStatement*)node;
+        _analyze(tryStatement->block, parent);
+        for (const auto& catchBlock : tryStatement->catchBlocks)
+        {
+            parent->maybePromote(catchBlock->exceptionName.text);
+            if (catchBlock->variableName.has_value())
+            {
+                parent->addLocal(catchBlock->variableName.value().text);
+                _analyze(catchBlock->block, parent);
+            }
+        }
         break;
     }
     case ASSIGNMENT_EXPRESSION:

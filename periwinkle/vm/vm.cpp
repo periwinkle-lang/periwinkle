@@ -24,6 +24,8 @@ using namespace vm;
 #define PEEK() *sp
 #define POP() *sp--
 #define JUMP() ip = &code->code[*ip]
+#define IP_OFFSET() (ip - &code->code[0] - 1)
+#define SET_IP(new_ip) ip = &code->code[(new_ip)]
 
 #define BINARY_OP(name, op_name)                        \
 case OpCode::name:                                      \
@@ -46,13 +48,15 @@ case OpCode::name:                                      \
     break;                                              \
 }
 
-size_t VirtualMachine::getLineno(WORD* ip) const
+constexpr auto NAME_NOT_DEFINED = "Ім'я \"%s\" не знайдено";
+
+i64 VirtualMachine::getLineno(WORD* ip) const
 {
     while (!frame->codeObject->ipToLineno.contains(ip - frame->codeObject->code.data()))
     {
         ip--;
     }
-    return frame->codeObject->ipToLineno[ip - frame->codeObject->code.data()];
+    return static_cast<i64>(frame->codeObject->ipToLineno[ip - frame->codeObject->code.data()]);
 }
 
 Object* VirtualMachine::execute()
@@ -61,10 +65,13 @@ Object* VirtualMachine::execute()
     const auto code = frame->codeObject;
     const auto& names = code->names;
     auto builtin = getBuiltin();
+    WORD a;
 
     for (;;)
     {
-        auto a = READ();
+    loop:
+        a = READ();
+        //std::cout << IP_OFFSET() << std::endl;
         switch ((OpCode)a)
         {
         case POP:
@@ -240,16 +247,21 @@ Object* VirtualMachine::execute()
             auto& name = names[READ()];
             if (frame->globals->contains(name))
             {
-                PUSH((*frame->globals)[name]);
+                if (Object* v; (v = (*frame->globals)[name]) != nullptr)
+                {
+                    PUSH(v);
+                    break;
+                }
             }
-            else if (builtin->contains(name))
+
+            if (builtin->contains(name))
             {
                 PUSH(builtin->at(name));
             }
             else
             {
                 getCurrentState()->setException(&NameErrorObjectType,
-                    utils::format("Імені \"%s\" не існує", name.c_str()));
+                    utils::format(NAME_NOT_DEFINED, name.c_str()));
                 goto error;
             }
             break;
@@ -260,14 +272,54 @@ Object* VirtualMachine::execute()
             (*frame->globals)[name] = POP();
             break;
         }
+        case DELETE_GLOBAL:
+        {
+            auto& name = names[READ()];
+            if ((*frame->globals)[name] != nullptr)
+            {
+                (*frame->globals)[name] = nullptr;
+            }
+            else
+            {
+                getCurrentState()->setException(&NameErrorObjectType,
+                    utils::format(NAME_NOT_DEFINED, name.c_str()));
+                goto error;
+            }
+            break;
+        }
         case LOAD_LOCAL:
         {
-            PUSH(bp[READ()]);
+            auto localIdx = READ();
+            if (Object* v; (v = bp[localIdx]) != nullptr)
+            {
+                PUSH(v);
+            }
+            else
+            {
+                getCurrentState()->setException(&NameErrorObjectType,
+                    utils::format(NAME_NOT_DEFINED, frame->codeObject->locals[localIdx].c_str()));
+                goto error;
+            }
             break;
         }
         case STORE_LOCAL:
         {
             bp[READ()] = POP();
+            break;
+        }
+        case DELETE_LOCAL:
+        {
+            auto localIdx = READ();
+            if (bp[localIdx] != nullptr)
+            {
+                bp[localIdx] = nullptr;
+            }
+            else
+            {
+                getCurrentState()->setException(&NameErrorObjectType,
+                    utils::format(NAME_NOT_DEFINED, frame->codeObject->locals[localIdx].c_str()));
+                goto error;
+            }
             break;
         }
         case GET_CELL:
@@ -406,6 +458,36 @@ Object* VirtualMachine::execute()
             PUSH(functionObject);
             break;
         }
+        case TRY:
+        {
+            code->getHandlerByStartIp(IP_OFFSET())->stackTop = sp;
+            break;
+        }
+        case CATCH:
+        {
+            auto exceptionType = static_cast<TypeObject*>(*sp);
+            auto endIp = READ();
+            auto currentException = getCurrentState()->exceptionOccurred();
+            if (isInstance(currentException, *exceptionType))
+            {
+                PUSH(currentException);
+                getCurrentState()->exceptionClear();
+            }
+            else
+            {
+                ip = &code->code[endIp];
+            }
+            break;
+        }
+        case END_TRY:
+        {
+        OP_END_TRY:
+            auto handler = code->getHandlerByEndIp(IP_OFFSET());
+            sp = handler->stackTop;
+            handler->stackTop = nullptr;
+            if (getCurrentState()->exceptionOccurred()) goto error;
+            break;
+        }
         default:
             plog::fatal << "Опкод не реалізовано: \"" << stringEnum::enumToString((OpCode)a) << "\"";
         }
@@ -414,7 +496,38 @@ Object* VirtualMachine::execute()
     error:
         auto exception = getCurrentState()->exceptionOccurred();
         plog::passert(exception) << "Віртуальна машина перейшла в блок обробки помилок без викинутої помилки.";
-        auto lineno = getLineno(ip - 1);
+        i64 lineno = getLineno(ip - 1);
+        WORD offset = IP_OFFSET();
+        if (auto excHandler = code->getExceptionHandler(offset))
+        {
+            if (!exception->lineno) exception->lineno = lineno;
+            auto handler = excHandler.value();
+            // Якщо в блоці "спробувати"
+            if (offset < handler->firstHandlerAddress)
+            {
+                SET_IP(handler->firstHandlerAddress);
+                goto loop;
+            }
+            // Якщо в блоці "наприкінці"
+            if (handler->finallyAddress && offset >= handler->finallyAddress)
+            {
+                SET_IP(handler->endAddress);
+                a = READ();
+                goto OP_END_TRY;
+            }
+            else // В блоках обробників
+            {
+                if (handler->finallyAddress)
+                {
+                    SET_IP(handler->finallyAddress);
+                    goto loop;
+                }
+                SET_IP(handler->endAddress);
+                a = READ();
+                goto OP_END_TRY;
+            }
+        }
+
         exception->addStackTraceItem(frame, lineno);
         return nullptr;
 }

@@ -88,19 +88,20 @@ namespace vm
     std::string vm::ExceptionObject::formatStackTrace() const
     {
         std::stringstream format;
-        for (const auto& item : stackTrace)
+
+        for (auto item = stackTrace.cbegin(); item != stackTrace.cend(); item++)
         {
+            i64 line = item->lineno;
+            if (item == stackTrace.cbegin() && lineno)
+                line = lineno;
             format << "    \"";
-            if (item.source->hasFile()) format << item.source->getPath().relative_path().string();
-            else format << item.source->getFilename();
-            format << "\" на лінії " << item.lineno;
-            if (!item.functionName.empty())
-            {
-                format << " в " << item.functionName;
-            }
-            format << "\n";
-            format << "        ";
-            format << utils::trim(utils::getLineFromString(item.source->getText(), item.lineno));
+            if (item->source->hasFile()) format << item->source->getPath().relative_path().string();
+            else format << item->source->getFilename();
+            format << "\" на лінії " << line;
+            if (!item->functionName.empty())
+                format << " в " << item->functionName;
+            format << "\n        ";
+            format << utils::trim(utils::getLineFromString(item->source->getText(), line));
             format << "\n";
         }
         return format.str();

@@ -43,6 +43,7 @@ statement_<ast::Statement*> =
     / s:continue_statement { $$ = s; }
     / s:return_statement { $$ = s; }
     / s:function_declaration { $$ = s; }
+    / s:try_catch_statement { $$ = s; }
     / e:expression { $$ = new ExpressionStatement(e); }
 
 if_statement<ast::IfStatement*> = s:if_statement_ _? "кінець" { $$ = s; }
@@ -78,8 +79,7 @@ function_declaration<ast::FunctionDeclaration*> =
         }
     }
 
-function_params<
-    std::tuple<
+function_params<std::tuple<
         ast::FunctionDeclaration::parameters_t,
         ast::FunctionDeclaration::variadicParameter_t,
         ast::FunctionDeclaration::defaultParameters_t>
@@ -103,6 +103,29 @@ default_parameters<ast::FunctionDeclaration::defaultParameters_t> =
     / d:default_parameter { $$.push_back(d); }
 
 default_parameter<ast::FunctionDeclaration::defaultParameter_t> = id:identifier _? "=" _? v:rhs { $$ = { newToken(id, $1), v }; }
+
+try_catch_statement<ast::TryCatchStatement*> = "спробувати" _ b:try_catch_block+ c:catch+ f:finally? "кінець"
+    { $$ = new TryCatchStatement(newToken("спробувати", $1), newBlockStatementExcludeOptional(b), c, f); }
+    / "спробувати" _ !try_catch_block { $$; parseError("Блок \"спробувати\" не може бути пустим."); }
+    / "спробувати" _ try_catch_block+ !catch { $$; parseError("В обробнику помилок повинен бути хоча б один блок \"обробити\""); }
+
+catch<ast::CatchBlock*> = "обробити" _ exceptionName:identifier _ var:catch_var? b:try_catch_block*
+    {
+        $$ = new CatchBlock{newToken("обробити", $1), newToken(exceptionName, $3)};
+        $$->block = newBlockStatementExcludeOptional(b);
+        if (var.has_value())
+        {
+            $$->as = var.value().first;
+            $$->variableName = var.value().second;
+        }
+    }
+
+catch_var<std::pair<ast::Token, ast::Token>> = "як" _ var:identifier { $$ = { newToken("як", $1), newToken(var, $3) }; }
+
+finally<ast::FinallyBlock*> = "наприкінці" _ b:try_catch_block*
+    { $$ = new FinallyBlock{ newToken("наприкінці", $1), newBlockStatementExcludeOptional(b) }; }
+
+try_catch_block<std::optional<ast::Statement*>> = !("кінець" / "обробити" / "наприкінці") s:statement { $$ = s; }
 
 expression<ast::Expression*> =
     / e:assignment_expression { $$ = e; }
@@ -203,8 +226,9 @@ assignment_expression<ast::AssignmentExpression*> = l:lhs _? op:([-+*\\/%]? "=")
 
 identifier<std::string> = !keywords id:([а-щА-ЩьюяїієґЬЮЯЇІЄҐ_][а-щА-ЩьюяїієґЬЮЯЇІЄҐ0-9_]*) { $$ = id; }
 keywords =
-    ("якщо" / "або якщо" / "інакше" / "кінець" / "поки" / "пропустити" / "завершити" / "менше" / "більше"
-     / "є" / "не" / "або" / "та" / "функція" / "повернути" / "кожній" / "з") ![а-щА-ЩьюяїієґЬЮЯЇІЄҐ0-9_]
+    ("якщо" / "або" / "інакше" / "кінець" / "поки" / "пропустити" / "завершити" / "менше" / "більше"
+     / "є" / "не" / "та" / "функція" / "повернути" / "кожній" / "з" / "спробувати" / "обробити"
+     / "як" / "наприкінці") ![а-щА-ЩьюяїієґЬЮЯЇІЄҐ0-9_]
 
 comments = (_? one_line_comment / _? multiline_comment)+
 one_line_comment = "//" (!(EOL / EOF) .)* (EOL / EOF)
@@ -215,4 +239,4 @@ multiline_comment =
 _ -nomemo = [ \t\r\n]+
 EOL -nomemo = "\n" / "\r" / "\r\n"
 EOF -inline = !.
-BOM -inline = "\xEF\xBB\xBF"  # UTF-8 byte oreder mask for
+BOM -inline = "\xEF\xBB\xBF"  # UTF-8 byte order mask

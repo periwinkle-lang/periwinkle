@@ -33,8 +33,10 @@ int compiler::Disassembler::opCodeLenArguments(OpCode code)
     case LOAD_CONST:
     case LOAD_GLOBAL:
     case STORE_GLOBAL:
+    case DELETE_GLOBAL:
     case LOAD_LOCAL:
     case STORE_LOCAL:
+    case DELETE_LOCAL:
     case LOAD_CELL:
     case STORE_CELL:
     case GET_CELL:
@@ -44,6 +46,8 @@ int compiler::Disassembler::opCodeLenArguments(OpCode code)
     case LOAD_METHOD:
     case CALL_METHOD:
     case FOR_EACH:
+    case TRY:
+    case CATCH:
         return 1;
     case CALL_NA:
     case CALL_METHOD_NA:
@@ -137,7 +141,7 @@ std::string compiler::Disassembler::disassemble(vm::CodeObject* codeObject)
                     codeObjects.push_back((vm::CodeObject*)argumentAsObject);
                 }
             }
-            else if (op == STORE_GLOBAL || op == LOAD_GLOBAL
+            else if (op == STORE_GLOBAL || op == LOAD_GLOBAL || op == DELETE_GLOBAL
                 || op == GET_ATTR || op == LOAD_METHOD)
             {
                 auto& name = codeObject->names[argument];
@@ -158,7 +162,7 @@ std::string compiler::Disassembler::disassemble(vm::CodeObject* codeObject)
                 }
                 out << ")";
             }
-            else if (op == LOAD_LOCAL || op == STORE_LOCAL)
+            else if (op == LOAD_LOCAL || op == STORE_LOCAL || op == DELETE_LOCAL)
             {
                 auto& name = codeObject->locals[argument];
                 out << "(" << name << ")";

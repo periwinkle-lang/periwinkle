@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <optional>
+#include <functional>
 
 #include "object.hpp"
 #include "vm.hpp"
@@ -12,6 +14,15 @@
 namespace vm
 {
     extern TypeObject codeObjectType;
+
+    struct ExceptionHandler
+    {
+        Object** stackTop; // Для відновлення стеку опкод TRY записує його вершину
+        WORD startAddress; // Адрес опкоду TRY
+        WORD firstHandlerAddress; // Адрес першого обробника
+        WORD endAddress; // Адрес END_TRY
+        WORD finallyAddress; // Адрес початку блоку "наприкінці", якщо 0, то блок відсутній
+    };
 
     struct CodeObject : Object
     {
@@ -29,6 +40,11 @@ namespace vm
         std::vector<std::string> defaults; // Імена параметрів за замовчуванням
         // Ключ - номер опкода, значення - номер лінії в коді
         std::map<WORD, WORD> ipToLineno;
+        std::vector<ExceptionHandler> exceptionHandlers;
+
+        std::optional<ExceptionHandler*> getExceptionHandler(WORD ip);
+        ExceptionHandler* getHandlerByStartIp(WORD ip);
+        ExceptionHandler* getHandlerByEndIp(WORD ip);
 
         static CodeObject* create(std::string name);
     };
