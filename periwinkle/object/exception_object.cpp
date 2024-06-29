@@ -53,6 +53,7 @@ namespace vm
         .base = &objectObjectType,
         .name = "Виняток",
         .alloc = exceptionAlloc,
+        .constructor = &exceptionInitMethod,
         .operators =
         {
             .toString = exceptionToString,

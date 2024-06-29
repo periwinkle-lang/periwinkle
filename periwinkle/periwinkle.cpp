@@ -45,7 +45,7 @@ void periwinkle::Periwinkle::setException(vm::TypeObject* type, const std::strin
     if (!vm::isException(type))
     {
         setException(&vm::InternalErrorObjectType,
-            utils::format("Тип \"%s\" не є підкласом ExceptionObjectType", type->name.c_str()));
+            utils::format("Об'єкт типу \"%s\" не є підкласом типу \"Виняток\"", type->name.c_str()));
         return;
     }
     currentException = vm::ExceptionObject::create(type, message);
@@ -56,7 +56,7 @@ void periwinkle::Periwinkle::setException(vm::Object* o)
     if (!vm::isException(o->objectType))
     {
         setException(&vm::InternalErrorObjectType,
-            utils::format("Тип \"%s\" не є підкласом ExceptionObjectType", o->objectType->name.c_str()));
+            utils::format("Об'єкт типу \"%s\" не є підкласом типу Виняток", o->objectType->name.c_str()));
         return;
     }
     currentException = static_cast<vm::ExceptionObject*>(o);

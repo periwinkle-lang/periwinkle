@@ -488,6 +488,12 @@ Object* VirtualMachine::execute()
             if (getCurrentState()->exceptionOccurred()) goto error;
             break;
         }
+        case RAISE:
+        {
+            auto exception = POP();
+            getCurrentState()->setException(exception);
+            goto error;
+        }
         default:
             plog::fatal << "Опкод не реалізовано: \"" << stringEnum::enumToString((OpCode)a) << "\"";
         }

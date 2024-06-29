@@ -45,6 +45,7 @@ namespace compiler
         void compileReturnStatement(ast::ReturnStatement* statement);
         void compileForEachStatement(ast::ForEachStatement* statement);
         void compileTryCatchStatement(ast::TryCatchStatement* statement);
+        void compileRaiseStatement(ast::RaiseStatement* statement);
 
         void compileExpression(ast::Expression* expression);
         void compileAssignmentExpression(ast::AssignmentExpression* expression);

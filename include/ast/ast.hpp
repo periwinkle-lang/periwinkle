@@ -26,6 +26,7 @@ namespace ast
         RETURN_STATEMENT,
         FOR_EACH_STATEMENT,
         TRY_CATCH_STATEMENT,
+        RAISE_STATEMENT,
 
         // Expression
         ASSIGNMENT_EXPRESSION,
@@ -203,6 +204,15 @@ namespace ast
             :
             Statement(NodeKind::TRY_CATCH_STATEMENT), try_(try_), block(block),
             catchBlocks(catchBlocks), finallyBlock(finallyBlock) {};
+    };
+
+    struct RaiseStatement : Statement
+    {
+        Token raise;
+        Expression* exception;
+
+        RaiseStatement(Token raise, Expression* exception)
+            : Statement(NodeKind::RAISE_STATEMENT), raise(raise), exception(exception) {};
     };
 
     struct AssignmentExpression : Expression

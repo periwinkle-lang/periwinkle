@@ -226,6 +226,12 @@ void ScopeAnalyzer::_analyze(ast::Node* node, Scope* parent)
         }
         break;
     }
+    case RAISE_STATEMENT:
+    {
+        auto raiseStatement = (ast::RaiseStatement*)node;
+        _analyze(raiseStatement->exception, parent);
+        break;
+    }
     case ASSIGNMENT_EXPRESSION:
     {
         auto assignmentExpression = (ast::AssignmentExpression*)node;

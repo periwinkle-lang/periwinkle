@@ -41,7 +41,7 @@ namespace vm
         LOAD_METHOD, CALL_METHOD, CALL_METHOD_NA,
 
         MAKE_FUNCTION,
-        TRY, CATCH, END_TRY,
+        TRY, CATCH, END_TRY, RAISE,
         COUNT // Кількість операцій
     )
 

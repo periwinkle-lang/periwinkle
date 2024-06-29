@@ -147,6 +147,9 @@ void compiler::Compiler::compileStatement(Statement* statement)
     case TRY_CATCH_STATEMENT:
         compileTryCatchStatement((TryCatchStatement*)statement);
         break;
+    case RAISE_STATEMENT:
+        compileRaiseStatement((RaiseStatement*)statement);
+        break;
     default:
         plog::fatal << "Неможливо обробити вузол \""
             << ast::stringEnum::enumToString(statement->kind) << "\"";
@@ -441,6 +444,12 @@ void compiler::Compiler::compileTryCatchStatement(TryCatchStatement* statement)
     excHandler.endAddress = getOffset();
     emitOpCode(END_TRY);
     codeObject->exceptionHandlers.push_back(excHandler);
+}
+
+void compiler::Compiler::compileRaiseStatement(RaiseStatement* statement)
+{
+    compileExpression(statement->exception);
+    emitOpCode(RAISE);
 }
 
 void compiler::Compiler::compileExpression(Expression* expression)

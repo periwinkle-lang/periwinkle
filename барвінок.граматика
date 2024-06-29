@@ -44,6 +44,7 @@ statement_<ast::Statement*> =
     / s:return_statement { $$ = s; }
     / s:function_declaration { $$ = s; }
     / s:try_catch_statement { $$ = s; }
+    / s:raise_statement { $$ = s; }
     / e:expression { $$ = new ExpressionStatement(e); }
 
 if_statement<ast::IfStatement*> = s:if_statement_ _? "кінець" { $$ = s; }
@@ -126,6 +127,10 @@ finally<ast::FinallyBlock*> = "наприкінці" _ b:try_catch_block*
     { $$ = new FinallyBlock{ newToken("наприкінці", $1), newBlockStatementExcludeOptional(b) }; }
 
 try_catch_block<std::optional<ast::Statement*>> = !("кінець" / "обробити" / "наприкінці") s:statement { $$ = s; }
+
+raise_statement<ast::RaiseStatement*> =
+    / "жбурнути" _ e:expression { $$ = new RaiseStatement(newToken("жбурнути", $1), e); }
+    / "жбурнути" !(_ expression) { $$; parseError("Після \"жбурнути\" повинний бути вираз"); }
 
 expression<ast::Expression*> =
     / e:assignment_expression { $$ = e; }
@@ -228,7 +233,7 @@ identifier<std::string> = !keywords id:([а-щА-ЩьюяїієґЬЮЯЇІЄҐ_
 keywords =
     ("якщо" / "або" / "інакше" / "кінець" / "поки" / "пропустити" / "завершити" / "менше" / "більше"
      / "є" / "не" / "та" / "функція" / "повернути" / "кожній" / "з" / "спробувати" / "обробити"
-     / "як" / "наприкінці") ![а-щА-ЩьюяїієґЬЮЯЇІЄҐ0-9_]
+     / "як" / "наприкінці" / "жбурнути") ![а-щА-ЩьюяїієґЬЮЯЇІЄҐ0-9_]
 
 comments = (_? one_line_comment / _? multiline_comment)+
 one_line_comment = "//" (!(EOL / EOF) .)* (EOL / EOF)
