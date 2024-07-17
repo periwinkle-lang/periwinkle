@@ -351,6 +351,7 @@ namespace vm
         .name = "Список",
         .size = sizeof(ListObject),
         .alloc = DEFAULT_ALLOC(ListObject),
+        .dealloc = DEFAULT_DEALLOC(ListObject),
         .constructor = new NATIVE_METHOD("конструктор", 0, true, listInit, listObjectType, nullptr),
         .operators =
         {

@@ -15,6 +15,7 @@ namespace vm
         .name = "Cell",
         .size = sizeof(CellObject),
         .alloc = DEFAULT_ALLOC(CellObject),
+        .dealloc = DEFAULT_DEALLOC(CellObject),
         .traverse = (traverseFunction)traverse,
     };
 }

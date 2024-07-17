@@ -50,6 +50,7 @@ namespace vm
         .name = "НативнийМетод",
         .size = sizeof(NativeMethodObject),
         .alloc = DEFAULT_ALLOC(NativeMethodObject),
+        .dealloc = DEFAULT_DEALLOC(NativeMethodObject),
         .operators =
         {
             .call = (callFunction)nativeMethodCall,

@@ -16,6 +16,7 @@ namespace vm
         .name = "MethodWithInstance",
         .size = sizeof(MethodWithInstanceObject),
         .alloc = DEFAULT_ALLOC(MethodWithInstanceObject),
+        .dealloc = DEFAULT_DEALLOC(MethodWithInstanceObject),
         .traverse = (traverseFunction)traverse,
     };
 }

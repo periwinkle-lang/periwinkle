@@ -458,6 +458,7 @@ namespace vm
         .name = "Стрічка",
         .size = sizeof(StringObject),
         .alloc = DEFAULT_ALLOC(StringObject),
+        .dealloc = DEFAULT_DEALLOC(StringObject),
         .constructor = new NATIVE_METHOD("конструктор", 1, false, strInit, stringObjectType, nullptr),
         .operators =
         {

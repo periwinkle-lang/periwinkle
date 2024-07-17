@@ -128,6 +128,7 @@ namespace vm
         .name = "Число",
         .size = sizeof(IntObject),
         .alloc = DEFAULT_ALLOC(IntObject),
+        .dealloc = DEFAULT_DEALLOC(IntObject),
         .constructor = new NATIVE_METHOD("конструктор", 1, false, intInit, intObjectType, nullptr),
         .operators =
         {

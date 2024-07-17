@@ -134,6 +134,7 @@ namespace vm
         .name = "Функція",
         .size = sizeof(FunctionObject),
         .alloc = DEFAULT_ALLOC(FunctionObject),
+        .dealloc = DEFAULT_DEALLOC(FunctionObject),
         .operators =
         {
             .call = fnCall,

@@ -62,6 +62,7 @@ namespace vm
         .name = "НативнаФункція",
         .size = sizeof(NativeFunctionObject),
         .alloc = DEFAULT_ALLOC(NativeFunctionObject),
+        .dealloc = DEFAULT_DEALLOC(NativeFunctionObject),
         .operators =
         {
             .call = (callFunction)nativeCall,

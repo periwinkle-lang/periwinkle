@@ -7,11 +7,17 @@
 
 #include "types.hpp"
 
-#define DEFAULT_ALLOC(object)          \
-    []()                               \
-    {                                  \
-        auto newObject = new object;   \
-        return (vm::Object*)newObject; \
+#define DEFAULT_ALLOC(objectStruct)        \
+    []()                                   \
+    {                                      \
+        auto newObject = new objectStruct; \
+        return (vm::Object*)newObject;     \
+    }
+
+#define DEFAULT_DEALLOC(objectStruct) \
+    [](vm::Object* o)                 \
+    {                                 \
+        delete (objectStruct*)o;      \
     }
 
 #define METHOD_TEMPLATE(name, object) \

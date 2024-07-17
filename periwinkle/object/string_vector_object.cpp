@@ -10,6 +10,7 @@ namespace vm
         .name = "StringVectorObject",
         .size = sizeof(StringVectorObject),
         .alloc = DEFAULT_ALLOC(StringVectorObject),
+        .dealloc = DEFAULT_DEALLOC(StringVectorObject),
     };
 }
 

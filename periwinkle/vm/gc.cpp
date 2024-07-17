@@ -4,8 +4,7 @@
 #include "native_method_object.hpp"
 #include "builtins.hpp"
 #include "plogger.hpp"
-
-#include "string_object.hpp"
+#include "periwinkle.hpp"
 
 using namespace vm;
 
@@ -19,10 +18,7 @@ void vm::GC::mark(Frame* frame)
     // Обхід стеку
     for (auto o : std::span{ rootFrame->bp, frame->sp + 1 })
     {
-        if (o != nullptr)
-        {
-            vm::mark(o);
-        }
+        vm::mark(o);
     }
 
     // Обхід глобальних змінних
@@ -45,6 +41,22 @@ void vm::GC::mark(Frame* frame)
     {
         vm::mark(it->second);
     }
+
+    // Клас Periwinkle зберігає посилання на об'єкт помилки
+    vm::mark(getCurrentState()->exceptionOccurred());
+}
+
+static inline void finalizeAndDeleteObject(Object* o)
+{
+    if (auto finalizer = o->objectType->destructor)
+    {
+        // Винятки в фіналізаторах ігноруються
+        finalizer->method(o, {}, nullptr, nullptr);
+    }
+    if (auto dealloc = o->objectType->dealloc)
+    {
+        dealloc(o);
+    }
 }
 
 void vm::GC::sweep()
@@ -52,17 +64,8 @@ void vm::GC::sweep()
     objects.remove_if([this](Object* o) {
         if (o->marked == false)
         {
-            if (auto finalizer = o->objectType->destructor)
-            {
-                // Винятки в фіналізаторах ігноруються
-                finalizer->method(o, {}, nullptr, nullptr);
-            }
-            if (auto dealloc = o->objectType->dealloc)
-            {
-                dealloc(o);
-            }
             allocated -= o->objectType->size;
-            delete o;
+            finalizeAndDeleteObject(o);
             return true;
         }
         else
@@ -94,15 +97,7 @@ void vm::GC::clean()
 {
     for (auto& object : objects)
     {
-        if (auto finalizer = object->objectType->destructor)
-        {
-            // Винятки в фіналізаторах ігноруються
-            finalizer->method(object, {}, nullptr, nullptr);
-        }
-        if (auto dealloc = object->objectType->dealloc)
-        {
-            dealloc(object);
-        }
+        finalizeAndDeleteObject(object);
     };
     objects.clear();
 }

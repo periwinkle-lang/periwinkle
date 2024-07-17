@@ -18,6 +18,7 @@ namespace vm
         .name = "ОбєктКоду",
         .size = sizeof(CodeObject),
         .alloc = DEFAULT_ALLOC(CodeObject),
+        .dealloc = DEFAULT_DEALLOC(CodeObject),
         .traverse = (traverseFunction)traverse,
     };
 

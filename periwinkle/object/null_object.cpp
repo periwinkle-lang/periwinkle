@@ -19,6 +19,7 @@ namespace vm
         .name = "Ніц",
         .size = sizeof(NullObject),
         .alloc = DEFAULT_ALLOC(NullObject),
+        .dealloc = DEFAULT_DEALLOC(NullObject),
         .operators =
         {
             .toString = nullToString,

@@ -127,6 +127,7 @@ periwinkle::Periwinkle::Periwinkle(const ProgramSource& source)
 periwinkle::Periwinkle::~Periwinkle()
 {
     delete source;
+    gc->clean();
     delete gc;
 }
 

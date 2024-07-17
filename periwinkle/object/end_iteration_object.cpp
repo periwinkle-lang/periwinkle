@@ -17,6 +17,7 @@ namespace vm
         .name = "КінецьІтерації",
         .size = sizeof(EndIterObject),
         .alloc = DEFAULT_ALLOC(EndIterObject),
+        .dealloc = DEFAULT_DEALLOC(EndIterObject),
         .operators =
         {
             .toString = endIterToString,

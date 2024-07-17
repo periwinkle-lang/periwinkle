@@ -16,6 +16,7 @@ using namespace vm;
         .name = excName,                                \
         .size = sizeof(ExceptionObject),                \
         .alloc = exceptionAlloc,                        \
+        .dealloc = exceptionDealloc,                    \
         .constructor = &exceptionInitMethod,            \
         .operators = excOperators,                      \
     };
@@ -41,6 +42,11 @@ static Object* exceptionAlloc()
     return (Object*)o;
 }
 
+static void exceptionDealloc(Object* o)
+{
+    delete (ExceptionObject*)o;
+}
+
 static Object* exceptionToString(Object* a)
 {
     auto exception = (ExceptionObject*)a;
@@ -55,6 +61,7 @@ namespace vm
         .name = "Виняток",
         .size = sizeof(ExceptionObject),
         .alloc = exceptionAlloc,
+        .dealloc = exceptionDealloc,
         .constructor = &exceptionInitMethod,
         .operators =
         {

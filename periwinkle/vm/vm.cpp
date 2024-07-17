@@ -72,7 +72,6 @@ Object* VirtualMachine::execute()
     {
     loop:
         a = READ();
-        //std::cout << IP_OFFSET() << std::endl;
         switch ((OpCode)a)
         {
         case POP:
