@@ -101,6 +101,7 @@ builtin_t* vm::getBuiltin()
             BUILTIN_FUNCTION("зчитати", 0, false, readLineNative, &readLineDefaults),
             BUILTIN_FUNCTION("ітератор", 1, false, getIterator, nullptr),
 
+            BUILTIN_TYPE(objectObjectType),
             BUILTIN_TYPE(intObjectType),
             BUILTIN_TYPE(boolObjectType),
             BUILTIN_TYPE(stringObjectType),

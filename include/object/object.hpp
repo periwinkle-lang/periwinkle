@@ -49,7 +49,10 @@ namespace vm
     using binaryFunction     = vm::Object*(*)(Object*, Object*);
     using ternaryFunction    = vm::Object*(*)(Object*, Object*, Object*);
     using callFunction       = vm::Object*(*)(Object*, Object**&, u64, NamedArgs*);
+    using allocFunction      = vm::Object*(*)(void);
+    using deallocFunction    = void(*)(Object*);
     using comparisonFunction = vm::Object*(*)(Object*, Object*, ObjectCompOperator);
+    using traverseFunction   = void(*)(Object*);
 
     struct ObjectOperators
     {
@@ -75,6 +78,7 @@ namespace vm
     struct Object
     {
         TypeObject* objectType = &typeObjectType;
+        bool marked = false;
 
         // Викликає об'єкт
         Object* call(Object**& sp, u64 argc, NamedArgs* namedArgs=nullptr);
@@ -129,15 +133,23 @@ namespace vm
     {
         TypeObject* base; // Батьківський тип
         std::string name;
-        Object* (*alloc)(void); // Створення нового екземпляра
-        NativeMethodObject* constructor; // Ініціалізація екземпляра
-        NativeMethodObject* descructor;
+        u32 size = 0;
+        allocFunction alloc = nullptr; // Створення нового екземпляра
+        deallocFunction dealloc = nullptr;
+        NativeMethodObject* constructor = nullptr; // Ініціалізація екземпляра
+        NativeMethodObject* destructor = nullptr;
         ObjectOperators operators;
-        comparisonFunction comparison;
+        comparisonFunction comparison = nullptr;
+
+        // Повинно обходити всі об'єкти, на які посилається даний об'єкт.
+        // Потрібно використати метод mark(Object*) до кожного об'єкту
+        traverseFunction traverse = nullptr;
+
         // Зберігає методи та поля
         std::unordered_map<std::string, Object*> attributes;
     };
 
+    void mark(Object* o);
     Object* allocObject(TypeObject* objectType);
     bool isInstance(const Object* o, const TypeObject& type);
     bool objectToBool(Object* o);

@@ -15,6 +15,7 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "КінецьІтерації",
+        .size = sizeof(EndIterObject),
         .alloc = DEFAULT_ALLOC(EndIterObject),
         .operators =
         {

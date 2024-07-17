@@ -2,13 +2,21 @@
 
 using namespace vm;
 
+static void traverse(MethodWithInstanceObject* o)
+{
+    mark(o->instance);
+    mark(o->callable);
+}
+
 namespace vm
 {
     TypeObject methodWithInstanceObjectType =
     {
         .base = nullptr,
         .name = "MethodWithInstance",
+        .size = sizeof(MethodWithInstanceObject),
         .alloc = DEFAULT_ALLOC(MethodWithInstanceObject),
+        .traverse = (traverseFunction)traverse,
     };
 }
 

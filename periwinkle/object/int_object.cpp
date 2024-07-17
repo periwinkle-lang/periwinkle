@@ -126,6 +126,7 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "Число",
+        .size = sizeof(IntObject),
         .alloc = DEFAULT_ALLOC(IntObject),
         .constructor = new NATIVE_METHOD("конструктор", 1, false, intInit, intObjectType, nullptr),
         .operators =

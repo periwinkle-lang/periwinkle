@@ -64,6 +64,7 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "Логічний",
+        .size = sizeof(BoolObject),
         .alloc = DEFAULT_ALLOC(BoolObject),
         .constructor = new NATIVE_METHOD("конструктор", 1, false, boolInit, boolObjectType, nullptr),
         .operators =

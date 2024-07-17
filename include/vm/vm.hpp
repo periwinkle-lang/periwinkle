@@ -49,7 +49,7 @@ namespace vm
 
     struct Frame
     {
-        Frame* previous;
+        Frame* previous = nullptr;
         CodeObject* codeObject;
         using object_map_t = std::unordered_map<std::string, Object*>;
         object_map_t* globals; // Глобальні змінні

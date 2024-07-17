@@ -2,13 +2,23 @@
 
 using namespace vm;
 
+static void traverse(CodeObject* codeObject)
+{
+    for (auto o : codeObject->constants)
+    {
+        mark(o);
+    }
+}
+
 namespace vm
 {
     TypeObject codeObjectType =
     {
         .base = nullptr,
         .name = "ОбєктКоду",
+        .size = sizeof(CodeObject),
         .alloc = DEFAULT_ALLOC(CodeObject),
+        .traverse = (traverseFunction)traverse,
     };
 
     struct ExceptionHandler;

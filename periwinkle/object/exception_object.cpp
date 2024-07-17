@@ -14,6 +14,7 @@ using namespace vm;
     {                                                   \
         .base = &baseType,                              \
         .name = excName,                                \
+        .size = sizeof(ExceptionObject),                \
         .alloc = exceptionAlloc,                        \
         .constructor = &exceptionInitMethod,            \
         .operators = excOperators,                      \
@@ -52,6 +53,7 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "Виняток",
+        .size = sizeof(ExceptionObject),
         .alloc = exceptionAlloc,
         .constructor = &exceptionInitMethod,
         .operators =

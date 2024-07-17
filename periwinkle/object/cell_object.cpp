@@ -2,13 +2,20 @@
 
 using namespace vm;
 
+static void traverse(CellObject* o)
+{
+    mark(o->value);
+}
+
 namespace vm
 {
     TypeObject cellObjectType =
     {
         .base = nullptr,
         .name = "Cell",
+        .size = sizeof(CellObject),
         .alloc = DEFAULT_ALLOC(CellObject),
+        .traverse = (traverseFunction)traverse,
     };
 }
 

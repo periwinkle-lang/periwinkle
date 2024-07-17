@@ -77,6 +77,14 @@ static Object* listComparison(Object* o1, Object* o2, ObjectCompOperator op)
     return P_BOOL(result);
 }
 
+static void listTraverse(ListObject* list)
+{
+    for (auto o : list->items)
+    {
+        mark(o);
+    }
+}
+
 static Object* listToString(Object* o)
 {
     auto listObject = (ListObject*)o;
@@ -318,6 +326,14 @@ METHOD_TEMPLATE(listSublist, ListObject)
     return subList;
 }
 
+static void listIterTraverse(ListIterObject* o)
+{
+    for (auto o : o->iterable)
+    {
+        mark(o);
+    }
+}
+
 METHOD_TEMPLATE(listIterNext, ListIterObject)
 {
     if (o->position < o->length)
@@ -333,6 +349,7 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "Список",
+        .size = sizeof(ListObject),
         .alloc = DEFAULT_ALLOC(ListObject),
         .constructor = new NATIVE_METHOD("конструктор", 0, true, listInit, listObjectType, nullptr),
         .operators =
@@ -343,6 +360,7 @@ namespace vm
             .getIter = (unaryFunction)listGetIter,
         },
         .comparison = listComparison,
+        .traverse = (traverseFunction)listTraverse,
         .attributes =
         {
             OBJECT_METHOD("видалити",   1, false, listRemove,    listObjectType, nullptr),
@@ -367,7 +385,9 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "ІтераторСписку",
+        .size = sizeof(ListIterObject),
         .alloc = DEFAULT_ALLOC(ListIterObject),
+        .traverse = (traverseFunction)listIterTraverse,
         .attributes =
         {
             OBJECT_METHOD("наступний", 0, false, listIterNext, listIterObjectType, nullptr),

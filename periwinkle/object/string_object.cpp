@@ -456,6 +456,7 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "Стрічка",
+        .size = sizeof(StringObject),
         .alloc = DEFAULT_ALLOC(StringObject),
         .constructor = new NATIVE_METHOD("конструктор", 1, false, strInit, stringObjectType, nullptr),
         .operators =
@@ -497,6 +498,7 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "ІтераторСтрічки",
+        .size = sizeof(StringIterObject),
         .alloc = DEFAULT_ALLOC(StringIterObject),
         .attributes =
         {

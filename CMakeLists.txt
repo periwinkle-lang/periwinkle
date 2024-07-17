@@ -64,7 +64,8 @@ add_library(periwinkle SHARED
     "periwinkle/object/method_with_instance_object.cpp" "include/object/method_with_instance_object.hpp"
     "periwinkle/object/string_vector_object.cpp" "include/object/string_vector_object.hpp"
     "periwinkle/object/validate_args.cpp" "include/object/validate_args.hpp"
-    "periwinkle/program_source.cpp" "include/program_source.hpp")
+    "periwinkle/program_source.cpp" "include/program_source.hpp"
+    "periwinkle/vm/gc.cpp" "include/vm/gc.hpp")
 target_include_directories(periwinkle PUBLIC
     "include"
     "include/compiler"

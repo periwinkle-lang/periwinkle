@@ -17,6 +17,7 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "Ніц",
+        .size = sizeof(NullObject),
         .alloc = DEFAULT_ALLOC(NullObject),
         .operators =
         {

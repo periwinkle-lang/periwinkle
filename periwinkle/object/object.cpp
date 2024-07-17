@@ -45,12 +45,14 @@ namespace vm
         // Object - базовий тип для всіх типів, і тому ні від кого не наслідується
         .base = nullptr,
         .name = "Обєкт",
+        .size = sizeof(Object),
     };
 
     TypeObject typeObjectType =
     {
         .base = &objectObjectType,
         .name = "Тип",
+        .size = sizeof(TypeObject),
         .operators =
         {
             .call = (callFunction)typeCall,
@@ -59,10 +61,24 @@ namespace vm
     };
 }
 
+void vm::mark(Object* o)
+{
+    if (o == nullptr || o->marked)
+    {
+        return;
+    }
+    o->marked = true;
+    if (auto traverse = o->objectType->traverse)
+    {
+        traverse(o);
+    }
+}
+
 Object* vm::allocObject(TypeObject* objectType)
 {
     auto o = objectType->alloc();
     o->objectType = objectType;
+    getCurrentState()->getGC()->addObject(o);
     return o;
 }
 

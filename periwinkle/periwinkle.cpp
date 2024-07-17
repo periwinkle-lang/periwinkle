@@ -28,7 +28,10 @@ vm::Object* periwinkle::Periwinkle::execute()
     using namespace std::placeholders;
     PParser::Parser parser(source->getText());
     parser.setErrorHandler(std::bind(
-        static_cast<void(*)(ProgramSource*, std::string, size_t)>(utils::throwSyntaxError), source, _1, _2));
+        static_cast<void(*)(ProgramSource*, std::string, size_t)>(utils::throwSyntaxError),
+            source, _1, _2
+        )
+    );
     auto ast = parser.parse();
     if (!ast.has_value()) { exit(1); }
     compiler::Compiler comp(ast.value(), source);
@@ -37,7 +40,9 @@ vm::Object* periwinkle::Periwinkle::execute()
     frame->sp = &stack[0];
     frame->bp = &stack[0];
     vm::VirtualMachine virtualMachine(frame);
-    return virtualMachine.execute();
+    auto result = virtualMachine.execute();
+    delete frame;
+    return result;
 }
 
 void periwinkle::Periwinkle::setException(vm::TypeObject* type, const std::string& message)
@@ -56,7 +61,7 @@ void periwinkle::Periwinkle::setException(vm::Object* o)
     if (!vm::isException(o->objectType))
     {
         setException(&vm::InternalErrorObjectType,
-            utils::format("Об'єкт типу \"%s\" не є підкласом типу Виняток", o->objectType->name.c_str()));
+            utils::format("Об'єкт типу \"%s\" не є підкласом типу \"Виняток\"", o->objectType->name.c_str()));
         return;
     }
     currentException = static_cast<vm::ExceptionObject*>(o);
@@ -78,6 +83,11 @@ void periwinkle::Periwinkle::printException() const
     std::cerr << currentException->formatStackTrace();
 }
 
+vm::GC* periwinkle::Periwinkle::getGC()
+{
+    return gc;
+}
+
 #ifdef DEBUG
 
 #include "disassembler.hpp"
@@ -97,23 +107,27 @@ periwinkle::Periwinkle::Periwinkle(const std::string& code)
     : source(new ProgramSource(code))
 {
     _currentState = this;
+    gc = new vm::GC();
 }
 
 periwinkle::Periwinkle::Periwinkle(const std::filesystem::path& path)
     : source(new ProgramSource(path))
 {
     _currentState = this;
+    gc = new vm::GC();
 }
 
 periwinkle::Periwinkle::Periwinkle(const ProgramSource& source)
     : source(new ProgramSource(source))
 {
     _currentState = this;
+    gc = new vm::GC();
 }
 
 periwinkle::Periwinkle::~Periwinkle()
 {
     delete source;
+    delete gc;
 }
 
 Periwinkle* getCurrentState()

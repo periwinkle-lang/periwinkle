@@ -8,6 +8,7 @@ namespace vm
     {
         .base = nullptr,
         .name = "StringVectorObject",
+        .size = sizeof(StringVectorObject),
         .alloc = DEFAULT_ALLOC(StringVectorObject),
     };
 }

@@ -23,7 +23,7 @@ Object* nativeCall(NativeFunctionObject* nativeFunction, Object**& sp, WORD argc
         nativeFunction->name, false, argc, namedArgs, &namedArgIndexes
     )) return nullptr;
 
-    auto variadicParameter = ListObject::create();
+    auto variadicParameter = new ListObject{ {&listObjectType} };
     if (nativeFunction->isVariadic)
     {
         auto variadicCount = argc - arityWithoutDefaults;
@@ -43,17 +43,30 @@ Object* nativeCall(NativeFunctionObject* nativeFunction, Object**& sp, WORD argc
     return result;
 }
 
+static void traverse(NativeFunctionObject* func)
+{
+    if (func->defaults)
+    {
+        for (auto o : func->defaults->values)
+        {
+            mark(o);
+        }
+    }
+}
+
 namespace vm
 {
     TypeObject nativeFunctionObjectType =
     {
         .base = &objectObjectType,
         .name = "НативнаФункція",
+        .size = sizeof(NativeFunctionObject),
         .alloc = DEFAULT_ALLOC(NativeFunctionObject),
         .operators =
         {
             .call = (callFunction)nativeCall,
         },
+        .traverse = (traverseFunction)traverse,
     };
 }
 

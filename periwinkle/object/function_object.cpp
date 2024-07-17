@@ -44,7 +44,7 @@ static Frame* frameFromFunctionObject(FunctionObject* fn)
     return newFrame;
 }
 
-Object* fnCall(Object* callable, Object**& sp, WORD argc, NamedArgs* namedArgs)
+static Object* fnCall(Object* callable, Object**& sp, WORD argc, NamedArgs* namedArgs)
 {
     auto fn = (FunctionObject*)callable;
     ListObject* variadicParameter = nullptr;
@@ -58,7 +58,7 @@ Object* fnCall(Object* callable, Object**& sp, WORD argc, NamedArgs* namedArgs)
 
     if (fn->code->isVariadic)
     {
-        variadicParameter = ListObject::create();
+        variadicParameter = new ListObject{ {&listObjectType} };
 
         if (auto variadicCount = argc - (fn->code->arity - defaultCount); variadicCount > 0)
         {
@@ -113,17 +113,32 @@ Object* fnCall(Object* callable, Object**& sp, WORD argc, NamedArgs* namedArgs)
     return result;
 }
 
+static void traverse(FunctionObject* func)
+{
+    mark(func->code);
+    for (auto o : func->closure)
+    {
+        mark(o);
+    }
+    for (auto o : func->defaultArguments)
+    {
+        mark(o);
+    }
+}
+
 namespace vm
 {
     TypeObject functionObjectType =
     {
         .base = &objectObjectType,
         .name = "Функція",
+        .size = sizeof(FunctionObject),
         .alloc = DEFAULT_ALLOC(FunctionObject),
         .operators =
         {
             .call = fnCall,
         },
+        .traverse = (traverseFunction)traverse,
     };
 }
 

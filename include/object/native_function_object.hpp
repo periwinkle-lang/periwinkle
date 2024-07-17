@@ -8,8 +8,8 @@
 #include "list_object.hpp"
 
 #define NATIVE_FUNCTION(name, arity, variadic, func, defaults)     \
-    vm::NativeFunctionObject{&vm::nativeFunctionObjectType, arity, \
-                           variadic, name, func, defaults}
+    vm::NativeFunctionObject{&vm::nativeFunctionObjectType, false, \
+                           arity, variadic, name, func, defaults}
 
 #define OBJECT_STATIC_METHOD(name, arity, variadic, func, defaults) \
     {name, new NATIVE_FUNCTION(name, arity, variadic, (nativeFunction)func, defaults)}

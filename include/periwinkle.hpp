@@ -8,6 +8,7 @@
 #include "exception_object.hpp"
 #include "exports.hpp"
 #include "program_source.hpp"
+#include "gc.hpp"
 
 namespace periwinkle
 {
@@ -16,6 +17,7 @@ namespace periwinkle
     private:
         ProgramSource* source;
         vm::ExceptionObject* currentException = nullptr;
+        vm::GC* gc = nullptr;
     public:
         // Повертає версію як число, 2 цифри на значення.
         //  Наприклад: версія 1.10.2, то повернеться чило 11002
@@ -37,6 +39,8 @@ namespace periwinkle
         vm::ExceptionObject* exceptionOccurred() const;
         void exceptionClear();
         void printException() const;
+
+        vm::GC* getGC();
 
 
 #ifdef DEBUG

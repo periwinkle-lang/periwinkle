@@ -27,17 +27,34 @@ static Object* nativeMethodCall(NativeMethodObject* callable, Object**& sp, WORD
     return result;
 }
 
+static void traverse(NativeMethodObject* method)
+{
+    if (method->classType != nullptr)
+    {
+        mark(method->classType);
+    }
+    if (method->defaults)
+    {
+        for (auto o : method->defaults->values)
+        {
+            mark(o);
+        }
+    }
+}
+
 namespace vm
 {
     TypeObject nativeMethodObjectType =
     {
         .base = &objectObjectType,
         .name = "НативнийМетод",
+        .size = sizeof(NativeMethodObject),
         .alloc = DEFAULT_ALLOC(NativeMethodObject),
         .operators =
         {
             .call = (callFunction)nativeMethodCall,
         },
+        .traverse = (traverseFunction)traverse,
     };
 }
 
@@ -75,7 +92,7 @@ Object* vm::callNativeMethod(Object* instance, NativeMethodObject* method, std::
         method->name, true, argc, namedArgs, &namedArgIndexes
     )) return nullptr;
 
-    auto variadicParameter = ListObject::create();
+    auto variadicParameter = new ListObject{ {&listObjectType} };
     if (method->isVariadic)
     {
         auto variadicCount = argc - arityWithoutDefaults;

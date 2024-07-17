@@ -65,6 +65,7 @@ Object* VirtualMachine::execute()
     const auto code = frame->codeObject;
     const auto& names = code->names;
     auto builtin = getBuiltin();
+    auto gc = getCurrentState()->getGC();
     WORD a;
 
     for (;;)
@@ -497,6 +498,7 @@ Object* VirtualMachine::execute()
         default:
             plog::fatal << "Опкод не реалізовано: \"" << stringEnum::enumToString((OpCode)a) << "\"";
         }
+        gc->gc(frame);
     }
 
     error:

@@ -147,6 +147,7 @@ namespace vm
     {
         .base = &objectObjectType,
         .name = "Дійсний",
+        .size = sizeof(RealObject),
         .alloc = DEFAULT_ALLOC(RealObject),
         .constructor = new NATIVE_METHOD("конструктор", 1, false, realInit, realObjectType, nullptr),
         .operators =
