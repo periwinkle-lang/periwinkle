@@ -221,7 +221,7 @@ void utils::throwSyntaxError(periwinkle::ProgramSource* source, std::string mess
 void utils::throwSyntaxError(periwinkle::ProgramSource* source, std::string message, size_t lineno, size_t col)
 {
     std::cerr << "Синтаксична помилка: ";
-    std::cerr << message << " (знайнено на " << lineno << " рядку)\n";
+    std::cerr << message << " (знайдено на " << lineno << " рядку)\n";
     const auto& line = utils::getLineFromString(source->getText(), lineno);
     std::cerr << utils::indent(4) << line << std::endl;
     auto offset = utils::utf8Size(line.substr(0, col));
