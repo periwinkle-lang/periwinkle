@@ -491,6 +491,13 @@ Object* VirtualMachine::execute()
         case RAISE:
         {
             auto exception = POP();
+            if (!isException(exception->objectType))
+            {
+                getCurrentState()->setException(&TypeErrorObjectType,
+                    utils::format("Об'єкт \"%s\" не є підкласом типу \"Виняток\"",
+                        exception->objectType->name.c_str()));
+                goto error;
+            }
             getCurrentState()->setException(exception);
             goto error;
         }
