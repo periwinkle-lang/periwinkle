@@ -1,4 +1,6 @@
 ﻿#include <numeric>
+#include <format>
+#include <utility>
 
 #include "object.hpp"
 #include "string_object.hpp"
@@ -100,17 +102,17 @@ static Object* strToReal(StringObject* o)
     catch (const std::invalid_argument& e)
     {
         getCurrentState()->setException(
-            &ValueErrorObjectType, utils::format(
-                "Неможливо перетворити стрічку \"%s\" в дійсне число",
-                utils::escapeString(o->asUtf8()).c_str()));
+            &ValueErrorObjectType, std::format(
+                "Неможливо перетворити стрічку \"{}\" в дійсне число",
+                utils::escapeString(o->asUtf8())));
         return nullptr;
     }
     catch (const std::out_of_range& e)
     {
         getCurrentState()->setException(
-            &ValueErrorObjectType, utils::format(
-                "Число \"%s\" не входить в діапазон можливих значень дійсного числа",
-                o->asUtf8().c_str()));
+            &ValueErrorObjectType, std::format(
+                "Число \"{}\" не входить в діапазон можливих значень дійсного числа",
+                o->asUtf8()));
         return nullptr;
     }
     return RealObject::create(value);
@@ -519,17 +521,17 @@ namespace vm
         catch (const std::invalid_argument& e)
         {
             getCurrentState()->setException(
-                &ValueErrorObjectType, utils::format(
-                    "Неможливо перетворити стрічку \"%s\" в число",
-                    utils::escapeString(str->asUtf8()).c_str()));
+                &ValueErrorObjectType, std::format(
+                    "Неможливо перетворити стрічку \"{}\" в число",
+                    utils::escapeString(str->asUtf8())));
             return std::nullopt;
         }
         catch (const std::out_of_range& e)
         {
             getCurrentState()->setException(
-                &ValueErrorObjectType, utils::format(
-                    "Число \"%s\" не входить в діапазон можливих значень числа",
-                    str->asUtf8().c_str()));
+                &ValueErrorObjectType, std::format(
+                    "Число \"{}\" не входить в діапазон можливих значень числа",
+                    str->asUtf8()));
             return std::nullopt;
         }
         return value;

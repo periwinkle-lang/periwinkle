@@ -37,16 +37,6 @@ namespace utils
     //     id =          10
     std::string indent(int width);
 
-    // Форматує стрічки за допомогою std::snprintf
-    template<typename ... Args>
-    std::string format(const std::string& format, Args ... args)
-    {
-        auto size = (size_t)std::snprintf(nullptr, 0, format.c_str(), args ...) + 1; // + 1 для '\0'
-        std::unique_ptr<char[]> buf(new char[size]);
-        std::snprintf(buf.get(), size, format.c_str(), args ...);
-        return std::string(buf.get(), buf.get() + size - 1); // - 1, щоб видалити '\0'
-    }
-
     void throwSyntaxError(periwinkle::ProgramSource* source, std::string message, size_t position);
     void throwSyntaxError(periwinkle::ProgramSource* source, std::string message, size_t lineno, size_t col);
 

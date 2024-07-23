@@ -1,4 +1,5 @@
 ﻿#include <algorithm>
+#include <format>
 
 #include "validate_args.hpp"
 #include "vm.hpp"
@@ -21,10 +22,10 @@ bool vm::validateCall(
     if (argc < arityWithoutDefaults)
     {
         getCurrentState()->setException(&TypeErrorObjectType,
-            utils::format(
-                "%s \"%s\" очікує %u %s, натомість передано %u",
-                CALLABLE_NAME, fnName.c_str(), arityWithoutDefaults,
-                utils::wordDeclension(arityWithoutDefaults, "аргумент").c_str(), argc)
+            std::format(
+                "{} \"{}\" очікує {} {}, натомість передано {}",
+                CALLABLE_NAME, fnName, arityWithoutDefaults,
+                utils::wordDeclension(arityWithoutDefaults, "аргумент"), argc)
         );
         return false;
     }
@@ -32,7 +33,7 @@ bool vm::validateCall(
     if (namedArgs && defaultCount == 0 && namedArgs->count != 0)
     {
         getCurrentState()->setException(&TypeErrorObjectType,
-            utils::format("%s \"%s\" не має параметрів за замовчуванням", CALLABLE_NAME, fnName.c_str())
+            std::format("{} \"{}\" не має параметрів за замовчуванням", CALLABLE_NAME, fnName)
         );
         return false;
     }
@@ -51,10 +52,10 @@ bool vm::validateCall(
         if (argc > arity && defaultCount == 0)
         {
             getCurrentState()->setException(&TypeErrorObjectType,
-                utils::format(
-                    "%s \"%s\" очікує %u %s, натомість передано %u",
-                    CALLABLE_NAME, fnName.c_str(), arityWithoutDefaults,
-                    utils::wordDeclension(arityWithoutDefaults, "аргумент").c_str(), argc)
+                std::format(
+                    "{} \"{}\" очікує {} {}, натомість передано {}",
+                    CALLABLE_NAME, fnName, arityWithoutDefaults,
+                    utils::wordDeclension(arityWithoutDefaults, "аргумент"), argc)
             );
             return false;
         }
@@ -65,9 +66,9 @@ bool vm::validateCall(
         if (argc > arity)
         {
             getCurrentState()->setException(&TypeErrorObjectType,
-                utils::format(
-                    "%s \"%s\" очікує від %u до %u аргументів, натомість передано %u",
-                    CALLABLE_NAME, fnName.c_str(), arityWithoutDefaults, arity, argc)
+                std::format(
+                    "{} \"{}\" очікує від {} до {} аргументів, натомість передано {}",
+                    CALLABLE_NAME, fnName, arityWithoutDefaults, arity, argc)
             );
             return false;
         }
@@ -85,9 +86,9 @@ bool vm::validateCall(
                 else
                 {
                     getCurrentState()->setException(&TypeErrorObjectType,
-                        utils::format(
-                            "%s \"%s\" не має параметра за замовчуванням з іменем \"%s\"",
-                            CALLABLE_NAME, fnName.c_str(), argName.c_str())
+                        std::format(
+                            "{} \"{}\" не має параметра за замовчуванням з іменем \"{}\"",
+                            CALLABLE_NAME, fnName, argName)
                     );
                     return false;
                 }
@@ -102,10 +103,10 @@ bool vm::validateCall(
                 if (max_it != namedArgIndexes->end())
                 {
                     getCurrentState()->setException(&TypeErrorObjectType,
-                        utils::format(
-                            "%s \"%s\", аргумент \"%s\" приймає два значення",
-                            CALLABLE_NAME, fnName.c_str(),
-                            namedArgs->names->at(max_it - namedArgIndexes->begin()).c_str()
+                        std::format(
+                            "{} \"{}\", аргумент \"{}\" приймає два значення",
+                            CALLABLE_NAME, fnName,
+                            namedArgs->names->at(max_it - namedArgIndexes->begin())
                         )
                     );
                     return false;

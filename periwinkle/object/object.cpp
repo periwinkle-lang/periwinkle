@@ -1,4 +1,5 @@
 ﻿#include <cstddef>
+#include <format>
 
 #include "object.hpp"
 #include "bool_object.hpp"
@@ -20,8 +21,8 @@ static Object* typeCall(TypeObject* type, Object**& sp, WORD argc, NamedArgs* na
     {
         getCurrentState()->setException(
             &TypeErrorObjectType,
-            utils::format("Неможливо створити екземпляр з типом \"%s\"",
-                type->name.c_str())
+            std::format("Неможливо створити екземпляр з типом \"{}\"",
+                type->name)
         );
         return nullptr;
     }
@@ -34,7 +35,7 @@ static Object* typeCall(TypeObject* type, Object**& sp, WORD argc, NamedArgs* na
 
 static Object* typeToString(TypeObject* type)
 {
-    auto str = StringObject::create(utils::format("<Тип %s>", type->name.c_str()));
+    auto str = StringObject::create(std::format("<Тип {}>", type->name));
     return str;
 }
 
@@ -186,9 +187,9 @@ static Object* callCompareOperator(Object* o1, Object* o2, ObjectCompOperator op
         if (op_ == nullptr)                                                   \
         {                                                                     \
             getCurrentState()->setException(&TypeErrorObjectType,             \
-                utils::format(                                                \
-                "Неправильний тип операнда \"%s\" для унарного оператора %s", \
-                objectType->name.c_str(), #op));                              \
+                std::format(                                                  \
+                "Неправильний тип операнда \"{}\" для унарного оператора {}", \
+                objectType->name, #op));                                      \
             return nullptr;                                                   \
         }                                                                     \
         return op_(this);                                                     \
@@ -201,7 +202,7 @@ static Object* callCompareOperator(Object* o1, Object* o2, ObjectCompOperator op
         if (op_ == nullptr)                                        \
         {                                                          \
             getCurrentState()->setException(&TypeErrorObjectType,  \
-                utils::format(message, objectType->name.c_str())); \
+                std::format(message, objectType->name));           \
             return nullptr;                                        \
         }                                                          \
         return op_(this);                                          \
@@ -214,9 +215,9 @@ static Object* callCompareOperator(Object* o1, Object* o2, ObjectCompOperator op
         if (result == &P_NotImplemented)                                           \
         {                                                                          \
             getCurrentState()->setException(&TypeErrorObjectType,                  \
-                utils::format(                                                     \
-                "Непідтримувані типи операндів \"%s\" та \"%s\" для оператора %s", \
-                objectType->name.c_str(), o->objectType->name.c_str(), #op));      \
+                std::format(                                                       \
+                "Непідтримувані типи операндів \"{}\" та \"{}\" для оператора {}", \
+                objectType->name, o->objectType->name, #op));                      \
             return nullptr;                                                        \
         }                                                                          \
         return result;                                                             \
@@ -240,9 +241,9 @@ Object* vm::Object::compare(Object* o, ObjectCompOperator op)
         case LT: opName = "менше"; break;
         case LE: opName = "менше="; break;
         }
-        getCurrentState()->setException(&TypeErrorObjectType, utils::format(
-            "Неможливо порівняти об'єкти типів \"%s\" та \"%s\" за допомогою оператора %s",
-            objectType->name.c_str(), o->objectType->name.c_str(), opName.c_str()));
+        getCurrentState()->setException(&TypeErrorObjectType, std::format(
+            "Неможливо порівняти об'єкти типів \"{}\" та \"{}\" за допомогою оператора {}",
+            objectType->name, o->objectType->name, opName));
         return nullptr;
     }
     return result;
@@ -254,8 +255,8 @@ Object* vm::Object::call(Object**& sp, WORD argc, NamedArgs* namedArgs)
     if (callOp == nullptr)
     {
         getCurrentState()->setException(&TypeErrorObjectType,
-            utils::format("Об'єкт типу \"%s\" не може бути викликаний",
-                objectType->name.c_str())
+            std::format("Об'єкт типу \"{}\" не може бути викликаний",
+                objectType->name)
         );
         return nullptr;
     }
@@ -269,7 +270,7 @@ Object* vm::Object::toString()
     if (op == nullptr)
     {
         return StringObject::create(
-            utils::format("<екземпляр класу %s %p>", objectType->name.c_str(), this));
+            std::format("<екземпляр класу {} {}>", objectType->name, static_cast<void*>(this)));
     }
     return op(this);
 }
@@ -284,8 +285,8 @@ Object* vm::Object::toBool()
     return op(this);
 }
 
-UNARY_OPERATOR_WITH_MESSAGE(toInteger, "Неможливо конвертувати об'єкт типу \"%s\" в число")
-UNARY_OPERATOR_WITH_MESSAGE(toReal, "Неможливо конвертувати об'єкт типу \"%s\" в дійсне число")
+UNARY_OPERATOR_WITH_MESSAGE(toInteger, "Неможливо конвертувати об'єкт типу \"{}\" в число")
+UNARY_OPERATOR_WITH_MESSAGE(toReal, "Неможливо конвертувати об'єкт типу \"{}\" в дійсне число")
 BINARY_OPERATOR(add, +)
 BINARY_OPERATOR(sub, -)
 BINARY_OPERATOR(mul, *)
@@ -294,7 +295,7 @@ BINARY_OPERATOR(floorDiv, \\)
 BINARY_OPERATOR(mod, %)
 UNARY_OPERATOR(pos, +)
 UNARY_OPERATOR(neg, -)
-UNARY_OPERATOR_WITH_MESSAGE(getIter, "Для об'єкта типу \"%s\" неможливо отримати ітератор")
+UNARY_OPERATOR_WITH_MESSAGE(getIter, "Для об'єкта типу \"{}\" неможливо отримати ітератор")
 
 Object* vm::Object::getAttr(const std::string& name)
 {

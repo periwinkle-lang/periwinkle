@@ -1,4 +1,6 @@
-﻿#include "argument_parser.hpp"
+﻿#include <format>
+
+#include "argument_parser.hpp"
 #include "vm.hpp"
 #include "exception_object.hpp"
 #include "utils.hpp"
@@ -19,11 +21,11 @@ using namespace vm;
     {                                                                                               \
         getCurrentState()->setException(                                                            \
             &TypeErrorObjectType,                                                                   \
-            utils::format(                                                                          \
-                "Тип аргументу \"%s\" має бути \"%s\", натомість був переданий об'єкт типу \"%s\"", \
-                desc.name.c_str(),                                                                  \
-                desc.type.name.c_str(),                                                             \
-                value->objectType->name.c_str())                                                    \
+            std::format(                                                                            \
+                "Тип аргументу \"{}\" має бути \"{}\", натомість був переданий об'єкт типу \"{}\"", \
+                desc.name,                                                                          \
+                desc.type.name,                                                                     \
+                value->objectType->name)                                                            \
         );                                                                                          \
         return false;                                                                               \
     }

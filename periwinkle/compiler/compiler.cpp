@@ -1,6 +1,7 @@
 ﻿#include <algorithm>
 #include <variant>
 #include <unordered_set>
+#include <format>
 
 #include "compiler.hpp"
 #include "code_object.hpp"
@@ -274,8 +275,8 @@ static std::optional<Token> checkDuplicateParameters(ast::FunctionDeclaration* f
 void compiler::Compiler::compileFunctionDeclaration(ast::FunctionDeclaration* statement)
 {
     if (auto param = checkDuplicateParameters(statement)) {
-        throwCompileError(utils::format(
-            "Параметр з ім'ям \"%s\" повторюється", param.value().text.c_str()),
+        throwCompileError(std::format(
+            "Параметр з ім'ям \"{}\" повторюється", param.value().text),
             param.value());
     }
     auto& name = statement->id.text;
@@ -594,8 +595,8 @@ void compiler::Compiler::compileCallExpression(CallExpression* expression)
                if (namedArgument.first.text == a)
                {
                    throwCompileError(
-                       utils::format(
-                           "Іменований параметр \"%s\" повторюється", a.c_str()),
+                       std::format(
+                           "Іменований параметр \"{}\" повторюється", a),
                        namedArgument.first
                    );
                }

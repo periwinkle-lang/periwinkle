@@ -1,4 +1,6 @@
-﻿#include "vm.hpp"
+﻿#include <format>
+
+#include "vm.hpp"
 #include "int_object.hpp"
 #include "code_object.hpp"
 #include "bool_object.hpp"
@@ -48,7 +50,7 @@ case OpCode::name:                                      \
     break;                                              \
 }
 
-constexpr auto NAME_NOT_DEFINED = "Ім'я \"%s\" не знайдено";
+constexpr auto NAME_NOT_DEFINED = "Ім'я \"{}\" не знайдено";
 
 i64 VirtualMachine::getLineno(WORD* ip) const
 {
@@ -218,8 +220,8 @@ Object* VirtualMachine::execute()
             {
                 getCurrentState()->setException(
                     &TypeErrorObjectType,
-                    utils::format("Тип \"%s\" не є ітератором",
-                        iterator->objectType->name.c_str()));
+                    std::format("Тип \"{}\" не є ітератором",
+                        iterator->objectType->name));
                 goto error;
             }
 
@@ -261,7 +263,7 @@ Object* VirtualMachine::execute()
             else
             {
                 getCurrentState()->setException(&NameErrorObjectType,
-                    utils::format(NAME_NOT_DEFINED, name.c_str()));
+                    std::format(NAME_NOT_DEFINED, name));
                 goto error;
             }
             break;
@@ -282,7 +284,7 @@ Object* VirtualMachine::execute()
             else
             {
                 getCurrentState()->setException(&NameErrorObjectType,
-                    utils::format(NAME_NOT_DEFINED, name.c_str()));
+                    std::format(NAME_NOT_DEFINED, name));
                 goto error;
             }
             break;
@@ -297,7 +299,7 @@ Object* VirtualMachine::execute()
             else
             {
                 getCurrentState()->setException(&NameErrorObjectType,
-                    utils::format(NAME_NOT_DEFINED, frame->codeObject->locals[localIdx].c_str()));
+                    std::format(NAME_NOT_DEFINED, frame->codeObject->locals[localIdx]));
                 goto error;
             }
             break;
@@ -317,7 +319,7 @@ Object* VirtualMachine::execute()
             else
             {
                 getCurrentState()->setException(&NameErrorObjectType,
-                    utils::format(NAME_NOT_DEFINED, frame->codeObject->locals[localIdx].c_str()));
+                    std::format(NAME_NOT_DEFINED, frame->codeObject->locals[localIdx]));
                 goto error;
             }
             break;
@@ -348,8 +350,8 @@ Object* VirtualMachine::execute()
             if (value == nullptr)
             {
                 getCurrentState()->setException(&AttributeErrorObjectType,
-                    utils::format("Об'єкт \"%s\" не має атрибута \"%s\"",
-                        object->objectType->name.c_str(), name.c_str()));
+                    std::format("Об'єкт \"{}\" не має атрибута \"\"",
+                        object->objectType->name, name));
                 goto error;
             }
             PUSH(value);
@@ -363,8 +365,8 @@ Object* VirtualMachine::execute()
             if (function == nullptr)
             {
                 getCurrentState()->setException(&AttributeErrorObjectType,
-                    utils::format("Об'єкт \"%s\" не має атрибута \"%s\"",
-                        object->objectType->name.c_str(), name.c_str()));
+                    std::format("Об'єкт \"{}\" не має атрибута \"{}\"",
+                        object->objectType->name, name));
                 goto error;
             }
 
@@ -494,8 +496,8 @@ Object* VirtualMachine::execute()
             if (!isException(exception->objectType))
             {
                 getCurrentState()->setException(&TypeErrorObjectType,
-                    utils::format("Об'єкт \"%s\" не є підкласом типу \"Виняток\"",
-                        exception->objectType->name.c_str()));
+                    std::format("Об'єкт \"{}\" не є підкласом типу \"Виняток\"",
+                        exception->objectType->name));
                 goto error;
             }
             getCurrentState()->setException(exception);

@@ -1,5 +1,6 @@
 ﻿#include <array>
 #include <functional>
+#include <format>
 
 #include "periwinkle.hpp"
 #include "vm.hpp"
@@ -50,7 +51,7 @@ void periwinkle::Periwinkle::setException(vm::TypeObject* type, const std::strin
     if (!vm::isException(type))
     {
         setException(&vm::InternalErrorObjectType,
-            utils::format("Об'єкт типу \"%s\" не є підкласом типу \"Виняток\"", type->name.c_str()));
+            std::format("Об'єкт типу \"{}\" не є підкласом типу \"Виняток\"", type->name));
         return;
     }
     currentException = vm::ExceptionObject::create(type, message);
@@ -61,7 +62,7 @@ void periwinkle::Periwinkle::setException(vm::Object* o)
     if (!vm::isException(o->objectType))
     {
         setException(&vm::InternalErrorObjectType,
-            utils::format("Об'єкт типу \"%s\" не є підкласом типу \"Виняток\"", o->objectType->name.c_str()));
+            std::format("Об'єкт типу \"{}\" не є підкласом типу \"Виняток\"", o->objectType->name));
         return;
     }
     currentException = static_cast<vm::ExceptionObject*>(o);
