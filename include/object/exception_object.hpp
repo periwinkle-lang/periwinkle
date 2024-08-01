@@ -1,4 +1,4 @@
-﻿#ifndef EXCEPTION_OBJECT_H
+#ifndef EXCEPTION_OBJECT_H
 #define EXCEPTION_OBJECT_H
 
 #include "object.hpp"

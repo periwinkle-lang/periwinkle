@@ -1,4 +1,4 @@
-﻿#include <algorithm>
+#include <algorithm>
 
 #include "function_object.hpp"
 #include "string_object.hpp"

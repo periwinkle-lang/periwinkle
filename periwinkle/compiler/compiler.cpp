@@ -1,4 +1,4 @@
-﻿#include <algorithm>
+#include <algorithm>
 #include <variant>
 #include <unordered_set>
 #include <format>

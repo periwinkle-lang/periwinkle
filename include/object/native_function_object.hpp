@@ -1,4 +1,4 @@
-﻿#ifndef NATIVE_FUNCTION_OBJECT_H
+#ifndef NATIVE_FUNCTION_OBJECT_H
 #define NATIVE_FUNCTION_OBJECT_H
 
 #include <span>

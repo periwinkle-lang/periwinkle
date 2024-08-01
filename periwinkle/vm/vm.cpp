@@ -1,4 +1,4 @@
-﻿#include <format>
+#include <format>
 
 #include "vm.hpp"
 #include "int_object.hpp"

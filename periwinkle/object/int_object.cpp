@@ -1,4 +1,4 @@
-﻿#include <string>
+#include <string>
 
 #include "object.hpp"
 #include "int_object.hpp"

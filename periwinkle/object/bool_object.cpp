@@ -1,4 +1,4 @@
-﻿#include "object.hpp"
+#include "object.hpp"
 #include "bool_object.hpp"
 #include "string_object.hpp"
 #include "int_object.hpp"

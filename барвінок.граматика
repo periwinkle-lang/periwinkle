@@ -1,4 +1,4 @@
-﻿%name parser
+%name parser
 
 %hpp {
     #include "ast/ast.hpp"

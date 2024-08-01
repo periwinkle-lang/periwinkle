@@ -1,4 +1,4 @@
-﻿#ifndef GC_HPP
+#ifndef GC_HPP
 #define GC_HPP
 
 #include <forward_list>

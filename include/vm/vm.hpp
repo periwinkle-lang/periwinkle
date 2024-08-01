@@ -1,4 +1,4 @@
-﻿#ifndef VM_H
+#ifndef VM_H
 #define VM_H
 
 #include <algorithm>

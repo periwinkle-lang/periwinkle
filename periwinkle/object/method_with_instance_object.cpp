@@ -1,4 +1,4 @@
-﻿#include "method_with_instance_object.hpp"
+#include "method_with_instance_object.hpp"
 
 using namespace vm;
 

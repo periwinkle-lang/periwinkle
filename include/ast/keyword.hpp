@@ -1,4 +1,4 @@
-﻿#ifndef KEYWORD_H
+#ifndef KEYWORD_H
 #define KEYWORD_H
 
 #include <string_view>

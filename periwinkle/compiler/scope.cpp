@@ -1,4 +1,4 @@
-﻿#include "scope.hpp"
+#include "scope.hpp"
 #include "ast.hpp"
 #include "plogger.hpp"
 #include "builtins.hpp"

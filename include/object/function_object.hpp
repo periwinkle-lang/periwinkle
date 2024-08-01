@@ -1,4 +1,4 @@
-﻿#ifndef FUNCTION_OBJECT_H
+#ifndef FUNCTION_OBJECT_H
 #define FUNCTION_OBJECT_H
 
 #include <vector>

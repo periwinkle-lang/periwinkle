@@ -1,4 +1,4 @@
-﻿#ifndef PCONFIG_H
+#ifndef PCONFIG_H
 #define PCONFIG_H
 
 #define PERIWINKLE_PROJECT_NAME  "@PROJECT_NAME@"

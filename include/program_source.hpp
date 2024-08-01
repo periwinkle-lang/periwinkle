@@ -1,4 +1,4 @@
-﻿#ifndef PROGRAM_SOURCE_HPP
+#ifndef PROGRAM_SOURCE_HPP
 #define PROGRAM_SOURCE_HPP
 
 #include <string>

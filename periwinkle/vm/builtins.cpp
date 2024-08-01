@@ -1,4 +1,4 @@
-﻿#include <span>
+#include <span>
 #include <numeric>
 
 #include "builtins.hpp"

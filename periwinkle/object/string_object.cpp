@@ -1,4 +1,4 @@
-﻿#include <numeric>
+#include <numeric>
 #include <format>
 #include <utility>
 

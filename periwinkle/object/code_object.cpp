@@ -1,4 +1,4 @@
-﻿#include "code_object.hpp"
+#include "code_object.hpp"
 
 using namespace vm;
 

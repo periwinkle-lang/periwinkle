@@ -1,4 +1,4 @@
-﻿#ifndef LIST_OBJECT_H
+#ifndef LIST_OBJECT_H
 #define LIST_OBJECT_H
 
 #include <vector>

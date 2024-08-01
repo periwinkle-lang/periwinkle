@@ -1,4 +1,4 @@
-﻿#ifndef BOOL_OBJECT_H
+#ifndef BOOL_OBJECT_H
 #define BOOL_OBJECT_H
 
 #include "object.hpp"

@@ -1,4 +1,4 @@
-﻿#ifndef CELL_OBJECT_H
+#ifndef CELL_OBJECT_H
 #define CELL_OBJECT_H
 
 #include "object.hpp"

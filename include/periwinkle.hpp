@@ -1,4 +1,4 @@
-﻿#ifndef PERIWINKLE_H
+#ifndef PERIWINKLE_H
 #define PERIWINKLE_H
 
 #include <string>

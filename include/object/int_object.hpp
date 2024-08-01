@@ -1,4 +1,4 @@
-﻿#ifndef INT_OBJECT_H
+#ifndef INT_OBJECT_H
 #define INT_OBJECT_H
 
 #include "object.hpp"

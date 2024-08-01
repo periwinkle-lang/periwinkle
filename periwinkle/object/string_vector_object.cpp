@@ -1,4 +1,4 @@
-﻿#include "string_vector_object.hpp"
+#include "string_vector_object.hpp"
 
 using namespace vm;
 

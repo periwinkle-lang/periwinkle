@@ -1,4 +1,4 @@
-﻿#include <format>
+#include <format>
 
 #include "argument_parser.hpp"
 #include "vm.hpp"

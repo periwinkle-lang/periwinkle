@@ -1,4 +1,4 @@
-﻿#include <span>
+#include <span>
 
 #include "gc.hpp"
 #include "native_method_object.hpp"

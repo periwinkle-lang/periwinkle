@@ -1,4 +1,4 @@
-﻿#include "end_iteration_object.hpp"
+#include "end_iteration_object.hpp"
 #include "string_object.hpp"
 #include "native_function_object.hpp"
 

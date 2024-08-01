@@ -1,4 +1,4 @@
-﻿#ifndef SCOPE_H
+#ifndef SCOPE_H
 #define SCOPE_H
 
 #include <iostream>

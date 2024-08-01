@@ -1,4 +1,4 @@
-﻿#include "null_object.hpp"
+#include "null_object.hpp"
 #include "string_object.hpp"
 #include "native_function_object.hpp"
 

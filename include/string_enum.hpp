@@ -1,4 +1,4 @@
-﻿#ifndef STRING_ENUM_H
+#ifndef STRING_ENUM_H
 #define STRING_ENUM_H
 
 #include <algorithm>

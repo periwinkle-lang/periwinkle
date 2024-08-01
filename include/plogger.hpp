@@ -1,4 +1,4 @@
-﻿#ifndef PLOGGER_H
+#ifndef PLOGGER_H
 #define PLOGGER_H
 
 #include <iostream>

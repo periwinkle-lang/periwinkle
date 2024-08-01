@@ -1,4 +1,4 @@
-﻿#ifndef CODE_OBJECT_H
+#ifndef CODE_OBJECT_H
 #define CODE_OBJECT_H
 
 #include <string>

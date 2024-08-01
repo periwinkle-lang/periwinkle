@@ -1,4 +1,4 @@
-﻿#ifndef NULL_OBJECT_H
+#ifndef NULL_OBJECT_H
 #define NULL_OBJECT_H
 
 #include "object.hpp"

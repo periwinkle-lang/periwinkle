@@ -1,4 +1,4 @@
-﻿#ifndef END_ITERATION_OBJECT_H
+#ifndef END_ITERATION_OBJECT_H
 #define END_ITERATION_OBJECT_H
 
 #include "object.hpp"

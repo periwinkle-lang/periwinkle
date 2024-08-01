@@ -1,4 +1,4 @@
-﻿#include "native_method_object.hpp"
+#include "native_method_object.hpp"
 #include "string_vector_object.hpp"
 #include "utils.hpp"
 #include "validate_args.hpp"

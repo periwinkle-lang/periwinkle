@@ -1,4 +1,4 @@
-﻿#ifndef STRING_VECTOR_OBJECT_H
+#ifndef STRING_VECTOR_OBJECT_H
 #define STRING_VECTOR_OBJECT_H
 
 #include <vector>

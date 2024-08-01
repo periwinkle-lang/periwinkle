@@ -1,4 +1,4 @@
-﻿#include "cell_object.hpp"
+#include "cell_object.hpp"
 
 using namespace vm;
 

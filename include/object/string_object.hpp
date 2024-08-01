@@ -1,4 +1,4 @@
-﻿#ifndef STRING_OBJECT_H
+#ifndef STRING_OBJECT_H
 #define STRING_OBJECT_H
 
 #include <optional>

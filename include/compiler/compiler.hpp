@@ -1,4 +1,4 @@
-﻿#ifndef  COMPILATOR_H
+#ifndef  COMPILATOR_H
 #define  COMPILATOR_H
 
 #include <vector>

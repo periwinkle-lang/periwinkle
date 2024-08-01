@@ -1,4 +1,4 @@
-﻿#ifndef REAL_OBJECT_H
+#ifndef REAL_OBJECT_H
 #define REAL_OBJECT_H
 
 #include "object.hpp"

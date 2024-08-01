@@ -1,4 +1,4 @@
-﻿#ifndef VALIDATE_ARGS_H
+#ifndef VALIDATE_ARGS_H
 #define VALIDATE_ARGS_H
 
 #include <span>

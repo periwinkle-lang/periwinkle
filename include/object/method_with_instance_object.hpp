@@ -1,4 +1,4 @@
-﻿#ifndef METHOD_WITH_INSTANCE_OBJECT_H
+#ifndef METHOD_WITH_INSTANCE_OBJECT_H
 #define METHOD_WITH_INSTANCE_OBJECT_H
 
 #include "object.hpp"

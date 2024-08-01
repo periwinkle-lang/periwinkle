@@ -1,4 +1,4 @@
-﻿#include <span>
+#include <span>
 
 #include "exception_object.hpp"
 #include "string_object.hpp"
