@@ -124,7 +124,7 @@ namespace plog
     class Starter
     {
     public:
-#ifdef DEBUG
+#ifndef NDEBUG
         template <typename T>
         friend loggerT operator<<(located_reference<plog::Starter<loggerT>&> starter, T const& obj)
         {
@@ -152,7 +152,7 @@ namespace plog
 
     class AssertStarter
     {
-#ifdef DEBUG
+#ifndef NDEBUG
     private:
         bool condition;
     public:

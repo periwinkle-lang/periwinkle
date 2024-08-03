@@ -43,7 +43,7 @@ namespace periwinkle
         vm::GC* getGC();
 
 
-#ifdef DEBUG
+#ifdef DEV_TOOLS
         void printDisassemble();
 #endif
         Periwinkle(const std::string& code);

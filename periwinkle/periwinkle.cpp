@@ -89,7 +89,7 @@ vm::GC* periwinkle::Periwinkle::getGC()
     return gc;
 }
 
-#ifdef DEBUG
+#ifdef DEV_TOOLS
 
 #include "disassembler.hpp"
 

@@ -124,8 +124,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 
-# Визначення DEBUG макроса
+# Визначення DEV_TOOLS макроса
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    target_compile_definitions(periwinkle PRIVATE DEBUG)
-    target_compile_definitions(launcher PRIVATE DEBUG)
+    target_compile_definitions(periwinkle PRIVATE DEV_TOOLS)
+    target_compile_definitions(launcher PRIVATE DEV_TOOLS)
 endif()

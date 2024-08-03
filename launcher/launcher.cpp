@@ -19,7 +19,7 @@ string usage(string programName)
     ss << "Використання: " << programName << " [опції] <файл>" << std::endl;
     ss << "Опції:" << std::endl;
     ss << "\t" << "-д, --допомога     Виводить це повідомлення." << std::endl;
-#ifdef DEBUG
+#ifdef DEV_TOOLS
     ss << "\t" << "-а, --асемблер     Виводить згенерований код для віртуальної машини. Не запускає програму." << std::endl;
 #endif
     return ss.str();
@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
             std::cout << usage(programName);
             return 0;
         }
-#ifdef DEBUG
+#ifdef DEV_TOOLS
         else if (COMPARE_OPTION(token, "-а", "--асемблер"))
         {
             continue;
@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 
 	periwinkle::Periwinkle interpreter(std::filesystem::path(argsForInterpreter.back()));
 
-#ifdef DEBUG
+#ifdef DEV_TOOLS
 	if (cmdOptionExists(argsForInterpreter, "-а", "--асемблер"))
 	{
 		interpreter.printDisassemble();
