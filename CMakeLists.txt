@@ -3,9 +3,6 @@ cmake_minimum_required(VERSION 3.20)
 project(Барвінок VERSION 0.0.0 LANGUAGES CXX)
 
 include(GenerateExportHeader)
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
-find_package(PCRE2)
-find_package(JPCRE2)
 if(NOT WIN32)
     set(Python3_FIND_UNVERSIONED_NAMES NEVER)
 endif()
@@ -15,12 +12,6 @@ configure_file("include/pconfig.hpp.in" "pconfig.hpp")
 include_directories(${CMAKE_CURRENT_BINARY_DIR}) # Для видимості pconfig.hpp в проекті
 
 
-if(NOT PCRE2_FOUND)
-    message(FATAL_ERROR "Бібліотеку PCRE2 не знайдено!")
-endif()
-if(NOT JPCRE2_FOUND)
-    message(FATAL_ERROR "Бібліотеку JPCRE2 не знайдено!")
-endif()
 if (NOT Python3_Interpreter_FOUND)
     message(FATAL_ERROR "Python 3 не знайдено!")
 endif()
@@ -109,8 +100,6 @@ set_target_properties(launcher PROPERTIES OUTPUT_NAME барвінок)
 
 
 # Додавання бібліотек до виконуваного файлу
-target_include_directories(periwinkle PUBLIC ${PCRE2_INCLUDE_DIRS} ${JPCRE2_INCLUDE_DIRS})
-target_link_libraries(periwinkle ${PCRE2_LIBRARIES})
 target_link_libraries(periwinkle parser)
 target_link_libraries(launcher periwinkle)
 
