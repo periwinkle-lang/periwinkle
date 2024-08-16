@@ -181,7 +181,7 @@ class UnicodeDatabase:
             record.uppercase_offset = char.codepoint - char.simple_uppercase_mapping
         if char.simple_titlecase_mapping:
             record.titlecase_offset = char.codepoint - char.simple_titlecase_mapping
-        if char.general_category == GeneralCategory.SeparatorSpace:
+        if char.general_category == GeneralCategory.SeparatorSpace.value:
             record.flags |= RecordMask.IS_SPACE
         if char.general_category.startswith(GeneralCategory.Letter.value):
             record.flags |= RecordMask.IS_LETTER
