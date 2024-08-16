@@ -15,6 +15,7 @@
 #include "native_function_object.hpp"
 #include "real_object.hpp"
 #include "periwinkle.hpp"
+#include "unicode.hpp"
 
 using namespace vm;
 
@@ -540,13 +541,13 @@ namespace vm
 
 std::string vm::StringObject::asUtf8() const
 {
-    return utils::utf32to8(value);
+    return unicode::utf32to8(value);
 }
 
 StringObject* vm::StringObject::create(const std::string& value)
 {
     auto stringObject = (StringObject*)allocObject(&stringObjectType);
-    stringObject->value = utils::utf8to32(value);
+    stringObject->value = unicode::utf8to32(value);
     return stringObject;
 }
 
