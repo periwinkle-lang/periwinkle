@@ -444,6 +444,108 @@ METHOD_TEMPLATE(toIntMethod, StringObject)
     return IntObject::create(value.value());
 }
 
+METHOD_TEMPLATE(strIsAlpha, StringObject)
+{
+    if (o->value.size() == 0)
+    {
+        return &P_false;
+    }
+
+    for (char32_t ch : o->value)
+    {
+        if (unicode::isLetter(ch) == false)
+        {
+            return &P_false;
+        }
+    }
+    return &P_true;
+}
+
+METHOD_TEMPLATE(strIsAlnum, StringObject)
+{
+    if (o->value.size() == 0)
+    {
+        return &P_false;
+    }
+
+    for (char32_t ch : o->value)
+    {
+        if ((unicode::isLetter(ch) && unicode::isDigit(ch)) == false)
+        {
+            return &P_false;
+        }
+    }
+    return &P_true;
+}
+
+METHOD_TEMPLATE(strIsDecimal, StringObject)
+{
+    if (o->value.size() == 0)
+    {
+        return &P_false;
+    }
+
+    for (char32_t ch : o->value)
+    {
+        if (unicode::isDecimal(ch) == false)
+        {
+            return &P_false;
+        }
+    }
+    return &P_true;
+}
+
+METHOD_TEMPLATE(strIsDigit, StringObject)
+{
+    if (o->value.size() == 0)
+    {
+        return &P_false;
+    }
+
+    for (char32_t ch : o->value)
+    {
+        if (unicode::isDigit(ch) == false)
+        {
+            return &P_false;
+        }
+    }
+    return &P_true;
+}
+
+METHOD_TEMPLATE(strIsNumeric, StringObject)
+{
+    if (o->value.size() == 0)
+    {
+        return &P_false;
+    }
+
+    for (char32_t ch : o->value)
+    {
+        if (unicode::isNumeric(ch) == false)
+        {
+            return &P_false;
+        }
+    }
+    return &P_true;
+}
+
+METHOD_TEMPLATE(strIsSpace, StringObject)
+{
+    if (o->value.size() == 0)
+    {
+        return &P_false;
+    }
+
+    for (char32_t ch : o->value)
+    {
+        if (unicode::isSpace(ch) == false)
+        {
+            return &P_false;
+        }
+    }
+    return &P_true;
+}
+
 METHOD_TEMPLATE(strIterNext, StringIterObject)
 {
     if (o->position < o->length)
@@ -494,6 +596,12 @@ namespace vm
             OBJECT_METHOD("підстрічка",         2, false, strSubstr,     stringObjectType, nullptr),
             OBJECT_METHOD("розділити",          1, false, strSplit,      stringObjectType, nullptr),
             OBJECT_METHOD("доЧисла",            0, false, toIntMethod,   stringObjectType, &toIntDefaults),
+            OBJECT_METHOD("цеБуквенне",         0, false, strIsAlpha,    stringObjectType, nullptr),
+            OBJECT_METHOD("цеБуквенноЦифрове",  0, false, strIsAlnum,    stringObjectType, nullptr),
+            OBJECT_METHOD("цеДесятковоЦифрове", 0, false, strIsDecimal,  stringObjectType, nullptr),
+            OBJECT_METHOD("цеЦифрову",          0, false, strIsDigit,    stringObjectType, nullptr),
+            OBJECT_METHOD("цеЧислове",          0, false, strIsNumeric,  stringObjectType, nullptr),
+            OBJECT_METHOD("цеПробіл",           0, false, strIsSpace,    stringObjectType, nullptr),
             OBJECT_STATIC_METHOD("зліпити",     2, false, strJoin, nullptr),
         },
     };

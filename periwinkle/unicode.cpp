@@ -204,4 +204,3 @@ std::string unicode::utf32to8(const std::u32string& s)
 
     return result;
 }
-
