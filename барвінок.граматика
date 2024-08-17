@@ -60,8 +60,8 @@ block_statement<std::optional<ast::Statement*>> = !"кінець" s:statement { 
 while_statement<ast::WhileStatement*> = "поки" _ c:rhs b:block_statement* _? "кінець"
     { $$ = new WhileStatement(newToken("поки", $1), c, newBlockStatementExcludeOptional(b)); }
 
-for_each_statement<ast::ForEachStatement*> = "кожній" _ id:identifier _ "з" _ e:rhs b:block_statement* _? "кінець"
-    { $$ = new ForEachStatement(newToken("кожній", $1), newToken(id, $3), e, newBlockStatementExcludeOptional(b)); }
+for_each_statement<ast::ForEachStatement*> = "обійти" _ e:rhs _ "як" _ id:identifier b:block_statement* _? "кінець"
+    { $$ = new ForEachStatement(newToken("обійти", $1), newToken(id, $7), e, newBlockStatementExcludeOptional(b)); }
 
 break_statement<ast::BreakStatement*> = "завершити" { $$ = new BreakStatement(newToken("завершити", $1)); }
 continue_statement<ast::ContinueStatement*> = "пропустити" { $$ = new ContinueStatement(newToken("пропустити", $1)); }
@@ -232,7 +232,7 @@ assignment_expression<ast::AssignmentExpression*> = l:lhs _? op:([-+*\\/%]? "=")
 identifier<std::string> = !keywords id:([а-щА-ЩьюяїієґЬЮЯЇІЄҐ_][а-щА-ЩьюяїієґЬЮЯЇІЄҐ0-9_]*) { $$ = id; }
 keywords =
     ("якщо" / "або" / "інакше" / "кінець" / "поки" / "пропустити" / "завершити" / "менше" / "більше"
-     / "є" / "не" / "та" / "функція" / "повернути" / "кожній" / "з" / "спробувати" / "обробити"
+     / "є" / "не" / "та" / "функція" / "повернути" / "обійти" / "спробувати" / "обробити"
      / "як" / "наприкінці" / "жбурнути") ![а-щА-ЩьюяїієґЬЮЯЇІЄҐ0-9_]
 
 comments = (_? one_line_comment / _? multiline_comment)+
