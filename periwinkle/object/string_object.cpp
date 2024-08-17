@@ -281,11 +281,6 @@ METHOD_TEMPLATE(strFind, StringObject)
     return IntObject::create(pos == std::string::npos ? -1 : pos);
 }
 
-METHOD_TEMPLATE(strCopy, StringObject)
-{
-    return StringObject::create(o->value);
-}
-
 METHOD_TEMPLATE(strCount, StringObject)
 {
     StringObject* value;
@@ -675,7 +670,6 @@ namespace vm
             OBJECT_METHOD("закінчуєтьсяНа",     1, false, strEndsWith,   stringObjectType, nullptr),
             OBJECT_METHOD("замінити",           2, false, strReplace,    stringObjectType, nullptr),
             OBJECT_METHOD("знайти",             1, false, strFind,       stringObjectType, nullptr),
-            OBJECT_METHOD("копія",              0, false, strCopy,       stringObjectType, nullptr),
             OBJECT_METHOD("кількість",          1, false, strCount,      stringObjectType, nullptr),
             OBJECT_METHOD("містить",            1, false, strContains,   stringObjectType, nullptr),
             OBJECT_METHOD("отримати",           1, false, strGet,        stringObjectType, nullptr),
