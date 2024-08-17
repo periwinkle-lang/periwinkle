@@ -59,6 +59,7 @@ class GeneralCategory(Enum):
     OtherPrivateUse = "Co"
     OtherNoAssigned = "Cn"
 
+
 @dataclass
 class RawRecord:
     codepoint: int
@@ -89,6 +90,7 @@ class RecordMask(IntEnum):
     LOWERCASE = auto()
     UPPERCASE = auto()
     TITLECASE = auto()
+    HAS_CASE = auto()
     IS_SPACE = auto()
     IS_LETTER = auto()
     IS_DECIMAL = auto()
@@ -175,12 +177,17 @@ class UnicodeDatabase:
             record.flags |= RecordMask.LOWERCASE
         if char.general_category == GeneralCategory.LetterTitlecase.value:
             record.flags |= RecordMask.TITLECASE
+        if char.general_category in (
+            GeneralCategory.LetterUppercase.value,
+            GeneralCategory.LetterLowercase.value,
+            GeneralCategory.LetterTitlecase.value):
+            record.flags |= RecordMask.HAS_CASE
         if char.simple_lowercase_mapping:
-            record.lowercase_offset = char.codepoint - char.simple_lowercase_mapping
+            record.lowercase_offset = char.simple_lowercase_mapping - char.codepoint
         if char.simple_uppercase_mapping:
-            record.uppercase_offset = char.codepoint - char.simple_uppercase_mapping
+            record.uppercase_offset = char.simple_uppercase_mapping - char.codepoint
         if char.simple_titlecase_mapping:
-            record.titlecase_offset = char.codepoint - char.simple_titlecase_mapping
+            record.titlecase_offset = char.simple_titlecase_mapping - char.codepoint
         if char.general_category == GeneralCategory.SeparatorSpace.value:
             record.flags |= RecordMask.IS_SPACE
         if char.general_category.startswith(GeneralCategory.Letter.value):

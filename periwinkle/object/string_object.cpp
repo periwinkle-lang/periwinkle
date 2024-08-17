@@ -546,6 +546,96 @@ METHOD_TEMPLATE(strIsSpace, StringObject)
     return &P_true;
 }
 
+METHOD_TEMPLATE(strToLowercase, StringObject)
+{
+    if (o->value.size() == 0)
+    {
+        return &P_emptyStr;
+    }
+
+    auto newStr = StringObject::create(U"");
+    newStr->value.reserve(o->value.size());
+    for (char32_t ch : o->value)
+    {
+        newStr->value += unicode::toLowercase(ch);
+    }
+
+    return newStr;
+}
+
+METHOD_TEMPLATE(strToUppercase, StringObject)
+{
+    if (o->value.size() == 0)
+    {
+        return &P_emptyStr;
+    }
+
+    auto newStr = StringObject::create(U"");
+    newStr->value.reserve(o->value.size());
+    for (char32_t ch : o->value)
+    {
+        newStr->value += unicode::toUppercase(ch);
+    }
+
+    return newStr;
+}
+
+METHOD_TEMPLATE(strTitle, StringObject)
+{
+    if (o->value.size() == 0)
+    {
+        return &P_emptyStr;
+    }
+
+    auto newStr = StringObject::create(U"");
+    newStr->value.reserve(o->value.size());
+    bool prevHasCase = false;
+    for (char32_t ch : o->value)
+    {
+        if (unicode::hasCase(ch) == false)
+        {
+            newStr->value += ch;
+            prevHasCase = false;
+            continue;
+        }
+
+        if (prevHasCase == false)
+        {
+            if (char32_t titleCh; (titleCh = unicode::toTitlecase(ch)) != ch)
+                newStr->value += titleCh;
+            else
+                newStr->value += unicode::toUppercase(ch);
+            prevHasCase = true;
+        }
+        else
+            newStr->value += unicode::toLowercase(ch);
+    }
+
+    return newStr;
+}
+
+METHOD_TEMPLATE(strCapitalize, StringObject)
+{
+    if (o->value.size() == 0)
+    {
+        return &P_emptyStr;
+    }
+
+    auto newStr = StringObject::create(U"");
+    newStr->value.reserve(o->value.size());
+    for (char32_t ch : o->value)
+    {
+        newStr->value += unicode::toLowercase(ch);
+    }
+
+    if (char32_t titleCh; (titleCh = unicode::toTitlecase(o->value[0])) != o->value[0])
+        newStr->value[0] = titleCh;
+    else
+        newStr->value[0] = unicode::toUppercase(o->value[0]);
+
+    return newStr;
+}
+
 METHOD_TEMPLATE(strIterNext, StringIterObject)
 {
     if (o->position < o->length)
@@ -602,6 +692,10 @@ namespace vm
             OBJECT_METHOD("цеЦифрову",          0, false, strIsDigit,    stringObjectType, nullptr),
             OBJECT_METHOD("цеЧислове",          0, false, strIsNumeric,  stringObjectType, nullptr),
             OBJECT_METHOD("цеПробіл",           0, false, strIsSpace,    stringObjectType, nullptr),
+            OBJECT_METHOD("доНижнього",         0, false, strToLowercase,stringObjectType, nullptr),
+            OBJECT_METHOD("доВерхнього",        0, false, strToUppercase,stringObjectType, nullptr),
+            OBJECT_METHOD("доЗаголовку",        0, false, strTitle,      stringObjectType, nullptr),
+            OBJECT_METHOD("буквиця",            0, false, strCapitalize, stringObjectType, nullptr),
             OBJECT_STATIC_METHOD("зліпити",     2, false, strJoin, nullptr),
         },
     };

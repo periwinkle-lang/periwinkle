@@ -16,6 +16,7 @@ namespace unicode
     bool isLowercase(char32_t ch);
     bool isUppercase(char32_t ch);
     bool isTitlecase(char32_t ch);
+    bool hasCase(char32_t ch);
 
     /* Поветрає істину, ящко символ має категорію Zs */
     bool isSpace(char32_t ch);

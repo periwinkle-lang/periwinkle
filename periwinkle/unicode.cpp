@@ -5,7 +5,7 @@
 
 using namespace unicode;
 
-inline unsigned char get_value_at_index(unsigned int index)
+static inline unsigned char get_value_at_index(unsigned int index)
 {
     auto it = std::lower_bound(indexes.cbegin(), indexes.cend(), index);
 
@@ -36,6 +36,11 @@ bool unicode::isUppercase(char32_t ch)
 bool unicode::isTitlecase(char32_t ch)
 {
     return getUnicodeRecord(ch)->flags & TITLECASE;
+}
+
+bool unicode::hasCase(char32_t ch)
+{
+    return getUnicodeRecord(ch)->flags & HAS_CASE;
 }
 
 bool unicode::isSpace(char32_t ch)
