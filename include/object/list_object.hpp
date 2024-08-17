@@ -18,7 +18,7 @@ namespace vm
 
     struct ListIterObject : Object
     {
-        size_t position;
+        size_t position = 0;
         size_t length;
         std::vector<Object*> iterable;
 

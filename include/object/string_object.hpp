@@ -23,7 +23,7 @@ namespace vm
 
     struct StringIterObject : Object
     {
-        size_t position;
+        size_t position = 0;
         size_t length;
         std::u32string iterable;
 
