@@ -683,7 +683,7 @@ namespace vm
             OBJECT_METHOD("цеБуквенне",         0, false, strIsAlpha,    stringObjectType, nullptr),
             OBJECT_METHOD("цеБуквенноЦифрове",  0, false, strIsAlnum,    stringObjectType, nullptr),
             OBJECT_METHOD("цеДесятковоЦифрове", 0, false, strIsDecimal,  stringObjectType, nullptr),
-            OBJECT_METHOD("цеЦифрову",          0, false, strIsDigit,    stringObjectType, nullptr),
+            OBJECT_METHOD("цеЦифрове",          0, false, strIsDigit,    stringObjectType, nullptr),
             OBJECT_METHOD("цеЧислове",          0, false, strIsNumeric,  stringObjectType, nullptr),
             OBJECT_METHOD("цеПробіл",           0, false, strIsSpace,    stringObjectType, nullptr),
             OBJECT_METHOD("доНижнього",         0, false, strToLowercase,stringObjectType, nullptr),
