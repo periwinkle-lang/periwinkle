@@ -12,6 +12,7 @@
 #include "real_object.hpp"
 #include "end_iteration_object.hpp"
 #include "argument_parser.hpp"
+#include "unicode.hpp"
 
 #define BUILTIN_FUNCTION(name, arity, isVariadic, func, defaults) \
     {name, NativeFunctionObject::create(arity, isVariadic, name, func, defaults)}
@@ -55,7 +56,7 @@ static Object* printNative(std::span<Object*> args, ListObject* va, NamedArgs* n
     };
     if (!argParser.parse(args, &printDefaults, na)) return nullptr;
     auto str = joinObjectString(separator->value, va->items);
-    std::cout << utils::utf32to8(str) << std::flush;
+    std::cout << unicode::utf32to8(str) << std::flush;
     return &P_null;
 }
 
@@ -67,7 +68,7 @@ static Object* printLnNative(std::span<Object*> args, ListObject* va, NamedArgs*
     };
     if (!argParser.parse(args, &printDefaults, na)) return nullptr;
     auto str = joinObjectString(separator->value, va->items);
-    std::cout << utils::utf32to8(str) << std::endl;
+    std::cout << unicode::utf32to8(str) << std::endl;
     return &P_null;
 }
 

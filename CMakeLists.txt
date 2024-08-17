@@ -56,7 +56,9 @@ add_library(periwinkle SHARED
     "periwinkle/object/string_vector_object.cpp" "include/object/string_vector_object.hpp"
     "periwinkle/object/validate_args.cpp" "include/object/validate_args.hpp"
     "periwinkle/program_source.cpp" "include/program_source.hpp"
-    "periwinkle/vm/gc.cpp" "include/vm/gc.hpp")
+    "periwinkle/vm/gc.cpp" "include/vm/gc.hpp"
+    "periwinkle/unicode.cpp" "include/unicode.hpp" "unicode_database.hpp"
+)
 target_include_directories(periwinkle PUBLIC
     "include"
     "include/compiler"
@@ -89,6 +91,16 @@ add_custom_command(
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/thirdparty/pparser.py ${CMAKE_SOURCE_DIR}/барвінок.граматика
     DEPENDS ${CMAKE_SOURCE_DIR}/барвінок.граматика
     COMMENT "Генерація парсера..."
+)
+
+
+# Генерація бази даних юнікоду
+add_custom_command(
+    OUTPUT "unicode_database.hpp"
+    PRE_BUILD
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/unicode/generate.py
+    DEPENDS ${CMAKE_SOURCE_DIR}/tools/unicode/generate.py
+    COMMENT "Генерація бази даних юнікоду..."
 )
 
 

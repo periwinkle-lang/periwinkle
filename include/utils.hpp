@@ -21,15 +21,6 @@ namespace utils
     size_t positionInLineFromPosition(std::string_view str, size_t position);
     void replaceTabToSpace(std::string& str);
 
-    // Повертає кількість символів в utf8 стрічці
-    size_t utf8Size(const std::string& str);
-
-    // Повертає utf8 символ по індексу
-    std::string utf8At(const std::string& str, size_t index);
-
-    std::u32string utf8to32(const std::string& s);
-    std::string utf32to8(const std::u32string& s);
-
     // Відступ на задану ширину, заповнює відступ пробілами.
     // Наприклад:
     //     std::cout << "id =" << indent(10) << "10";
