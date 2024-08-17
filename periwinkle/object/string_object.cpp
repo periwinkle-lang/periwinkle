@@ -340,12 +340,12 @@ METHOD_TEMPLATE(strTrim, StringObject)
     auto start = o->value.begin();
     auto end = o->value.end();
 
-    while (start != end && *start >= 0 && *start <= 255 && std::isspace(*start))
+    while (start != end && unicode::isSpace(*start))
     {
         start++;
     }
 
-    while (end != start && *start >= 0 && *start <= 255 && std::isspace(*(end - 1)))
+    while (end != start && unicode::isSpace(*(end - 1)))
     {
         end--;
     }
@@ -358,7 +358,7 @@ METHOD_TEMPLATE(strLeftTrim, StringObject)
     auto start = o->value.begin();
     auto end = o->value.end();
 
-    while (start != end && *start >= 0 && *start <= 255 && std::isspace(*start))
+    while (start != end && unicode::isSpace(*start))
     {
         start++;
     }
@@ -371,7 +371,7 @@ METHOD_TEMPLATE(strRightTrim, StringObject)
     auto start = o->value.begin();
     auto end = o->value.end();
 
-    while (end != start && *start >= 0 && *start <= 255 && std::isspace(*(end - 1)))
+    while (end != start && unicode::isSpace(*(end - 1)))
     {
         end--;
     }
