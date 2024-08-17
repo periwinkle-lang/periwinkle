@@ -203,7 +203,7 @@ std::string utils::readline()
         }
     }
 
-    // Видалення символів переносу рядка з кінця стрічки
+    // Видалення символів переносу рядка з кінця рядка
     line.erase(line.find_last_not_of(L"\r\n") + 1);
 
     return utils::convertWideToUtf8(line);

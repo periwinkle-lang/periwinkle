@@ -17,7 +17,7 @@ namespace utils
     std::string getLineFromString(std::string_view str, int line);
     size_t linenoFromPosition(std::string_view str, size_t position);
 
-    // Визначає позицію в стрічці із загальної позиції символа в стрічці
+    // Визначає позицію в рядку із загальної позиції символа в рядку
     size_t positionInLineFromPosition(std::string_view str, size_t position);
     void replaceTabToSpace(std::string& str);
 

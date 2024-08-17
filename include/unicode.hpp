@@ -42,7 +42,7 @@ namespace unicode
     повертає його без змін. */
     char32_t toTitlecase(char32_t ch);
 
-    // Повертає кількість символів в utf8 стрічці
+    // Повертає кількість символів в utf8 рядку
     size_t utf8Size(const std::string& str);
 
     // Повертає utf8 символ по індексу

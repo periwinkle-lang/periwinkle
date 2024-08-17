@@ -73,8 +73,8 @@ namespace compiler
         vm::WORD localIdx(const std::string& name); // Повертає індекс з CodeObject->locals
         vm::WORD nameIdx(const std::string& name); // Повертає індекс з CodeObject->names
         void throwCompileError(std::string message, ast::Token token);
-        // Встановлює номер стрічки в коді, який зараз компілюється.
-        // !!!Викликати перед компіляцією стрічки!!!
+        // Встановлює номер рядка в коді, який зараз компілюється.
+        // !!!Викликати перед компіляцією рядка!!!
         inline void setLineno(ast::Token token);
         inline vm::WORD emitOpCode(vm::OpCode op);
         inline vm::WORD emitOperand(vm::WORD operand);

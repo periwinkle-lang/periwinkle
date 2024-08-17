@@ -9,7 +9,7 @@ namespace vm
 {
     extern TypeObject stringVectorObjectType;
 
-    // Допоміжний об'єкт для передачі через стек списку зі стрічками
+    // Допоміжний об'єкт для передачі через стек списку з рядками
     struct StringVectorObject : Object
     {
         std::vector<std::string> value;

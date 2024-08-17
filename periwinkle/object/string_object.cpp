@@ -49,7 +49,7 @@ static bool tryConvertToString(Object* o, std::u32string& str)
         || index < 0)                                                  \
     {                                                                  \
         getCurrentState()->setException(                               \
-            &IndexErrorObjectType, "Індекс виходить за межі стрічки"); \
+            &IndexErrorObjectType, "Індекс виходить за межі рядка"); \
         return nullptr;                                                \
     }
 
@@ -104,7 +104,7 @@ static Object* strToReal(StringObject* o)
     {
         getCurrentState()->setException(
             &ValueErrorObjectType, std::format(
-                "Неможливо перетворити стрічку \"{}\" в дійсне число",
+                "Неможливо перетворити рядок \"{}\" в дійсне число",
                 utils::escapeString(o->asUtf8())));
         return nullptr;
     }
@@ -650,7 +650,7 @@ namespace vm
     TypeObject stringObjectType =
     {
         .base = &objectObjectType,
-        .name = "Стрічка",
+        .name = "Рядок",
         .size = sizeof(StringObject),
         .alloc = DEFAULT_ALLOC(StringObject),
         .dealloc = DEFAULT_DEALLOC(StringObject),
@@ -683,7 +683,7 @@ namespace vm
             OBJECT_METHOD("причепурити",        0, false, strTrim,       stringObjectType, nullptr),
             OBJECT_METHOD("причепуритиЗліва",   0, false, strLeftTrim,   stringObjectType, nullptr),
             OBJECT_METHOD("причепуритиСправа",  0, false, strRightTrim,  stringObjectType, nullptr),
-            OBJECT_METHOD("підстрічка",         2, false, strSubstr,     stringObjectType, nullptr),
+            OBJECT_METHOD("підрядок",           2, false, strSubstr,     stringObjectType, nullptr),
             OBJECT_METHOD("розділити",          1, false, strSplit,      stringObjectType, nullptr),
             OBJECT_METHOD("доЧисла",            0, false, toIntMethod,   stringObjectType, &toIntDefaults),
             OBJECT_METHOD("цеБуквенне",         0, false, strIsAlpha,    stringObjectType, nullptr),
@@ -703,7 +703,7 @@ namespace vm
     TypeObject stringIterObjectType =
     {
         .base = &objectObjectType,
-        .name = "ІтераторСтрічки",
+        .name = "ІтераторРядка",
         .size = sizeof(StringIterObject),
         .alloc = DEFAULT_ALLOC(StringIterObject),
         .attributes =
@@ -725,7 +725,7 @@ namespace vm
         {
             getCurrentState()->setException(
                 &ValueErrorObjectType, std::format(
-                    "Неможливо перетворити стрічку \"{}\" в число",
+                    "Неможливо перетворити рядок \"{}\" в число",
                     utils::escapeString(str->asUtf8())));
             return std::nullopt;
         }
