@@ -368,7 +368,7 @@ namespace vm
             OBJECT_METHOD("видалитиВсі",1, false, listRemoveAll, listObjectType, nullptr),
             OBJECT_METHOD("вставити",   2, false, listInsert,    listObjectType, nullptr),
             OBJECT_METHOD("встановити", 2, false, listSetItem,   listObjectType, nullptr),
-            OBJECT_METHOD("довжина",    0, false, listSize,      listObjectType, nullptr),
+            OBJECT_METHOD("розмір",     0, false, listSize,      listObjectType, nullptr),
             OBJECT_METHOD("додати",     1, false, listPush,      listObjectType, nullptr),
             OBJECT_METHOD("замінити",   2, false, listReplace,   listObjectType, nullptr),
             OBJECT_METHOD("знайти",     1, false, listFindItem,  listObjectType, nullptr),

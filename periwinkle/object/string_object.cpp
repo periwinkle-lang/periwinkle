@@ -666,7 +666,7 @@ namespace vm
             OBJECT_METHOD("видалитиПрефікс",    1, false, removePrefix,  stringObjectType, nullptr),
             OBJECT_METHOD("вставити",           2, false, strInsert,     stringObjectType, nullptr),
             OBJECT_METHOD("встановити",         2, false, strSet,        stringObjectType, nullptr),
-            OBJECT_METHOD("довжина",            0, false, strSize,       stringObjectType, nullptr),
+            OBJECT_METHOD("розмір",             0, false, strSize,       stringObjectType, nullptr),
             OBJECT_METHOD("закінчуєтьсяНа",     1, false, strEndsWith,   stringObjectType, nullptr),
             OBJECT_METHOD("замінити",           2, false, strReplace,    stringObjectType, nullptr),
             OBJECT_METHOD("знайти",             1, false, strFind,       stringObjectType, nullptr),
