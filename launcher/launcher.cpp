@@ -1,31 +1,24 @@
 #include <iostream>
-#include <fstream>
 #include <sstream>
-#include <vector>
-#ifdef IS_WINDOWS
-    #include<windows.h>
-#endif
 
+#include "launcher.hpp"
 #include "periwinkle.hpp"
 #include "utils.hpp"
 
-using std::string;
-using std::vector;
-
-string usage(string programName)
+static std::string usage(std::string_view programName)
 {
     std::stringstream ss;
-    ss << "Барвінок " << periwinkle::Periwinkle::getVersionAsString() << std::endl;
-    ss << "Використання: " << programName << " [опції] <файл>" << std::endl;
-    ss << "Опції:" << std::endl;
-    ss << "\t" << "-д, --допомога     Виводить це повідомлення." << std::endl;
+    ss << "Барвінок " << periwinkle::Periwinkle::getVersionAsString() << "\n";
+    ss << "Використання: " << programName << " [опції] <файл>\n";
+    ss << "Опції:\n";
+    ss << "\t" << "-д, --допомога     Виводить це повідомлення.\n";
 #ifdef DEV_TOOLS
-    ss << "\t" << "-а, --асемблер     Виводить згенерований код для віртуальної машини. Не запускає програму." << std::endl;
+    ss << "\t" << "-а, --асемблер     Виводить згенерований код для віртуальної машини. Не запускає програму.\n";
 #endif
     return ss.str();
 }
 
-bool cmdOptionExists(vector<string> tokens, string option, string fullOption = "")
+static bool cmdOptionExists(std::span<const std::string_view> tokens, std::string_view option, std::string_view fullOption = "")
 {
     bool optionExists = std::find(tokens.begin(), tokens.end(), option) != tokens.end();
     bool fullOptionExists = false;
@@ -39,35 +32,21 @@ bool cmdOptionExists(vector<string> tokens, string option, string fullOption = "
 #define COMPARE_OPTION(token, option, fullOption) \
     (token == option || token == fullOption)
 
-#ifdef IS_WINDOWS
-int wmain(int argc, wchar_t* w_argv[])
+int launcher(std::span<const std::string_view> args) noexcept
 {
-	char** argv = new char* [argc];
-	for (int i = 0; i < argc; ++i)
-	{
-		auto utf8String = utils::convertWideToUtf8(w_argv[i]);
-		argv[i] = new char[utf8String.size()];
-		strcpy(argv[i], utf8String.c_str());
-	}
-	SetConsoleOutputCP(CP_UTF8);
-#else
-int main(int argc, char* argv[])
-{
-#endif
-    auto programName = string(argv[0]);
-    programName = programName.substr(programName.find_last_of("/\\") + 1);
-    if (argc == 1)
+    const std::string_view programName = args[0].substr(args[0].find_last_of("/\\") + 1);
+    if (args.size() == 1)
     {
         std::cout << usage(programName);
         return 0;
     }
 
-    vector<string> tokens(argv + 1, argv + argc);
-    vector<string> argsForInterpreter; // Аргументи для інтерпретатора
-    vector<string> argsForProgram; // Аргументи для програми запущеної інтерпретатором
-    for (int i = 0; i < (int)tokens.size(); ++i)
+    std::span<const std::string_view> tokens(args.begin() + 1, args.end());
+    std::span<const std::string_view> argsForInterpreter; // Аргументи для інтерпретатора
+    std::span<const std::string_view> argsForProgram; // Аргументи для програми запущеної інтерпретатором
+    for (size_t i = 0; i < tokens.size(); ++i)
     {
-        auto token = tokens[i];
+        std::string_view token = tokens[i];
         if (COMPARE_OPTION(token, "-д", "--допомога"))
         {
             std::cout << usage(programName);
@@ -81,11 +60,8 @@ int main(int argc, char* argv[])
 #endif
         else if (!token.starts_with("-"))
         {
-            for (int j = 0; j < (int)tokens.size(); ++j)
-            {
-                if (j <= i) argsForInterpreter.push_back(tokens[j]);
-                else argsForProgram.push_back(tokens[j]);
-            }
+            argsForInterpreter = { tokens.begin(), tokens.begin() + i + 1 };
+            argsForProgram = { tokens.begin() + i + 1, tokens.end() };
             break;
         }
         else
@@ -106,9 +82,5 @@ int main(int argc, char* argv[])
 #endif
     auto result = interpreter.execute();
     if (result == nullptr) { interpreter.printException(); };
-
-#ifdef IS_WINDOWS
-    delete[] argv;
-#endif
 	return 0;
 }

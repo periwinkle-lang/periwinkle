@@ -106,7 +106,7 @@ add_custom_command(
 
 
 # Виконуваний файл
-add_executable(launcher "launcher/launcher.cpp")
+add_executable(launcher "launcher/launcher.cpp" "launcher/launcher.hpp")
 target_include_directories(launcher PUBLIC "include/")
 target_compile_features(launcher PUBLIC cxx_std_20)
 set_target_properties(launcher PROPERTIES OUTPUT_NAME барвінок)
@@ -120,7 +120,9 @@ target_link_libraries(launcher periwinkle)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   target_compile_definitions(periwinkle PRIVATE "IS_LINUX")
   target_compile_definitions(launcher PRIVATE "IS_LINUX")
+
   target_sources(periwinkle PRIVATE "periwinkle/platform_linux.cpp")
+  target_sources(launcher PRIVATE "launcher/main.cpp")
 endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   target_compile_definitions(periwinkle PRIVATE "IS_MACOS")
@@ -129,7 +131,9 @@ endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   target_compile_definitions(periwinkle PRIVATE "IS_WINDOWS")
   target_compile_definitions(launcher PRIVATE "IS_WINDOWS")
+
   target_sources(periwinkle PRIVATE "periwinkle/platform_win.cpp")
+  target_sources(launcher PRIVATE "launcher/wmain.cpp")
 endif()
 
 
