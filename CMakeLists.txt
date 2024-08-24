@@ -58,6 +58,7 @@ add_library(periwinkle SHARED
     "periwinkle/program_source.cpp" "include/program_source.hpp"
     "periwinkle/vm/gc.cpp" "include/vm/gc.hpp"
     "periwinkle/unicode.cpp" "include/unicode.hpp" "unicode_database.hpp"
+    "include/platform.hpp"
 )
 target_include_directories(periwinkle PUBLIC
     "include"
@@ -116,17 +117,30 @@ target_link_libraries(periwinkle parser)
 target_link_libraries(launcher periwinkle)
 
 
-# Додаткові параметри компілятора
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  target_compile_definitions(periwinkle PRIVATE "IS_LINUX")
+  target_compile_definitions(launcher PRIVATE "IS_LINUX")
+  target_sources(periwinkle PRIVATE "periwinkle/platform_linux.cpp")
+endif()
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  target_compile_definitions(periwinkle PRIVATE "IS_MACOS")
+  target_compile_definitions(launcher PRIVATE "IS_MACOS")
+endif()
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  target_compile_definitions(periwinkle PRIVATE "IS_WINDOWS")
+  target_compile_definitions(launcher PRIVATE "IS_WINDOWS")
+  target_sources(periwinkle PRIVATE "periwinkle/platform_win.cpp")
+endif()
+
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # Додаткові параметри компілятора
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(periwinkle PUBLIC -Wall -Wpedantic)
         target_compile_options(launcher PUBLIC -Wall -Wpedantic)
     endif()
-endif()
 
-
-# Визначення DEV_TOOLS макроса
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # Визначення DEV_TOOLS макроса
     target_compile_definitions(periwinkle PRIVATE DEV_TOOLS)
     target_compile_definitions(launcher PRIVATE DEV_TOOLS)
 endif()

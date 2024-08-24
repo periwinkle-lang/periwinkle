@@ -2,7 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
-#ifdef _WIN32
+#ifdef IS_WINDOWS
     #include<windows.h>
 #endif
 
@@ -39,7 +39,7 @@ bool cmdOptionExists(vector<string> tokens, string option, string fullOption = "
 #define COMPARE_OPTION(token, option, fullOption) \
     (token == option || token == fullOption)
 
-#ifdef _WIN32
+#ifdef IS_WINDOWS
 int wmain(int argc, wchar_t* w_argv[])
 {
 	char** argv = new char* [argc];
@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
     auto result = interpreter.execute();
     if (result == nullptr) { interpreter.printException(); };
 
-#ifdef _WIN32
+#ifdef IS_WINDOWS
     delete[] argv;
 #endif
 	return 0;

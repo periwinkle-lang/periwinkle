@@ -42,8 +42,6 @@ namespace utils
     API std::wstring convertUtf8ToWide(std::string_view str);
     API std::string convertWideToUtf8(std::wstring_view wstr);
 #endif
-
-    std::string readline();
 }
 
 #endif

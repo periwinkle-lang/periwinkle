@@ -13,6 +13,7 @@
 #include "end_iteration_object.hpp"
 #include "argument_parser.hpp"
 #include "unicode.hpp"
+#include "platform.hpp"
 
 #define BUILTIN_FUNCTION(name, arity, isVariadic, func, defaults) \
     {name, NativeFunctionObject::create(arity, isVariadic, name, func, defaults)}
@@ -80,7 +81,7 @@ static Object* readLineNative(std::span<Object*> args, ListObject* va, NamedArgs
     };
     if (!argParser.parse(args, &readLineDefaults, na)) return nullptr;
     std::cout << prompt->asUtf8();
-    std::string line = utils::readline();
+    std::string line = platform::readline();
     return StringObject::create(line);
 }
 
