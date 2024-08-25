@@ -229,11 +229,14 @@ named_argument<ast::CallExpression::namedArgument_t> = id:identifier _? "=" _? v
 assignment_expression<ast::AssignmentExpression*> = l:lhs _? op:([-+*\\/%]? "=") _? r:rhs
     { $$ = new AssignmentExpression(newToken(l, $1), newToken(op, $2), r); }
 
-identifier<std::string> = !keywords id:([а-щА-ЩьюяїієґЬЮЯЇІЄҐ_][а-щА-ЩьюяїієґЬЮЯЇІЄҐ0-9_]*) { $$ = id; }
+identifier<std::string> =
+    / !keywords id:([а-щА-ЩьюяїієґЬЮЯЇІЄҐ_][а-щА-ЩьюяїієґЬЮЯЇІЄҐ0-9_']*) { $$ = id; }
+    / &"'" { $$; parseError("Ім'я не може починатись апострофом"); }
+
 keywords =
     ("якщо" / "або" / "інакше" / "кінець" / "поки" / "пропустити" / "завершити" / "менше" / "більше"
      / "є" / "не" / "та" / "функція" / "повернути" / "обійти" / "спробувати" / "обробити"
-     / "як" / "наприкінці" / "жбурнути") ![а-щА-ЩьюяїієґЬЮЯЇІЄҐ0-9_]
+     / "як" / "наприкінці" / "жбурнути") ![а-щА-ЩьюяїієґЬЮЯЇІЄҐ0-9_']
 
 comments = (_? one_line_comment / _? multiline_comment)+
 one_line_comment = "//" (!(EOL / EOF) .)* (EOL / EOF)

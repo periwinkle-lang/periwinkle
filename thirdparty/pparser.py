@@ -323,6 +323,7 @@ def escape_string(string: str) -> str:
         "\t": "t",
         "\v": "v",
         "\\": "\\",
+        "'": "\'",
     }
     new_string = ""
     for ch in string:
