@@ -84,12 +84,17 @@ target_compile_features(parser PUBLIC cxx_std_17)
 set_property(TARGET parser PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 
+file(DOWNLOAD
+    https://github.com/romanfedyniak/pparser/releases/download/0.1.3/pparser.py
+    ${CMAKE_BINARY_DIR}/pparser.py
+)
+
 # Генерація парсера
 add_custom_command(
     OUTPUT "parser.hpp" "parser.cpp"
     PRE_BUILD
-    COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/thirdparty/pparser.py ${CMAKE_SOURCE_DIR}/барвінок.граматика
-    DEPENDS ${CMAKE_SOURCE_DIR}/барвінок.граматика
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_BINARY_DIR}/pparser.py ${CMAKE_SOURCE_DIR}/барвінок.граматика
+    DEPENDS ${CMAKE_SOURCE_DIR}/барвінок.граматика ${CMAKE_BINARY_DIR}/pparser.py
     COMMENT "Генерація парсера..."
 )
 
