@@ -2,12 +2,7 @@
 #define UTILS_H
 
 #include <string>
-#include <map>
-#include <sstream>
-#include <algorithm>
-#include <memory>
 
-#include "exports.hpp"
 #include "program_source.hpp"
 #include "types.hpp"
 
@@ -37,11 +32,6 @@ namespace utils
     std::string trim(std::string_view str);
     std::string ltrim(std::string_view str);
     std::string rtrim(std::string_view str);
-
-#ifdef _WIN32
-    API std::wstring convertUtf8ToWide(std::string_view str);
-    API std::string convertWideToUtf8(std::wstring_view wstr);
-#endif
 }
 
 #endif

@@ -4,6 +4,7 @@
 #include "launcher.hpp"
 #include "periwinkle.hpp"
 #include "utils.hpp"
+#include "unicode.hpp"
 
 static std::string usage(std::string_view programName)
 {
@@ -31,6 +32,18 @@ static bool cmdOptionExists(std::span<const std::string_view> tokens, std::strin
 
 #define COMPARE_OPTION(token, option, fullOption) \
     (token == option || token == fullOption)
+
+int launcher(std::span<const std::wstring_view> wargs) noexcept
+{
+    std::vector<std::string> args(wargs.size());
+    std::vector<std::string_view> argsView(wargs.size());
+    for (size_t i = 0; i < wargs.size(); ++i)
+    {
+        args[i] = unicode::toUtf8(wargs[i]);
+        argsView[i] = args[i];
+    }
+    return launcher(argsView);
+}
 
 int launcher(std::span<const std::string_view> args) noexcept
 {

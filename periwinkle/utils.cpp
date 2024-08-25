@@ -1,9 +1,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <cassert>
-#ifdef _WIN32
-    #include <windows.h>
-#endif
+#include <algorithm>
 
 #include "utils.hpp"
 #include "unicode.hpp"
@@ -12,7 +10,7 @@ using namespace utils;
 
 std::string utils::escapeString(const std::string& str)
 {
-    static std::map<char, std::string> charToEscapeChar =
+    static std::unordered_map<char, std::string> charToEscapeChar =
     {
         {'\a', "\\а"}, {'\b', "\\б"}, {'\t', "\\т"}, {'\n', "\\н"}, {'\v', "\\в"}, {'\f', "\\ф"},
         {'\r', "\\р"}, {'\"', "\\\""}, {'\\', "\\\\"},
@@ -164,21 +162,3 @@ std::string utils::rtrim(std::string_view str)
 
     return std::string{ start, end };
 }
-
-#ifdef _WIN32
-std::wstring utils::convertUtf8ToWide(std::string_view str)
-{
-    int count = MultiByteToWideChar(CP_UTF8, 0, data(str), (int)str.length(), NULL, 0);
-    std::wstring wstr(count, 0);
-    MultiByteToWideChar(CP_UTF8, 0, data(str), (int)str.length(), data(wstr), count);
-    return wstr;
-}
-
-std::string utils::convertWideToUtf8(std::wstring_view wstr)
-{
-    int count = WideCharToMultiByte(CP_UTF8, 0, data(wstr), (int)wstr.length(), NULL, 0, NULL, NULL);
-    std::string str(count, 0);
-    WideCharToMultiByte(CP_UTF8, 0, data(wstr), -1, data(str), count, NULL, NULL);
-    return str;
-}
-#endif

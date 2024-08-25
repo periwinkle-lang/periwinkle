@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include "exports.hpp"
+
 namespace unicode
 {
     struct UnicodeRecord
@@ -43,13 +45,28 @@ namespace unicode
     char32_t toTitlecase(char32_t ch);
 
     // Повертає кількість символів в utf8 рядку
-    size_t utf8Size(const std::string& str);
+    size_t utf8Size(std::string_view str);
+    // Повертає кількість символів в utf16 рядку
+    size_t utf16Size(std::u16string_view str);
 
     // Повертає utf8 символ по індексу
-    std::string utf8At(const std::string& str, size_t index);
+    std::string utf8At(std::string_view str, size_t index);
+    // Повертає utf16 символ по індексу
+    std::u16string utf16At(std::u16string_view str, size_t index);
 
-    std::u32string utf8to32(const std::string& s);
-    std::string utf32to8(const std::u32string& s);
+    std::string toUtf8(std::u16string_view s);
+    std::string toUtf8(std::u32string_view s);
+    API std::string toUtf8(std::wstring_view s);
+    std::u16string toUtf16(std::string_view s);
+    std::u16string toUtf16(std::u32string_view s);
+    std::u16string toUtf16(std::wstring_view s);
+    std::u32string toUtf32(std::string_view s);
+    std::u32string toUtf32(std::u16string_view s);
+    std::u32string toUtf32(std::wstring_view s);
+
+    std::wstring toWstring(std::string_view s);
+    std::wstring toWstring(std::u16string_view s);
+    std::wstring toWstring(std::u32string_view s);
 }
 
 #endif

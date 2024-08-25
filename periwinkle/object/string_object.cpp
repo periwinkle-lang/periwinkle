@@ -737,13 +737,13 @@ namespace vm
 
 std::string vm::StringObject::asUtf8() const
 {
-    return unicode::utf32to8(value);
+    return unicode::toUtf8(value);
 }
 
-StringObject* vm::StringObject::create(const std::string& value)
+StringObject* vm::StringObject::create(std::string_view value)
 {
     auto stringObject = (StringObject*)allocObject(&stringObjectType);
-    stringObject->value = unicode::utf8to32(value);
+    stringObject->value = unicode::toUtf32(value);
     return stringObject;
 }
 

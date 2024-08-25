@@ -14,7 +14,7 @@ namespace vm
         std::u32string value;
 
         std::string asUtf8() const;
-        static StringObject* create(const std::string& value);
+        static StringObject* create(std::string_view value);
         static StringObject* create(const std::u32string& value);
     };
 

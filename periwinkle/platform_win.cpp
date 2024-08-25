@@ -1,7 +1,7 @@
 #include <Windows.h>
 
 #include "platform.hpp"
-#include "utils.hpp"
+#include "unicode.hpp"
 
 using namespace platform;
 
@@ -27,5 +27,5 @@ std::string platform::readline()
     // Видалення символів переносу рядка з кінця рядка
     line.erase(line.find_last_not_of(L"\r\n") + 1);
 
-    return utils::convertWideToUtf8(line);
+    return unicode::toUtf8(line);
 }

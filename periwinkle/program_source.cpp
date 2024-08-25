@@ -3,7 +3,7 @@
 #include <sstream>
 
 #include "program_source.hpp"
-#include "utils.hpp"
+#include "unicode.hpp"
 
 using namespace periwinkle;
 
@@ -31,8 +31,8 @@ bool ProgramSource::hasFile() const
 ProgramSource::ProgramSource(const std::filesystem::path& path)
     : path(path), name(path.string())
 {
-#ifdef _WIN32
-    std::ifstream filestream(utils::convertUtf8ToWide(path.string()));
+#ifdef IS_WINDOWS
+    std::ifstream filestream(unicode::toWstring(path.string()));
 #else
     std::ifstream filestream(path);
 #endif

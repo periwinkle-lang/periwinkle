@@ -74,7 +74,6 @@ generate_export_header(periwinkle
     EXPORT_FILE_NAME exports.hpp
 )
 
-
 # Парсер
 add_library(parser STATIC
     "parser.hpp"
