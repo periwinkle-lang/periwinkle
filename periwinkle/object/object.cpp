@@ -12,6 +12,7 @@
 #include "int_object.hpp"
 #include "real_object.hpp"
 #include "periwinkle.hpp"
+#include "keyword.hpp"
 
 using namespace vm;
 
@@ -217,7 +218,7 @@ static Object* callCompareOperator(Object* o1, Object* o2, ObjectCompOperator op
             getCurrentState()->setException(&TypeErrorObjectType,                  \
                 std::format(                                                       \
                 "Непідтримувані типи операндів \"{}\" та \"{}\" для оператора {}", \
-                objectType->name, o->objectType->name, #op));                      \
+                objectType->name, o->objectType->name, op));                       \
             return nullptr;                                                        \
         }                                                                          \
         return result;                                                             \
@@ -287,14 +288,14 @@ Object* vm::Object::toBool()
 
 UNARY_OPERATOR_WITH_MESSAGE(toInteger, "Неможливо конвертувати об'єкт типу \"{}\" в число")
 UNARY_OPERATOR_WITH_MESSAGE(toReal, "Неможливо конвертувати об'єкт типу \"{}\" в дійсне число")
-BINARY_OPERATOR(add, +)
-BINARY_OPERATOR(sub, -)
-BINARY_OPERATOR(mul, *)
-BINARY_OPERATOR(div, /)
-BINARY_OPERATOR(floorDiv, \\)
-BINARY_OPERATOR(mod, %)
-UNARY_OPERATOR(pos, +)
-UNARY_OPERATOR(neg, -)
+BINARY_OPERATOR(add, Keyword::ADD)
+BINARY_OPERATOR(sub, Keyword::SUB)
+BINARY_OPERATOR(mul, Keyword::MUL)
+BINARY_OPERATOR(div, Keyword::DIV)
+BINARY_OPERATOR(floorDiv, Keyword::FLOOR_DIV)
+BINARY_OPERATOR(mod, Keyword::MOD)
+UNARY_OPERATOR(pos, Keyword::ADD)
+UNARY_OPERATOR(neg, Keyword::NEG)
 UNARY_OPERATOR_WITH_MESSAGE(getIter, "Для об'єкта типу \"{}\" неможливо отримати ітератор")
 
 Object* vm::Object::getAttr(const std::string& name)

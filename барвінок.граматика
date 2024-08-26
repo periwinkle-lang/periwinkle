@@ -163,7 +163,7 @@ sum<ast::Expression*> =
     / e:term { $$ = e; }
 
 term<ast::Expression*> =
-    / l:term _? op:("*" / "/" / "%" / "\\") _? r:factor { $$ = new BinaryExpression(l, newToken(op, $3), r); }
+    / l:term _? op:("*" / "//" / "/" / "%") _? r:factor { $$ = new BinaryExpression(l, newToken(op, $3), r); }
     / e:factor { $$ = e; }
 
 factor<ast::Expression*> =
@@ -226,7 +226,7 @@ named_arguments<ast::CallExpression::namedArguments_t> =
 
 named_argument<ast::CallExpression::namedArgument_t> = id:identifier _? "=" _? v:rhs { $$ = {newToken(id, $1), v}; }
 
-assignment_expression<ast::AssignmentExpression*> = l:lhs _? op:([-+*\\/%]? "=") _? r:rhs
+assignment_expression<ast::AssignmentExpression*> = l:lhs _? op:(("//" / [-+*/%])? "=") _? r:rhs
     { $$ = new AssignmentExpression(newToken(l, $1), newToken(op, $2), r); }
 
 identifier<std::string> =

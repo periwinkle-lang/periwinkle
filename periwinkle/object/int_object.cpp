@@ -104,7 +104,13 @@ static Object* intFloorDiv(Object* o1, Object* o2)
 {
     i64 a, b;
     TO_INT(o1, a);
-    TO_INT(o1, b);
+    TO_INT(o2, b);
+    if (b == 0)
+    {
+        getCurrentState()->setException(
+            &DivisionByZeroErrorObjectType, "Ділення на нуль");
+        return nullptr;
+    }
     auto result = a / b;
     return IntObject::create(result);
 }

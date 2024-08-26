@@ -15,8 +15,8 @@ namespace Keyword
     KW MUL_EQUAL = "*=";
     KW DIV = "/";
     KW DIV_EQUAL = "/=";
-    KW FLOOR_DIV = "\\";
-    KW FLOOR_DIV_EQUAL = "\\=";
+    KW FLOOR_DIV = "//";
+    KW FLOOR_DIV_EQUAL = "//=";
     KW MOD = "%";
     KW MOD_EQUAL = "%=";
     KW EQUAL = "=";
