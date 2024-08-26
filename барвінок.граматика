@@ -238,11 +238,8 @@ keywords =
      / "є" / "не" / "та" / "функція" / "повернути" / "обійти" / "спробувати" / "обробити"
      / "як" / "наприкінці" / "жбурнути") ![а-щА-ЩьюяїієґЬЮЯЇІЄҐ0-9_']
 
-comments = (_? one_line_comment / _? multiline_comment)+
-one_line_comment = "//" (!(EOL / EOF) .)* (EOL / EOF)
-multiline_comment =
-    / "/*" (!"*/" .)* "*/"
-    / "/*" .* { parseError("Очікується */"); }
+comments = (_? comment)+
+comment = "!" (!(EOL / EOF) .)* (EOL / EOF)
 
 _ -nomemo = [ \t\r\n]+
 EOL -nomemo = "\n" / "\r" / "\r\n"
