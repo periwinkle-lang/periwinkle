@@ -29,8 +29,8 @@ static bool tryConvertToString(Object* o, std::u32string& str)
     return false;
 }
 
-#define CHECK_STRING(object)                  \
-    if (OBJECT_IS(object, &stringObjectType)) \
+#define CHECK_STRING(object)                           \
+    if (OBJECT_IS(object, &stringObjectType) == false) \
         return &P_NotImplemented;
 
 // Конвертує об'єкт до StringObject, окрім випадку, коли об'єкт типу "ніц"
@@ -70,10 +70,12 @@ static Object* strComparison(Object* o1, Object* o2, ObjectCompOperator op)
     using enum ObjectCompOperator;
     switch (op)
     {
-    case EQ: result = a.compare(b) == 0; break;
-    case NE: result = a.compare(b) != 0; break;
-    default:
-        return &P_NotImplemented;
+    case EQ: result = a == b; break;
+    case NE: result = a != b; break;
+    case GT: result = a > b; break;
+    case GE: result = a >= b; break;
+    case LT: result = a < b; break;
+    case LE: result = a <= b; break;
     }
 
     return P_BOOL(result);
