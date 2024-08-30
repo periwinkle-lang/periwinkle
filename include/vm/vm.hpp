@@ -22,8 +22,7 @@ namespace vm
         // Операції над об'єктами
         POS, NEG, GET_ITER, ADD, SUB, MUL, DIV, MOD, FLOOR_DIV,
 
-        // Бінарні операції
-        BIN_AND, BIN_OR, BIN_NOT, XOR, SHL, SHR, IS, COMPARE,
+        IS, COMPARE,
 
         // Логічні операції
         NOT,
