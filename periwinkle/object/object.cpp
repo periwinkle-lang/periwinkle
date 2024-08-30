@@ -237,10 +237,10 @@ Object* vm::Object::compare(Object* o, ObjectCompOperator op)
         case EQ: return P_BOOL(this == o); break;
         case NE: return P_BOOL(this != o); break;
 
-        case GT: opName = "більше"; break;
-        case GE: opName = "більше="; break;
-        case LT: opName = "менше"; break;
-        case LE: opName = "менше="; break;
+        case GT: opName = Keyword::GREATER; break;
+        case GE: opName = Keyword::GREATER_EQUAL; break;
+        case LT: opName = Keyword::LESS; break;
+        case LE: opName = Keyword::LESS_EQUAL; break;
         }
         getCurrentState()->setException(&TypeErrorObjectType, std::format(
             "Неможливо порівняти об'єкти типів \"{}\" та \"{}\" за допомогою оператора {}",

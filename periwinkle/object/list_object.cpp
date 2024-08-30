@@ -1,6 +1,7 @@
 #include <sstream>
 #include <algorithm>
 #include <utility>
+#include <stdexcept>
 
 #include "object.hpp"
 #include "list_object.hpp"
@@ -326,6 +327,27 @@ METHOD_TEMPLATE(listSublist, ListObject)
     return subList;
 }
 
+METHOD_TEMPLATE(listSort, ListObject)
+{
+    try
+    {
+        std::sort(o->items.begin(), o->items.end(),
+            [](Object* a, Object* b) {
+                Object* result = a->compare(b, ObjectCompOperator::LT);
+                // Якщо результат порівняння nullptr, значить стався виняток,
+                // і щоб перервати сортування, викидається C++ виняток, який одразу і обробляється
+                if (result == nullptr) throw std::runtime_error("Великоднє яйце");
+                return result == &P_true;
+            }
+        );
+    }
+    catch (const std::runtime_error& e)
+    {
+        return nullptr;
+    }
+    return &P_null;
+}
+
 static void listIterTraverse(ListIterObject* o)
 {
     for (auto o : o->iterable)
@@ -364,21 +386,22 @@ namespace vm
         .traverse = (traverseFunction)listTraverse,
         .attributes =
         {
-            OBJECT_METHOD("видалити",   1, false, listRemove,    listObjectType, nullptr),
-            OBJECT_METHOD("видалитиВсі",1, false, listRemoveAll, listObjectType, nullptr),
-            OBJECT_METHOD("вставити",   2, false, listInsert,    listObjectType, nullptr),
-            OBJECT_METHOD("встановити", 2, false, listSetItem,   listObjectType, nullptr),
-            OBJECT_METHOD("розмір",     0, false, listSize,      listObjectType, nullptr),
-            OBJECT_METHOD("додати",     1, false, listPush,      listObjectType, nullptr),
-            OBJECT_METHOD("замінити",   2, false, listReplace,   listObjectType, nullptr),
-            OBJECT_METHOD("знайти",     1, false, listFindItem,  listObjectType, nullptr),
-            OBJECT_METHOD("копія",      0, false, listCopy,      listObjectType, nullptr),
-            OBJECT_METHOD("кількість",  1, false, listCount,     listObjectType, nullptr),
-            OBJECT_METHOD("містить",    1, false, listContains,  listObjectType, nullptr),
-            OBJECT_METHOD("обернути",   0, false, listReverse,   listObjectType, nullptr),
-            OBJECT_METHOD("отримати",   1, false, listGetItem,   listObjectType, nullptr),
-            OBJECT_METHOD("очистити",   0, false, listClear,     listObjectType, nullptr),
-            OBJECT_METHOD("підсписок",  2, false, listSublist,   listObjectType, nullptr),
+            OBJECT_METHOD("видалити",     1, false, listRemove,    listObjectType, nullptr),
+            OBJECT_METHOD("видалитиВсі",  1, false, listRemoveAll, listObjectType, nullptr),
+            OBJECT_METHOD("вставити",     2, false, listInsert,    listObjectType, nullptr),
+            OBJECT_METHOD("встановити",   2, false, listSetItem,   listObjectType, nullptr),
+            OBJECT_METHOD("розмір",       0, false, listSize,      listObjectType, nullptr),
+            OBJECT_METHOD("додати",       1, false, listPush,      listObjectType, nullptr),
+            OBJECT_METHOD("замінити",     2, false, listReplace,   listObjectType, nullptr),
+            OBJECT_METHOD("знайти",       1, false, listFindItem,  listObjectType, nullptr),
+            OBJECT_METHOD("копія",        0, false, listCopy,      listObjectType, nullptr),
+            OBJECT_METHOD("кількість",    1, false, listCount,     listObjectType, nullptr),
+            OBJECT_METHOD("містить",      1, false, listContains,  listObjectType, nullptr),
+            OBJECT_METHOD("обернути",     0, false, listReverse,   listObjectType, nullptr),
+            OBJECT_METHOD("отримати",     1, false, listGetItem,   listObjectType, nullptr),
+            OBJECT_METHOD("очистити",     0, false, listClear,     listObjectType, nullptr),
+            OBJECT_METHOD("підсписок",    2, false, listSublist,   listObjectType, nullptr),
+            OBJECT_METHOD("відсортувати", 0, false, listSort,      listObjectType, nullptr),
         },
     };
 
