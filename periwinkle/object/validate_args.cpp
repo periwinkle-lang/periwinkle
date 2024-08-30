@@ -17,8 +17,15 @@ bool vm::validateCall(
     std::vector<size_t>* namedArgIndexes)
 {
     auto defaultCount = defaultNames != nullptr ? defaultNames->size() : 0;
-    auto arityWithoutDefaults = arity - defaultCount;
+    if (namedArgs && defaultCount == 0 && namedArgs->count != 0)
+    {
+        getCurrentState()->setException(&TypeErrorObjectType,
+            std::format("{} \"{}\" не має іменованих параметрів", CALLABLE_NAME, fnName)
+        );
+        return false;
+    }
 
+    auto arityWithoutDefaults = arity - defaultCount;
     if (argc < arityWithoutDefaults)
     {
         getCurrentState()->setException(&TypeErrorObjectType,
@@ -26,14 +33,6 @@ bool vm::validateCall(
                 "{} \"{}\" очікує {} {}, натомість передано {}",
                 CALLABLE_NAME, fnName, arityWithoutDefaults,
                 utils::wordDeclension(arityWithoutDefaults, "аргумент"), argc)
-        );
-        return false;
-    }
-
-    if (namedArgs && defaultCount == 0 && namedArgs->count != 0)
-    {
-        getCurrentState()->setException(&TypeErrorObjectType,
-            std::format("{} \"{}\" не має параметрів за замовчуванням", CALLABLE_NAME, fnName)
         );
         return false;
     }
