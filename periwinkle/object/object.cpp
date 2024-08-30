@@ -46,7 +46,7 @@ namespace vm
     {
         // Object - базовий тип для всіх типів, і тому ні від кого не наслідується
         .base = nullptr,
-        .name = "Обєкт",
+        .name = "Об'єкт",
         .size = sizeof(Object),
     };
 

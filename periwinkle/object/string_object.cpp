@@ -249,7 +249,7 @@ Object* strJoin(std::span<Object*> args, ListObject* va)
     ListObject* objects;
     ArgParser argParser{
         {&separator, stringObjectType, "роздільник"},
-        {&objects, listObjectType, "обєкти"},
+        {&objects, listObjectType, "об'єкти"},
     };
     if (!argParser.parse(args)) return nullptr;
 

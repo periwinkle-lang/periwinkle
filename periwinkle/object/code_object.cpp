@@ -15,7 +15,7 @@ namespace vm
     TypeObject codeObjectType =
     {
         .base = nullptr,
-        .name = "ОбєктКоду",
+        .name = "Об'єктКоду",
         .size = sizeof(CodeObject),
         .alloc = DEFAULT_ALLOC(CodeObject),
         .dealloc = DEFAULT_DEALLOC(CodeObject),
