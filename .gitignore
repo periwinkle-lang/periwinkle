@@ -5,3 +5,6 @@ build/
 out/
 CMakeSettings.json
 Makefile
+тестування/
+*.code-workspace
+.vscode
