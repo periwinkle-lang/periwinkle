@@ -1,17 +1,15 @@
 #include "native_method_object.hpp"
 #include "string_vector_object.hpp"
 #include "utils.hpp"
-#include "validate_args.hpp"
 #include "periwinkle.hpp"
 
 using namespace vm;
 
-static Object* nativeMethodCall(NativeMethodObject* callable, Object**& sp, WORD argc,
-    NamedArgs* namedArgs)
+static Object* nativeMethodCall(
+    NativeMethodObject* callable, std::span<Object*> argv, ListObject* va, NamedArgs* na)
 {
-    auto firstArg = sp - argc + 1;
-
-    if ((*firstArg)->objectType != callable->classType)
+    auto instance = argv[0];
+    if (instance->objectType != callable->classType)
     {
         getCurrentState()->setException(
             &TypeErrorObjectType,
@@ -19,12 +17,7 @@ static Object* nativeMethodCall(NativeMethodObject* callable, Object**& sp, WORD
             " до якого відноситься метод");
         return nullptr;
     }
-
-    std::span<Object*> args{ firstArg + 1, argc - 1 };
-    auto result = callNativeMethod(*firstArg, callable, args, namedArgs);
-    if (!result) return nullptr;
-    sp -= argc + 1; // +1 для методу
-    return result;
+    return callable->method(instance, argv.subspan(1), va, na);
 }
 
 static void traverse(NativeMethodObject* method)
@@ -33,11 +26,11 @@ static void traverse(NativeMethodObject* method)
     {
         mark(method->classType);
     }
-    if (method->defaults)
+    if (method->callableInfo.defaults)
     {
-        for (auto o : method->defaults->values)
+        for (const auto& o : method->callableInfo.defaults->parameters)
         {
-            mark(o);
+            mark(o.second);
         }
     }
 }
@@ -49,6 +42,7 @@ namespace vm
         .base = &objectObjectType,
         .name = "НативнийМетод",
         .size = sizeof(NativeMethodObject),
+        .callableInfoOffset = offsetof(NativeMethodObject, callableInfo),
         .alloc = DEFAULT_ALLOC(NativeMethodObject),
         .dealloc = DEFAULT_DEALLOC(NativeMethodObject),
         .operators =
@@ -65,46 +59,12 @@ NativeMethodObject* vm::NativeMethodObject::create(
 {
     auto nativeMethod =
         (NativeMethodObject*)allocObject(&nativeMethodObjectType);
-    nativeMethod->arity = arity + 1 + (defaults ? defaults->names.size() : 0); // +1 для екземляра класу
-    nativeMethod->isVariadic = isVariadic;
-    nativeMethod->name = name;
+    nativeMethod->callableInfo.arity = arity + 1 + (defaults ? defaults->parameters.size() : 0); // +1 для екземляра класу
+    nativeMethod->callableInfo.flags |= isVariadic ? CallableInfo::IS_VARIADIC : 0;
+    nativeMethod->callableInfo.flags |= defaults ? CallableInfo::HAS_DEFAULTS : 0;
+    nativeMethod->callableInfo.name = name;
     nativeMethod->method = method;
     nativeMethod->classType = classType;
-    nativeMethod->defaults = defaults;
+    nativeMethod->callableInfo.defaults = defaults;
     return nativeMethod;
-}
-
-Object* vm::callNativeMethod(Object* instance, NativeMethodObject* method, std::span<Object*> args,
-    NamedArgs* namedArgs)
-{
-    auto arityWithoutDefaults = method->arity;
-    auto argc = args.size() + 1; // +1 для екземпляра
-
-    std::vector<std::string>* defaultNames = nullptr;
-    if (method->defaults)
-    {
-        defaultNames = &method->defaults->names;
-        arityWithoutDefaults -= defaultNames->size();
-    }
-    std::vector<size_t> namedArgIndexes;
-
-    if (!validateCall(
-        method->arity, defaultNames, method->isVariadic,
-        method->name, true, argc, namedArgs, &namedArgIndexes
-    )) return nullptr;
-
-    auto variadicParameter = new ListObject{ {&listObjectType} };
-    if (method->isVariadic)
-    {
-        auto variadicCount = argc - arityWithoutDefaults;
-        for (WORD i = 0; i < variadicCount; ++i)
-        {
-            variadicParameter->items.push_back(args[argc - variadicCount - 1 + i]);
-        }
-    }
-
-    auto result = method->method(
-        instance, args, variadicParameter, namedArgs);
-    delete variadicParameter;
-    return result;
 }

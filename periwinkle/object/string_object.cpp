@@ -418,8 +418,9 @@ METHOD_TEMPLATE(strSplit, StringObject)
     return strs;
 }
 
-static DefaultParameters toIntDefaults = {
-    {"основа"}, { new IntObject{ {.objectType = &intObjectType}, 10 } } };
+static IntObject int10 = IntObject{ {.objectType = &intObjectType}, 10 };
+static DefaultParameters toIntDefaults = {{
+    {"основа", &int10}} };
 
 METHOD_TEMPLATE(toIntMethod, StringObject)
 {
@@ -651,7 +652,13 @@ namespace vm
         .size = sizeof(StringObject),
         .alloc = DEFAULT_ALLOC(StringObject),
         .dealloc = DEFAULT_DEALLOC(StringObject),
-        .constructor = new NATIVE_METHOD("конструктор", 1, false, strInit, stringObjectType, nullptr),
+        .callableInfo =
+        {
+            .arity = 1,
+            .name = "конструктор",
+            .flags = CallableInfo::IS_METHOD,
+        },
+        .constructor = strInit,
         .operators =
         {
             .toString = strToString,

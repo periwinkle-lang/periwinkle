@@ -33,7 +33,7 @@ using namespace vm;
 bool vm::ArgParser::parse(const std::span<Object*> args, DefaultParameters* defaults, NamedArgs* na)
 {
     auto argc = args.size();
-    auto defaultCount = defaults != nullptr ? defaults->names.size() : 0;
+    auto defaultCount = defaults != nullptr ? defaults->parameters.size() : 0;
     auto arity = description.size();
 
     for (size_t i = 0; i < argc; ++i)
@@ -45,40 +45,28 @@ bool vm::ArgParser::parse(const std::span<Object*> args, DefaultParameters* defa
     {
         if (na != nullptr)
         {
-            std::vector<size_t> namedArgIndexes;
-
-            for (size_t i = 0; i < na->count; ++i)
-            {
-                auto& argName = na->names->at(i);
-                auto it = std::find(defaults->names.begin(), defaults->names.end(), argName);
-                if (it != defaults->names.end())
-                {
-                    namedArgIndexes.push_back(it - defaults->names.begin());
-                }
-            }
-
-            for (size_t i = 0, j = namedArgIndexes.size(); i < arity - argc; ++i)
+            for (size_t i = 0, j = na->count; i < arity - argc; ++i)
             {
                 if (j)
                 {
-                    auto it = std::find(namedArgIndexes.begin(), namedArgIndexes.end(), i);
-                    if (it != namedArgIndexes.end())
+                    auto it = std::find(na->indexes.begin(), na->indexes.end(), i);
+                    if (it != na->indexes.end())
                     {
-                        auto index = it - namedArgIndexes.begin();
+                        auto index = it - na->indexes.begin();
                         CHECK_SET_ARG(description[i + argc], na->values[index]);
                         j--;
                         continue;
                     }
                 }
 
-                SET_ARG(description[i + argc], defaults->values[i]);
+                SET_ARG(description[i + argc], defaults->parameters[i].second);
             }
         }
         else
         {
             for (size_t i = 0; i < arity - argc; ++i)
             {
-                SET_ARG(description[i + argc], defaults->values[i]);
+                SET_ARG(description[i + argc], defaults->parameters[i].second);
             }
         }
     }

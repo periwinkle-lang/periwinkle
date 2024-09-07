@@ -3,7 +3,7 @@
 
 #include <string_view>
 
-#define KW static constexpr auto
+#define KW constexpr std::string_view
 
 namespace Keyword
 {

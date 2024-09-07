@@ -135,7 +135,13 @@ namespace vm
         .size = sizeof(IntObject),
         .alloc = DEFAULT_ALLOC(IntObject),
         .dealloc = DEFAULT_DEALLOC(IntObject),
-        .constructor = new NATIVE_METHOD("конструктор", 1, false, intInit, intObjectType, nullptr),
+        .callableInfo =
+        {
+            .arity = 1,
+            .name = constructorName,
+            .flags = CallableInfo::IS_METHOD,
+        },
+        .constructor = intInit,
         .operators =
         {
             .toString = intToString,

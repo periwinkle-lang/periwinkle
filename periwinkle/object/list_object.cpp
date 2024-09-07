@@ -374,7 +374,13 @@ namespace vm
         .size = sizeof(ListObject),
         .alloc = DEFAULT_ALLOC(ListObject),
         .dealloc = DEFAULT_DEALLOC(ListObject),
-        .constructor = new NATIVE_METHOD("конструктор", 0, true, listInit, listObjectType, nullptr),
+        .callableInfo =
+        {
+            .arity = 0,
+            .name = constructorName,
+            .flags = CallableInfo::IS_VARIADIC | CallableInfo::IS_METHOD,
+        },
+        .constructor = listInit,
         .operators =
         {
             .toString = listToString,

@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <span>
 
 #include "types.hpp"
 
@@ -35,15 +36,19 @@ namespace vm
 
     struct NamedArgs
     {
-        std::vector<std::string>* names;
+        std::span<std::string> names;
         std::vector<Object*> values;
+        // Зберігає індекс параметра за замовчуванням, до якого належить аргумент
+        // для викликаного об'єкта. Заповнюється за допомогою vm::validateCall,
+        // після чого може бути використовується в vm::ArgParser.
+        std::vector<size_t> indexes;
         u64 count;
     };
 
     struct DefaultParameters
     {
-        std::vector<std::string> names;
-        std::vector<Object*> values;
+        using Pair = std::pair<std::string_view, Object*>;
+        std::vector<Pair> parameters;
     };
 
     enum class ObjectCompOperator
@@ -54,15 +59,17 @@ namespace vm
     using unaryFunction      = vm::Object*(*)(Object*);
     using binaryFunction     = vm::Object*(*)(Object*, Object*);
     using ternaryFunction    = vm::Object*(*)(Object*, Object*, Object*);
-    using callFunction       = vm::Object*(*)(Object*, Object**&, u64, NamedArgs*);
+    using callFunction       = vm::Object*(*)(Object*, std::span<Object*>, ListObject*, NamedArgs*);
+    using stackCallFunction  = vm::Object*(*)(Object*, Object**&);
     using allocFunction      = vm::Object*(*)(void);
-    using deallocFunction    = void(*)(Object*);
-    using comparisonFunction = vm::Object*(*)(Object*, Object*, ObjectCompOperator);
-    using traverseFunction   = void(*)(Object*);
+    using deallocFunction    = void (*)(Object*);
+    using comparisonFunction = vm::Object* (*)(Object*, Object*, ObjectCompOperator);
+    using traverseFunction   = void (*)(Object*);
 
     struct ObjectOperators
     {
-         callFunction call; // Виклик об'єкта
+         callFunction call; // Виклик об'єкта, дані передаються через аргументи
+         stackCallFunction stackCall; // Виклик об'єкта, дані передаються через стек
          unaryFunction toString;
          unaryFunction toInteger;
          unaryFunction toReal;
@@ -87,7 +94,11 @@ namespace vm
         bool marked = false;
 
         // Викликає об'єкт
-        Object* call(Object**& sp, u64 argc, NamedArgs* namedArgs=nullptr);
+        Object* call(std::span<Object*>, NamedArgs* na=nullptr);
+
+        // Викликає об'єкт, але аргмументи передаються через стек віртуальної машини.
+        // Також очищає стек від аргументів
+        Object* stackCall(Object**& sp, u64 argc, NamedArgs* na=nullptr);
 
         // Викликає операції порівяння для вхідних об'єктів
         Object* compare(Object* o, ObjectCompOperator op);
@@ -135,14 +146,31 @@ namespace vm
         Object* getAttr(const std::string& name);
     };
 
+    struct CallableInfo
+    {
+        WORD arity = 0;
+        std::string name;
+        DefaultParameters* defaults = nullptr;
+        u8 flags = 0;
+
+        enum Flags : u8
+        {
+            IS_VARIADIC = 1 << 0,
+            IS_METHOD = 1 << 1,
+            HAS_DEFAULTS = 1 << 2,
+        };
+    };
+
     struct TypeObject : Object
     {
         TypeObject* base; // Батьківський тип
         std::string name;
         u32 size = 0;
+        size_t callableInfoOffset = 0; // offsetof для поля, де зберігається CallableInfo
         allocFunction alloc = nullptr; // Створення нового екземпляра
         deallocFunction dealloc = nullptr;
-        NativeMethodObject* constructor = nullptr; // Ініціалізація екземпляра
+        CallableInfo callableInfo;
+        callFunction constructor = nullptr; // Ініціалізація екземпляра
         NativeMethodObject* destructor = nullptr;
         ObjectOperators operators;
         comparisonFunction comparison = nullptr;
@@ -155,10 +183,16 @@ namespace vm
         std::unordered_map<std::string, Object*> attributes;
     };
 
+    // Використовується як callableName для конструкторів в TypeObject
+    extern const char* constructorName;
+
     void mark(Object* o);
     Object* allocObject(TypeObject* objectType);
     bool isInstance(const Object* o, const TypeObject& type);
     bool objectToBool(Object* o);
+
+    // Перевіряє чи передана правильна кількість аргументів для виклику функції
+    bool validateCall(Object* callable, WORD argc, vm::NamedArgs* namedArgs);
 }
 
 #endif

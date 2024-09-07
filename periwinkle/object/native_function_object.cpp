@@ -3,53 +3,22 @@
 #include "native_method_object.hpp"
 #include "string_vector_object.hpp"
 #include "vm.hpp"
-#include "validate_args.hpp"
 
 using namespace vm;
 
-Object* nativeCall(NativeFunctionObject* nativeFunction, Object**& sp, WORD argc, NamedArgs* namedArgs)
+static Object* nativeCall(
+    NativeFunctionObject* nativeFunction, std::span<Object*> argv, ListObject* va, NamedArgs* na)
 {
-    auto arityWithoutDefaults = nativeFunction->arity;
-    std::vector<std::string>* defaultNames = nullptr;
-    if (nativeFunction->defaults)
-    {
-        defaultNames = &nativeFunction->defaults->names;
-        arityWithoutDefaults -= defaultNames->size();
-    }
-    std::vector<size_t> namedArgIndexes;
-
-    if (!validateCall(
-        nativeFunction->arity, defaultNames, nativeFunction->isVariadic,
-        nativeFunction->name, false, argc, namedArgs, &namedArgIndexes
-    )) return nullptr;
-
-    auto variadicParameter = new ListObject{ {&listObjectType} };
-    if (nativeFunction->isVariadic)
-    {
-        auto variadicCount = argc - arityWithoutDefaults;
-        for (WORD i = variadicCount; i > 0; --i)
-        {
-            variadicParameter->items.push_back(*(sp - i + 1));
-        }
-        sp -= variadicCount;
-        argc -= variadicCount; // Змінюється значення вхідного аргументу
-    }
-    auto result = nativeFunction->function(
-        {sp - (argc != 0 ? argc - 1 : 0), argc},
-        variadicParameter, namedArgs
-    );
-    delete variadicParameter;
-    sp -= argc + 1;
-    return result;
+    return nativeFunction->function(argv, va, na);
 }
 
 static void traverse(NativeFunctionObject* func)
 {
-    if (func->defaults)
+    if (func->callableInfo.defaults)
     {
-        for (auto o : func->defaults->values)
+        for (const auto& o : func->callableInfo.defaults->parameters)
         {
-            mark(o);
+            mark(o.second);
         }
     }
 }
@@ -61,6 +30,7 @@ namespace vm
         .base = &objectObjectType,
         .name = "НативнаФункція",
         .size = sizeof(NativeFunctionObject),
+        .callableInfoOffset = offsetof(NativeFunctionObject, callableInfo),
         .alloc = DEFAULT_ALLOC(NativeFunctionObject),
         .dealloc = DEFAULT_DEALLOC(NativeFunctionObject),
         .operators =
@@ -76,10 +46,11 @@ NativeFunctionObject* vm::NativeFunctionObject::create(
     nativeFunction function, DefaultParameters* defaults)
 {
     auto nativeFunction = (NativeFunctionObject*)allocObject(&nativeFunctionObjectType);
-    nativeFunction->arity = arity + (defaults ? defaults->names.size() : 0);
-    nativeFunction->isVariadic = isVariadic;
-    nativeFunction->name = name;
+    nativeFunction->callableInfo.arity = arity + (defaults ? defaults->parameters.size() : 0);
+    nativeFunction->callableInfo.flags |= isVariadic ? CallableInfo::IS_VARIADIC : 0;
+    nativeFunction->callableInfo.flags |= defaults ? CallableInfo::HAS_DEFAULTS : 0;
+    nativeFunction->callableInfo.name = name;
+    nativeFunction->callableInfo.defaults = defaults;
     nativeFunction->function = function;
-    nativeFunction->defaults = defaults;
     return nativeFunction;
 }

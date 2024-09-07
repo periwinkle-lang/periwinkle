@@ -1,5 +1,6 @@
 #include <cstddef>
 #include <format>
+#include <algorithm>
 
 #include "object.hpp"
 #include "bool_object.hpp"
@@ -16,21 +17,19 @@
 
 using namespace vm;
 
-static Object* typeCall(TypeObject* type, Object**& sp, WORD argc, NamedArgs* na)
+static Object* typeCall(TypeObject* type, std::span<Object*> argv, ListObject* va, NamedArgs* na)
 {
     if (type->constructor == nullptr)
     {
         getCurrentState()->setException(
             &TypeErrorObjectType,
-            std::format("Неможливо створити екземпляр з типом \"{}\"",
-                type->name)
+            std::format("Неможливо створити екземпляр з типом \"{}\"", type->name)
         );
         return nullptr;
     }
 
-    auto instance = callNativeMethod(type, type->constructor, {sp - argc + 1, argc}, na);
+    auto instance = type->constructor(type, argv, va, na);
     if (!instance) return nullptr;
-    sp -= argc + 1;
     return instance;
 }
 
@@ -55,12 +54,15 @@ namespace vm
         .base = &objectObjectType,
         .name = "Тип",
         .size = sizeof(TypeObject),
+        .callableInfoOffset = offsetof(TypeObject, callableInfo),
         .operators =
         {
             .call = (callFunction)typeCall,
             .toString = (unaryFunction)typeToString,
         },
     };
+
+    const char* constructorName = "конструктор";
 }
 
 void vm::mark(Object* o)
@@ -113,11 +115,126 @@ bool vm::objectToBool(Object* o)
     return static_cast<BoolObject*>(o->toBool())->value;
 }
 
+#define GET_CALLABLE_INFO(object) \
+    reinterpret_cast<vm::CallableInfo*>(reinterpret_cast<char*>(object) + (object)->objectType->callableInfoOffset)
+
+bool vm::validateCall(Object* callable, WORD argc, vm::NamedArgs* namedArgs)
+{
+    auto callableInfo = GET_CALLABLE_INFO(callable);
+    auto defaultCount = callableInfo->flags & CallableInfo::HAS_DEFAULTS ?
+        callableInfo->defaults->parameters.size() : 0;
+    std::string_view callableType = callableInfo->flags & CallableInfo::IS_METHOD ? "Метод" : "Функція";
+    if (namedArgs && defaultCount == 0 && namedArgs->count != 0)
+    {
+        getCurrentState()->setException(&TypeErrorObjectType,
+            std::format("{} \"{}\" не має іменованих параметрів", callableType, callableInfo->name)
+        );
+        return false;
+    }
+
+    auto arityWithoutDefaults = callableInfo->arity - defaultCount;
+    if (argc < arityWithoutDefaults)
+    {
+        getCurrentState()->setException(&TypeErrorObjectType,
+            std::format(
+                "{} \"{}\" очікує {} {}, натомість передано {}",
+                callableType, callableInfo->name, arityWithoutDefaults,
+                utils::wordDeclension(arityWithoutDefaults, "аргумент"), argc)
+        );
+        return false;
+    }
+
+    if (callableInfo->flags & CallableInfo::IS_VARIADIC)
+    {
+        if (auto variadicCount = argc - arityWithoutDefaults; variadicCount > 0)
+        {
+            // Тепер змінна argc позначає кількість переданих змінних
+            // без урахування варіативних аргументів
+            argc -= variadicCount;
+        }
+    }
+    else
+    {
+        if (argc > callableInfo->arity && defaultCount == 0)
+        {
+            getCurrentState()->setException(&TypeErrorObjectType,
+                std::format(
+                    "{} \"{}\" очікує {} {}, натомість передано {}",
+                    callableType, callableInfo->name, arityWithoutDefaults,
+                    utils::wordDeclension(arityWithoutDefaults, "аргумент"), argc)
+            );
+            return false;
+        }
+    }
+
+    if (defaultCount)
+    {
+        if (argc > callableInfo->arity)
+        {
+            getCurrentState()->setException(&TypeErrorObjectType,
+                std::format(
+                    "{} \"{}\" очікує від {} до {} аргументів, натомість передано {}",
+                    callableType, callableInfo->name, arityWithoutDefaults, callableInfo->arity, argc)
+            );
+            return false;
+        }
+
+        if (namedArgs != nullptr)
+        {
+            namedArgs->indexes.reserve(namedArgs->count);
+            for (size_t i = 0; i < namedArgs->count; ++i)
+            {
+                std::string_view argName = namedArgs->names[i];
+                const auto& defaults = callableInfo->defaults->parameters;
+                auto it = std::find_if(defaults.begin(), defaults.end(),
+                    [argName](const DefaultParameters::Pair& item)
+                    {
+                        return item.first == argName;
+                    }
+                );
+                if (it != defaults.end())
+                {
+                    namedArgs->indexes.push_back(it - defaults.begin());
+                }
+                else
+                {
+                    getCurrentState()->setException(&TypeErrorObjectType,
+                        std::format(
+                            "{} \"{}\" не має параметра за замовчуванням з іменем \"{}\"",
+                            callableType, callableInfo->name, argName)
+                    );
+                    return false;
+                }
+            }
+
+            if (argc > arityWithoutDefaults)
+            {
+                auto overflow = argc - arityWithoutDefaults;
+                auto maxIt = std::max_element(namedArgs->indexes.begin(), namedArgs->indexes.end(),
+                    [overflow](size_t a, size_t b) { return a < overflow && a > b; });
+
+                if (maxIt != namedArgs->indexes.end())
+                {
+                    getCurrentState()->setException(&TypeErrorObjectType,
+                        std::format(
+                            "{} \"{}\", аргумент \"{}\" приймає два значення",
+                            callableType, callableInfo->name,
+                            namedArgs->names[maxIt - namedArgs->indexes.begin()]
+                        )
+                    );
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
 #define GET_OPERATOR(object, op) (object)->objectType->operators.op
 
 // Повертає посилання на binaryFunction з структури ObjectOperators за зсувом
 #define GET_BINARY_OPERATOR_BY_OFFSET(object, operatorOffset) \
-    (*(binaryFunction*)(&((char*)&object->objectType->operators)[operatorOffset]));
+    reinterpret_cast<binaryFunction>((reinterpret_cast<char*>(&(object->objectType->operators))[operatorOffset]));
 
 #define OPERATOR_OFFSET(op) offsetof(ObjectOperators, op)
 
@@ -250,19 +367,118 @@ Object* vm::Object::compare(Object* o, ObjectCompOperator op)
     return result;
 }
 
-Object* vm::Object::call(Object**& sp, WORD argc, NamedArgs* namedArgs)
+static inline Object* _callObject(Object* callable, std::span<Object*> argv, NamedArgs* na)
+{
+    auto callableInfo = GET_CALLABLE_INFO(callable);
+
+    if (!validateCall(callable, argv.size(), na))
+        return nullptr;
+
+    auto argc = argv.size();
+    auto va = ListObject::create();
+    if (callableInfo->flags & CallableInfo::IS_VARIADIC)
+    {
+        auto arityWithoutDefaults = callableInfo->arity;
+        if (callableInfo->flags & CallableInfo::HAS_DEFAULTS)
+            arityWithoutDefaults -= callableInfo->defaults->parameters.size();
+        if (auto variadicCount = argc - arityWithoutDefaults; variadicCount > 0)
+        {
+            va->items.reserve(variadicCount);
+            va->items.insert(va->items.end(), argv.end() - variadicCount, argv.end());
+            argc -= variadicCount;
+        }
+    }
+    return GET_OPERATOR(callable, call)(callable, argv.first(argc), va, na);
+}
+
+static constexpr std::string_view ERROR_MSG_NOT_CALLABLE{ "Об'єкт типу \"{}\" не може бути викликаний" };
+
+Object* vm::Object::call(std::span<Object*> argv, NamedArgs* na)
 {
     auto callOp = GET_OPERATOR(this, call);
     if (callOp == nullptr)
     {
         getCurrentState()->setException(&TypeErrorObjectType,
-            std::format("Об'єкт типу \"{}\" не може бути викликаний",
-                objectType->name)
+            std::format(ERROR_MSG_NOT_CALLABLE, objectType->name)
         );
         return nullptr;
     }
+    return _callObject(this, argv, na);
+}
 
-    return callOp(this, sp, argc, namedArgs);
+Object* vm::Object::stackCall(Object**& sp, u64 argc, NamedArgs* na)
+{
+    Object* result;
+    auto callableInfo = GET_CALLABLE_INFO(this);
+    auto stackCallOp = GET_OPERATOR(this, stackCall);
+    if (stackCallOp != nullptr)
+    {
+        if (!validateCall(this, argc, na))
+            return nullptr;
+
+        auto defaultCount = callableInfo->flags & CallableInfo::HAS_DEFAULTS ?
+            callableInfo->defaults->parameters.size() : 0;
+
+        // Варіативний аргумент
+        if (callableInfo->flags & CallableInfo::IS_VARIADIC)
+        {
+            auto va = ListObject::create();
+            if (auto variadicCount = argc - (callableInfo->arity - defaultCount); variadicCount > 0)
+            {
+                va->items.reserve(variadicCount);
+                va->items.insert(va->items.end(), sp - variadicCount, sp);
+                argc -= variadicCount;
+            }
+            *(++sp) = va;
+        }
+
+        if (defaultCount)
+        {
+            if (na != nullptr)
+            {
+                for (size_t i = 0, j = na->count; i < defaultCount; ++i)
+                {
+                    if (j)
+                    {
+                        auto it = std::find(na->indexes.begin(), na->indexes.end(), i);
+                        if (it != na->indexes.end())
+                        {
+                            auto index = it - na->indexes.begin();
+                            *(++sp) = na->values[na->count - index - 1];
+                            j--;
+                            continue;
+                        }
+                    }
+                    *(++sp) = callableInfo->defaults->parameters[defaultCount - i - 1].second;
+                }
+            }
+            else
+            {
+                for (size_t i = 0, argLack = callableInfo->arity - argc; i < argLack; ++i)
+                    *(++sp) = callableInfo->defaults->parameters[argLack - i - 1].second;
+            }
+        }
+        result = stackCallOp(this, sp);
+    }
+    else
+    {
+        // Якщо об'єкт не підтримує stackCall, то викликається call оператор
+        auto callOp = GET_OPERATOR(this, call);
+        if (callOp != nullptr)
+            result = _callObject(this, { sp - argc + 1, argc }, na);
+        else
+        {
+            getCurrentState()->setException(&TypeErrorObjectType,
+                std::format(ERROR_MSG_NOT_CALLABLE, objectType->name)
+            );
+            return nullptr;
+        }
+    }
+    // Очищення стека
+    sp -= callableInfo->arity // аргументи
+        + (callableInfo->flags & CallableInfo::IS_VARIADIC) // варіативний параметр
+        + 1; // викликаний об'єкт
+    return result;
 }
 
 Object* vm::Object::toString()

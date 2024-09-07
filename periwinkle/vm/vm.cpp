@@ -180,7 +180,7 @@ Object* VirtualMachine::execute()
             auto argc = READ();
             auto callable = *(sp - argc);
 
-            auto result = callable->call(sp, argc);
+            auto result = callable->stackCall(sp, argc);
             if (!result) goto error;
             PUSH(result);
             break;
@@ -193,14 +193,15 @@ Object* VirtualMachine::execute()
             auto namedArgs = new NamedArgs;
             auto namedArgCount = namedArgNames->value.size();
 
-            namedArgs->names = &namedArgNames->value;
+            namedArgs->names = namedArgNames->value;
             namedArgs->count = namedArgCount;
+            namedArgs->values.reserve(namedArgCount);
             for (size_t i = 0; i < namedArgCount; ++i)
             {
                 namedArgs->values.push_back(*(sp--));
             }
 
-            auto result = callable->call(sp, argc - namedArgCount, namedArgs);
+            auto result = callable->stackCall(sp, argc - namedArgCount, namedArgs);
             if (!result) goto error;
             PUSH(result);
             delete namedArgs;
@@ -225,7 +226,7 @@ Object* VirtualMachine::execute()
                 goto error;
             }
 
-            auto nextElement = callNativeMethod(iterator, nextMethod, {});
+            auto nextElement = nextMethod->call({sp, 1});
             if (!nextElement) goto error;
             if (nextElement != &P_endIter)
             {
@@ -390,16 +391,17 @@ Object* VirtualMachine::execute()
             if (OBJECT_IS(callable, &methodWithInstanceObjectType))
             {
                 auto methodWithInstance = (MethodWithInstanceObject*)callable;
-                result = callNativeMethod(
-                    methodWithInstance->instance,
-                    (NativeMethodObject*)methodWithInstance->callable,
-                    { sp - argc + 1, argc });
+                std::vector<Object*> argv;
+                argv.reserve(argc + 1);
+                argv.push_back(methodWithInstance->instance);
+                argv.insert(argv.begin(), sp - argc + 1, sp);
+                result = methodWithInstance->callable->call(argv);
                 if (!result) goto error;
                 sp -= argc + 1; // Метод
             }
             else
             {
-                result = callable->call(sp, argc);
+                result = callable->stackCall(sp, argc);
                 if (!result) goto error;
             }
             PUSH(result);
@@ -413,8 +415,9 @@ Object* VirtualMachine::execute()
             auto namedArgs = new NamedArgs;
             auto namedArgCount = namedArgNames->value.size();
 
-            namedArgs->names = &namedArgNames->value;
+            namedArgs->names = namedArgNames->value;
             namedArgs->count = namedArgCount;
+            namedArgs->values.reserve(namedArgCount);
             for (size_t i = 0; i < namedArgCount; ++i)
             {
                 namedArgs->values.push_back(*(sp--));
@@ -425,16 +428,17 @@ Object* VirtualMachine::execute()
             {
                 argc -= namedArgCount;
                 auto methodWithInstance = (MethodWithInstanceObject*)callable;
-                result = callNativeMethod(
-                    methodWithInstance->instance,
-                    (NativeMethodObject*)methodWithInstance->callable,
-                    { sp - argc + 1, argc }, namedArgs);
+                std::vector<Object*> argv;
+                argv.reserve(argc + 1);
+                argv.push_back(methodWithInstance->instance);
+                argv.insert(argv.begin(), sp - argc + 1, sp);
+                result = methodWithInstance->callable->call(argv);
                 if (!result) goto error;
                 sp -= argc + 1; // Метод
             }
             else
             {
-                result = callable->call(sp, argc - namedArgCount, namedArgs);
+                result = callable->stackCall(sp, argc - namedArgCount, namedArgs);
                 if (!result) goto error;
             }
             PUSH(result);
@@ -452,9 +456,12 @@ Object* VirtualMachine::execute()
                 functionObject->closure.push_back((CellObject*)POP());
             }
 
-            for (WORD i = 0; i < codeObject->defaults.size(); ++i)
+            if (code->defaults.empty() == false)
             {
-                functionObject->defaultArguments.push_back(POP());
+                functionObject->callableInfo.defaults = new DefaultParameters;
+                functionObject->callableInfo.defaults->parameters.reserve(code->defaults.size());
+                for (std::string_view parameterName : codeObject->defaults)
+                    functionObject->callableInfo.defaults->parameters.emplace_back(parameterName, POP());
             }
 
             PUSH(functionObject);

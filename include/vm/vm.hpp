@@ -13,8 +13,6 @@
 
 namespace vm
 {
-    using WORD = u64;
-
     STRING_ENUM(OpCode,
         // Операції зі стеком
         POP, DUP,

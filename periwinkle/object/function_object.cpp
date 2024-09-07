@@ -7,7 +7,6 @@
 #include "native_method_object.hpp"
 #include "string_vector_object.hpp"
 #include "vm.hpp"
-#include "validate_args.hpp"
 #include "plogger.hpp"
 
 using namespace vm;
@@ -44,71 +43,14 @@ static Frame* frameFromFunctionObject(FunctionObject* fn)
     return newFrame;
 }
 
-static Object* fnCall(Object* callable, Object**& sp, WORD argc, NamedArgs* namedArgs)
+static Object* fnStackCall(Object* callable, Object**& sp)
 {
-    auto fn = (FunctionObject*)callable;
-    ListObject* variadicParameter = nullptr;
-    auto defaultCount = fn->code->defaults.size();
-    std::vector<size_t> namedArgIndexes;
-
-    if (!validateCall(
-        fn->code->arity, &fn->code->defaults, fn->code->isVariadic, fn->code->name,
-        false, argc, namedArgs, &namedArgIndexes
-    )) return nullptr;
-
-    if (fn->code->isVariadic)
-    {
-        variadicParameter = new ListObject{ {&listObjectType} };
-
-        if (auto variadicCount = argc - (fn->code->arity - defaultCount); variadicCount > 0)
-        {
-            for (WORD i = variadicCount; i > 0; --i)
-            {
-                variadicParameter->items.push_back(*(sp - i + 1));
-            }
-            sp -= variadicCount;
-            argc -= variadicCount; // Змінюється значення вхідного аргументу
-        }
-        *(++sp) = variadicParameter;
-    }
-
-    if (defaultCount)
-    {
-        if (namedArgs != nullptr)
-        {
-            for (size_t i = 0, j = namedArgIndexes.size(); i < defaultCount; ++i)
-            {
-                if (j)
-                {
-                    auto it = std::find(namedArgIndexes.begin(), namedArgIndexes.end(), i);
-                    if (it != namedArgIndexes.end())
-                    {
-                        auto index = it - namedArgIndexes.begin();
-                        *(++sp) = namedArgs->values[namedArgs->count - index - 1];
-                        j--;
-                        continue;
-                    }
-                }
-
-                *(++sp) = fn->defaultArguments[defaultCount - i - 1];
-            }
-        }
-        else
-        {
-            for (size_t i = 0, argLack = fn->code->arity - argc; i < argLack; ++i)
-            {
-                *(++sp) = fn->defaultArguments[argLack - i - 1];
-            }
-        }
-    }
-
+    auto fn = static_cast<FunctionObject*>(callable);
     auto frame = frameFromFunctionObject(fn);
     auto prevVm = VirtualMachine::currentVm;
     auto newVM = VirtualMachine(frame);
     auto result = newVM.execute();
     delete frame;
-    if (variadicParameter != nullptr) delete variadicParameter;
-    sp -= fn->code->arity + 1 + (int)fn->code->isVariadic;
     VirtualMachine::currentVm = prevVm;
     return result;
 }
@@ -120,9 +62,9 @@ static void traverse(FunctionObject* func)
     {
         mark(o);
     }
-    for (auto o : func->defaultArguments)
+    for (const auto& o : func->callableInfo.defaults->parameters)
     {
-        mark(o);
+        mark(o.second);
     }
 }
 
@@ -133,11 +75,12 @@ namespace vm
         .base = &objectObjectType,
         .name = "Функція",
         .size = sizeof(FunctionObject),
+        .callableInfoOffset = offsetof(FunctionObject, callableInfo),
         .alloc = DEFAULT_ALLOC(FunctionObject),
         .dealloc = DEFAULT_DEALLOC(FunctionObject),
         .operators =
         {
-            .call = fnCall,
+            .stackCall = fnStackCall,
         },
         .traverse = (traverseFunction)traverse,
     };
@@ -147,5 +90,9 @@ FunctionObject* vm::FunctionObject::create(CodeObject* code)
 {
     auto functionObject = (FunctionObject*)allocObject(&functionObjectType);
     functionObject->code = code;
+    functionObject->callableInfo.arity = code->arity;
+    functionObject->callableInfo.flags |= code->isVariadic ? CallableInfo::IS_VARIADIC : 0;
+    functionObject->callableInfo.flags |= code->defaults.size() ? CallableInfo::HAS_DEFAULTS : 0;
+    functionObject->callableInfo.name = code->name;
     return functionObject;
 }

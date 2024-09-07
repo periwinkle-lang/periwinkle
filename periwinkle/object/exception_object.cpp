@@ -10,18 +10,18 @@
 using namespace vm;
 
 #define EXCEPTION_EXTEND(baseType, exc, excName, excOperators) \
-    TypeObject exc##ObjectType =                        \
-    {                                                   \
-        .base = &baseType,                              \
-        .name = excName,                                \
-        .size = sizeof(ExceptionObject),                \
-        .alloc = exceptionAlloc,                        \
-        .dealloc = exceptionDealloc,                    \
-        .constructor = &exceptionInitMethod,            \
-        .operators = excOperators,                      \
+    TypeObject exc##ObjectType =                               \
+    {                                                          \
+        .base = &baseType,                                     \
+        .name = excName,                                       \
+        .size = sizeof(ExceptionObject),                       \
+        .alloc = exceptionAlloc,                               \
+        .dealloc = exceptionDealloc,                           \
+        .constructor = (callFunction)exceptionInit,            \
+        .operators = excOperators,                             \
     };
 
-static DefaultParameters exceptionInitDefaults = { {"повідомлення"}, {&P_emptyStr} };
+static DefaultParameters exceptionInitDefaults = {{ {"повідомлення", &P_emptyStr} }};
 
 METHOD_TEMPLATE(exceptionInit, TypeObject)
 {
@@ -32,9 +32,6 @@ METHOD_TEMPLATE(exceptionInit, TypeObject)
     if (!argParser.parse(args, &exceptionInitDefaults, na)) return nullptr;
     return ExceptionObject::create(o, message->asUtf8());
 }
-
-auto exceptionInitMethod = NATIVE_METHOD(
-    "конструктор", 1, false, reinterpret_cast<nativeMethod>(exceptionInit), ExceptionObjectType, nullptr);
 
 static Object* exceptionAlloc()
 {
@@ -62,7 +59,14 @@ namespace vm
         .size = sizeof(ExceptionObject),
         .alloc = exceptionAlloc,
         .dealloc = exceptionDealloc,
-        .constructor = &exceptionInitMethod,
+        .callableInfo =
+        {
+            .arity = 1,
+            .name = constructorName,
+            .defaults = &exceptionInitDefaults,
+            .flags = CallableInfo::HAS_DEFAULTS | CallableInfo::IS_METHOD,
+        },
+        .constructor = (vm::callFunction)exceptionInit,
         .operators =
         {
             .toString = exceptionToString,

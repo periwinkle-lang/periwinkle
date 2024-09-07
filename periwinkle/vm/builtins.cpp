@@ -28,11 +28,11 @@ using namespace vm;
 
 static StringObject strWithSpace = { {.objectType = &stringObjectType}, U" " };
 
-static DefaultParameters readLineDefaults = { {"підказка"}, {&P_emptyStr} };
-static DefaultParameters printDefaults = { {"роздільник"}, {&strWithSpace} };
+static DefaultParameters readLineDefaults = {{ {"підказка", &P_emptyStr} }};
+static DefaultParameters printDefaults = {{ {"роздільник", &strWithSpace} }};
 
 static std::u32string joinObjectString(
-    const std::u32string& sep, const std::vector<Object*>& objects)
+    const std::u32string& sep, std::span<Object*> objects)
 {
     if (objects.size())
     {
