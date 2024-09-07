@@ -3,8 +3,6 @@ from enum import Enum, IntEnum, auto
 from contextlib import redirect_stdout
 from urllib import request
 from io import StringIO
-from collections import Counter
-from sys import maxsize
 
 # Вихідні назви файлів
 UNICODE_DATABASE_HPP = "unicode_database.hpp"
@@ -118,7 +116,7 @@ class UnicodeDatabase:
     def __init__(self):
         self._chars: list[RawRecord | None] = [None] * 0x110000
         self._index: list[int] = [0] * 0x110000
-        self._records: list[Record] = [Record(0, 0, 0 , 0)]  # На першому місці має стояти запис з нулями
+        self._records: list[Record] = [Record(0, 0, 0, 0)]  # На першому місці має стояти запис з нулями
         self._generate_chars()
         self._generate_records_and_index()
 
@@ -144,9 +142,9 @@ class UnicodeDatabase:
             bidi_class=values[4],
             decomposition_type=decomposition_type,
             decomposition_mapping=decomposition_mapping,
-            decimal = None if not values[6] else int(values[6]),
-            digit = None if not values[7] else int(values[7]),
-            is_numeric = bool(values[8]),
+            decimal=None if not values[6] else int(values[6]),
+            digit=None if not values[7] else int(values[7]),
+            is_numeric=bool(values[8]),
             bidi_mirrored=values[9],
             unicode_1_name=values[10],
             iso_comment=values[11],
@@ -178,9 +176,9 @@ class UnicodeDatabase:
         if char.general_category == GeneralCategory.LetterTitlecase.value:
             record.flags |= RecordMask.TITLECASE
         if char.general_category in (
-            GeneralCategory.LetterUppercase.value,
-            GeneralCategory.LetterLowercase.value,
-            GeneralCategory.LetterTitlecase.value):
+                GeneralCategory.LetterUppercase.value,
+                GeneralCategory.LetterLowercase.value,
+                GeneralCategory.LetterTitlecase.value):
             record.flags |= RecordMask.HAS_CASE
         if char.simple_lowercase_mapping:
             record.lowercase_offset = char.simple_lowercase_mapping - char.codepoint
@@ -206,7 +204,7 @@ class UnicodeDatabase:
             if record not in self._records:
                 self._records.append(record)
             self._index[i] = self._records.index(record)
-        assert len(self._records) < 255,\
+        assert len(self._records) < 255, \
             "Якщо кількість записів більша, то потрібно змінити тип для масиву індексації, зараз використовується unsigned short"
 
     @property
