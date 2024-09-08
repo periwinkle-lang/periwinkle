@@ -33,27 +33,6 @@ using namespace vm;
     a = opcode & OPCODE_MASK; \
     operand = opcode >> 8;
 
-#define BINARY_OP(name, op_name)                        \
-case OpCode::name:                                      \
-{                                                       \
-    auto arg1 = POP();                                  \
-    auto arg2 = POP();                                  \
-    auto result = arg1->op_name(arg2);                  \
-    if (!result) goto error;                            \
-    PUSH(result);                                       \
-    break;                                              \
-}
-
-#define UNARY_OP(name, op_name)                         \
-case OpCode::name:                                      \
-{                                                       \
-    auto arg = POP();                                   \
-    auto result = arg->op_name();                       \
-    if (!result) goto error;                            \
-    PUSH(result);                                       \
-    break;                                              \
-}
-
 constexpr auto NAME_NOT_DEFINED = "Ім'я \"{}\" не знайдено";
 
 i64 VirtualMachine::getLineno(WORD* ip) const
@@ -91,15 +70,23 @@ Object* VirtualMachine::execute()
             PUSH(object);
             break;
         }
-        UNARY_OP(POS, pos)
-        UNARY_OP(NEG, neg)
-        UNARY_OP(GET_ITER, getIter)
-        BINARY_OP(ADD, add)
-        BINARY_OP(SUB, sub)
-        BINARY_OP(MUL, mul)
-        BINARY_OP(DIV, div)
-        BINARY_OP(MOD, mod)
-        BINARY_OP(FLOOR_DIV, floorDiv)
+        case UNARY_OP:
+        {
+            auto arg = POP();
+            auto result = arg->callUnaryOperator(static_cast<ObjectOperatorOffset>(operand));
+            if (!result) goto error;
+            PUSH(result);
+            break;
+        }
+        case BINARY_OP:
+        {
+            auto arg1 = POP();
+            auto arg2 = POP();
+            auto result = arg1->callBinaryOperator(arg2, static_cast<ObjectOperatorOffset>(operand));
+            if (!result) goto error;
+            PUSH(result);
+            break;
+        }
         case IS:
         {
             auto o1 = POP();
@@ -136,8 +123,6 @@ Object* VirtualMachine::execute()
             if (getCurrentState()->exceptionOccurred()) goto error;
             if (condition)
                 JUMP();
-            else
-                ip++;
             break;
         }
         case JMP_IF_FALSE:
@@ -147,8 +132,6 @@ Object* VirtualMachine::execute()
             if (getCurrentState()->exceptionOccurred()) goto error;
             if (condition == false)
                 JUMP();
-            else
-                ip++;
             break;
         }
         case JMP_IF_TRUE_OR_POP:
@@ -159,10 +142,7 @@ Object* VirtualMachine::execute()
             if (condition)
                 JUMP();
             else
-            {
-                ip++;
                 (void)POP();
-            }
             break;
         }
         case JMP_IF_FALSE_OR_POP:
@@ -173,10 +153,7 @@ Object* VirtualMachine::execute()
             if (condition == false)
                 JUMP();
             else
-            {
-                ip++;
                 (void)POP();
-            }
             break;
         }
         case CALL:
@@ -235,7 +212,6 @@ Object* VirtualMachine::execute()
             if (nextElement != &P_endIter)
             {
                 PUSH(nextElement);
-                ip++; // Пропуск аргументу опкоду
             }
             else
             {

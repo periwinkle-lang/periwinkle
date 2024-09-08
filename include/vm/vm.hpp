@@ -18,7 +18,7 @@ namespace vm
         POP, DUP,
 
         // Операції над об'єктами
-        POS, NEG, GET_ITER, ADD, SUB, MUL, DIV, MOD, FLOOR_DIV,
+        UNARY_OP, BINARY_OP,
 
         IS, COMPARE,
 

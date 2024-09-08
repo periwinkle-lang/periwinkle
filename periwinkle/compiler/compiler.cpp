@@ -359,7 +359,7 @@ void compiler::Compiler::compileForEachStatement(ForEachStatement* statement)
 {
     compileExpression(statement->expression);
     setLineno(statement->forEach);
-    emitOpCode(GET_ITER);
+    emitOpCode(UNARY_OP, static_cast<vm::WORD>(vm::ObjectOperatorOffset::GET_ITER));
     auto startForEachAddress = getOffset();
     auto endForEachBlock = emitOpCode(FOR_EACH, 0);
     setLineno(statement->variable);
@@ -488,13 +488,15 @@ void compiler::Compiler::compileAssignmentExpression(AssignmentExpression* expre
     compileNameGet(name);
 
     setLineno(expression->assignment);
-    if      (op == Keyword::ADD_EQUAL) emitOpCode(ADD);
-    else if (op == Keyword::SUB_EQUAL) emitOpCode(SUB);
-    else if (op == Keyword::MUL_EQUAL) emitOpCode(MUL);
-    else if (op == Keyword::DIV_EQUAL) emitOpCode(DIV);
-    else if (op == Keyword::MOD_EQUAL) emitOpCode(MOD);
-    else if (op == Keyword::FLOOR_DIV_EQUAL) emitOpCode(FLOOR_DIV);
+    vm::ObjectOperatorOffset operatorOffset;
+    if      (op == Keyword::ADD_EQUAL) operatorOffset = vm::ObjectOperatorOffset::ADD;
+    else if (op == Keyword::SUB_EQUAL) operatorOffset = vm::ObjectOperatorOffset::SUB;
+    else if (op == Keyword::MUL_EQUAL) operatorOffset = vm::ObjectOperatorOffset::MUL;
+    else if (op == Keyword::DIV_EQUAL) operatorOffset = vm::ObjectOperatorOffset::DIV;
+    else if (op == Keyword::MOD_EQUAL) operatorOffset = vm::ObjectOperatorOffset::MOD;
+    else if (op == Keyword::FLOOR_DIV_EQUAL) operatorOffset = vm::ObjectOperatorOffset::FLOOR_DIV;
     else plog::fatal << "Неправильний оператор присвоєння: \"" << op << "\"";
+    emitOpCode(BINARY_OP, static_cast<vm::WORD>(operatorOffset));
     compileNameSet(name);
 }
 
@@ -692,19 +694,19 @@ void compiler::Compiler::compileBinaryExpression(BinaryExpression* expression)
     compileExpression(expression->left);
     setLineno(expression->op);
 
-    if      (op == Keyword::ADD) emitOpCode(ADD);
-    else if (op == Keyword::SUB) emitOpCode(SUB);
-    else if (op == Keyword::DIV) emitOpCode(DIV);
-    else if (op == Keyword::MUL) emitOpCode(MUL);
-    else if (op == Keyword::MOD) emitOpCode(MOD);
-    else if (op == Keyword::FLOOR_DIV) emitOpCode(FLOOR_DIV);
+    if      (op == Keyword::ADD) emitOpCode(BINARY_OP, static_cast<vm::WORD>(vm::ObjectOperatorOffset::ADD));
+    else if (op == Keyword::SUB) emitOpCode(BINARY_OP, static_cast<vm::WORD>(vm::ObjectOperatorOffset::SUB));
+    else if (op == Keyword::DIV) emitOpCode(BINARY_OP, static_cast<vm::WORD>(vm::ObjectOperatorOffset::DIV));
+    else if (op == Keyword::MUL) emitOpCode(BINARY_OP, static_cast<vm::WORD>(vm::ObjectOperatorOffset::MUL));
+    else if (op == Keyword::MOD) emitOpCode(BINARY_OP, static_cast<vm::WORD>(vm::ObjectOperatorOffset::MOD));
+    else if (op == Keyword::FLOOR_DIV) emitOpCode(BINARY_OP, static_cast<vm::WORD>(vm::ObjectOperatorOffset::FLOOR_DIV));
     else if (op == Keyword::IS) emitOpCode(IS);
-    else if (op == Keyword::EQUAL_EQUAL) emitOpCode(COMPARE, (vm::WORD)EQ);
-    else if (op == Keyword::NOT_EQUAL) emitOpCode(COMPARE, (vm::WORD)NE);
-    else if (op == Keyword::GREATER) emitOpCode(COMPARE, (vm::WORD)GT);
-    else if (op == Keyword::GREATER_EQUAL) emitOpCode(COMPARE, (vm::WORD)GE);
-    else if (op == Keyword::LESS) emitOpCode(COMPARE, (vm::WORD)LT);
-    else if (op == Keyword::LESS_EQUAL) emitOpCode(COMPARE, (vm::WORD)LE);
+    else if (op == Keyword::EQUAL_EQUAL) emitOpCode(COMPARE, static_cast<vm::WORD>(EQ));
+    else if (op == Keyword::NOT_EQUAL) emitOpCode(COMPARE, static_cast<vm::WORD>(NE));
+    else if (op == Keyword::GREATER) emitOpCode(COMPARE, static_cast<vm::WORD>(GT));
+    else if (op == Keyword::GREATER_EQUAL) emitOpCode(COMPARE, static_cast<vm::WORD>(GE));
+    else if (op == Keyword::LESS) emitOpCode(COMPARE, static_cast<vm::WORD>(LT));
+    else if (op == Keyword::LESS_EQUAL) emitOpCode(COMPARE, static_cast<vm::WORD>(LE));
     else plog::fatal << "Неправильний токен оператора: \"" << op << "\"";
 }
 
@@ -714,8 +716,8 @@ void compiler::Compiler::compileUnaryExpression(UnaryExpression* expression)
     setLineno(expression->op);
 
     auto& op = expression->op.text;
-    if (op == Keyword::ADD) emitOpCode(POS);
-    else if (op == Keyword::SUB) emitOpCode(NEG);
+    if (op == Keyword::ADD) emitOpCode(UNARY_OP, static_cast<vm::WORD>(vm::ObjectOperatorOffset::POS));
+    else if (op == Keyword::SUB) emitOpCode(UNARY_OP, static_cast<vm::WORD>(vm::ObjectOperatorOffset::NEG));
     else if (op == Keyword::NOT) emitOpCode(NOT);
     else plog::fatal << "Неправильний токен унарного оператора: \"" << op << "\"";
 }

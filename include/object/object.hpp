@@ -68,21 +68,34 @@ namespace vm
 
     struct ObjectOperators
     {
-         callFunction call; // Виклик об'єкта, дані передаються через аргументи
-         stackCallFunction stackCall; // Виклик об'єкта, дані передаються через стек
-         unaryFunction toString;
-         unaryFunction toInteger;
-         unaryFunction toReal;
-         unaryFunction toBool;
-         binaryFunction add;
-         binaryFunction sub;
-         binaryFunction mul;
-         binaryFunction div;
-         binaryFunction floorDiv; // Ділення з округленням
-         binaryFunction mod;
-         unaryFunction pos; // Унарний оператор +
-         unaryFunction neg; // Заперечення
-         unaryFunction getIter; // Повертає ітератор
+        callFunction call; // Виклик об'єкта, дані передаються через аргументи
+        stackCallFunction stackCall; // Виклик об'єкта, дані передаються через стек
+        unaryFunction toString;
+        unaryFunction toInteger;
+        unaryFunction toReal;
+        unaryFunction toBool;
+        binaryFunction add;
+        binaryFunction sub;
+        binaryFunction mul;
+        binaryFunction div;
+        binaryFunction floorDiv; // Ділення з округленням
+        binaryFunction mod;
+        unaryFunction pos; // Унарний оператор +
+        unaryFunction neg; // Заперечення
+        unaryFunction getIter; // Повертає ітератор
+    };
+
+    enum class ObjectOperatorOffset : WORD
+    {
+        ADD = offsetof(ObjectOperators, add),
+        SUB = offsetof(ObjectOperators, sub),
+        MUL = offsetof(ObjectOperators, mul),
+        DIV = offsetof(ObjectOperators, div),
+        FLOOR_DIV = offsetof(ObjectOperators, floorDiv),
+        MOD = offsetof(ObjectOperators, mod),
+        POS = offsetof(ObjectOperators, pos),
+        NEG = offsetof(ObjectOperators, neg),
+        GET_ITER = offsetof(ObjectOperators, getIter),
     };
 
     extern TypeObject typeObjectType;
@@ -141,6 +154,12 @@ namespace vm
 
         // Повертає ітератор об'єкта
         Object* getIter();
+
+        // Викликає унарний оператор для об'єкта
+        Object* callUnaryOperator(vm::ObjectOperatorOffset offset);
+
+        // Викликає бінарний оператор для об'єктів
+        Object* callBinaryOperator(Object* other, vm::ObjectOperatorOffset offset);
 
         // Отримання атрибута за його іменем, якщо атрибут не знайдений, повертає nullptr
         Object* getAttr(const std::string& name);

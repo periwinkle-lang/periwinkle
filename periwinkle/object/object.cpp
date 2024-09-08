@@ -1,6 +1,8 @@
 #include <cstddef>
 #include <format>
 #include <algorithm>
+#include <string_view>
+#include <unordered_map>
 
 #include "object.hpp"
 #include "bool_object.hpp"
@@ -14,6 +16,7 @@
 #include "real_object.hpp"
 #include "periwinkle.hpp"
 #include "keyword.hpp"
+#include "plogger.hpp"
 
 using namespace vm;
 
@@ -236,9 +239,13 @@ bool vm::validateCall(Object* callable, WORD argc, vm::NamedArgs* namedArgs)
 #define GET_BINARY_OPERATOR_BY_OFFSET(object, operatorOffset) \
     (*reinterpret_cast<binaryFunction*>(reinterpret_cast<char*>(&(object)->objectType->operators) + operatorOffset))
 
+// Повертає посилання на unaryFunction з структури ObjectOperators за зсувом
+#define GET_UNARY_OPERATOR_BY_OFFSET(object, operatorOffset) \
+    (*reinterpret_cast<unaryFunction*>(reinterpret_cast<char*>(&(object)->objectType->operators) + operatorOffset))
+
 #define OPERATOR_OFFSET(op) offsetof(ObjectOperators, op)
 
-static Object* callBinaryOperator(Object* o1, Object* o2, size_t operatorOffset)
+static Object* _callBinaryOperator(Object* o1, Object* o2, size_t operatorOffset)
 {
     auto o1Operator = GET_BINARY_OPERATOR_BY_OFFSET(o1, operatorOffset);
     auto o2Operator = GET_BINARY_OPERATOR_BY_OFFSET(o2, operatorOffset);
@@ -298,19 +305,21 @@ static Object* callCompareOperator(Object* o1, Object* o2, ObjectCompOperator op
     return &P_NotImplemented;
 }
 
-#define UNARY_OPERATOR(op_name, op)                                           \
-    Object* vm::Object::op_name()                                             \
-    {                                                                         \
-        auto op_ = GET_OPERATOR(this, op_name);                               \
-        if (op_ == nullptr)                                                   \
-        {                                                                     \
-            getCurrentState()->setException(&TypeErrorObjectType,             \
-                std::format(                                                  \
-                "Неправильний тип операнда \"{}\" для унарного оператора {}", \
-                objectType->name, #op));                                      \
-            return nullptr;                                                   \
-        }                                                                     \
-        return op_(this);                                                     \
+static constexpr std::string_view UNARY_OPERATOR_ERROR_MSG = "Неправильний тип операнда \"{}\" для унарного оператора {}";
+
+#define UNARY_OPERATOR(op_name, op)                               \
+    Object* vm::Object::op_name()                                 \
+    {                                                             \
+        auto op_ = GET_OPERATOR(this, op_name);                   \
+        if (op_ == nullptr)                                       \
+        {                                                         \
+            getCurrentState()->setException(&TypeErrorObjectType, \
+                std::format(                                      \
+                UNARY_OPERATOR_ERROR_MSG,                         \
+                objectType->name, #op));                          \
+            return nullptr;                                       \
+        }                                                         \
+        return op_(this);                                         \
     }
 
 #define UNARY_OPERATOR_WITH_MESSAGE(op_name, message)              \
@@ -326,19 +335,20 @@ static Object* callCompareOperator(Object* o1, Object* o2, ObjectCompOperator op
         return op_(this);                                          \
     }
 
-#define BINARY_OPERATOR(op_name, op)                                               \
-    Object* vm::Object::op_name(Object* o)                                         \
-    {                                                                              \
-        auto result = callBinaryOperator(this, o, OPERATOR_OFFSET(op_name));       \
-        if (result == &P_NotImplemented)                                           \
-        {                                                                          \
-            getCurrentState()->setException(&TypeErrorObjectType,                  \
-                std::format(                                                       \
-                "Непідтримувані типи операндів \"{}\" та \"{}\" для оператора {}", \
-                objectType->name, o->objectType->name, op));                       \
-            return nullptr;                                                        \
-        }                                                                          \
-        return result;                                                             \
+static constexpr std::string_view BINARY_OPERATOR_ERROR_MSG = "Непідтримувані типи операндів \"{}\" та \"{}\" для оператора {}";
+
+#define BINARY_OPERATOR(op_name, op)                                          \
+    Object* vm::Object::op_name(Object* o)                                    \
+    {                                                                         \
+        auto result = _callBinaryOperator(this, o, OPERATOR_OFFSET(op_name)); \
+        if (result == &P_NotImplemented)                                      \
+        {                                                                     \
+            getCurrentState()->setException(&TypeErrorObjectType,             \
+                std::format(BINARY_OPERATOR_ERROR_MSG,                        \
+                    objectType->name, o->objectType->name, op));              \
+            return nullptr;                                                   \
+        }                                                                     \
+        return result;                                                        \
     }
 
 Object* vm::Object::compare(Object* o, ObjectCompOperator op)
@@ -505,8 +515,12 @@ Object* vm::Object::toBool()
     return op(this);
 }
 
-UNARY_OPERATOR_WITH_MESSAGE(toInteger, "Неможливо конвертувати об'єкт типу \"{}\" в число")
-UNARY_OPERATOR_WITH_MESSAGE(toReal, "Неможливо конвертувати об'єкт типу \"{}\" в дійсне число")
+static constexpr std::string_view TO_INTEGER_ERROR_MSG = "Неможливо конвертувати об'єкт типу \"{}\" в число";
+static constexpr std::string_view TO_REAL_ERROR_MSG = "Неможливо конвертувати об'єкт типу \"{}\" в дійсне число";
+static constexpr std::string_view GET_ITER_ERROR_MSG = "Для об'єкта типу \"{}\" неможливо отримати ітератор";
+
+UNARY_OPERATOR_WITH_MESSAGE(toInteger, TO_INTEGER_ERROR_MSG)
+UNARY_OPERATOR_WITH_MESSAGE(toReal, TO_REAL_ERROR_MSG)
 BINARY_OPERATOR(add, Keyword::ADD)
 BINARY_OPERATOR(sub, Keyword::SUB)
 BINARY_OPERATOR(mul, Keyword::MUL)
@@ -514,8 +528,61 @@ BINARY_OPERATOR(div, Keyword::DIV)
 BINARY_OPERATOR(floorDiv, Keyword::FLOOR_DIV)
 BINARY_OPERATOR(mod, Keyword::MOD)
 UNARY_OPERATOR(pos, Keyword::ADD)
-UNARY_OPERATOR(neg, Keyword::NEG)
-UNARY_OPERATOR_WITH_MESSAGE(getIter, "Для об'єкта типу \"{}\" неможливо отримати ітератор")
+UNARY_OPERATOR(neg, Keyword::SUB)
+UNARY_OPERATOR_WITH_MESSAGE(getIter, GET_ITER_ERROR_MSG)
+
+static const std::unordered_map<size_t, const std::string_view> offsetToUnaryOperatorErrorMsg =
+{
+    {static_cast<size_t>(vm::ObjectOperatorOffset::GET_ITER), GET_ITER_ERROR_MSG},
+};
+
+static const std::unordered_map<size_t, const std::string_view> offsetToOperatorKeyword =
+{
+    {static_cast<size_t>(vm::ObjectOperatorOffset::ADD), Keyword::ADD},
+    {static_cast<size_t>(vm::ObjectOperatorOffset::SUB), Keyword::SUB},
+    {static_cast<size_t>(vm::ObjectOperatorOffset::MUL), Keyword::MUL},
+    {static_cast<size_t>(vm::ObjectOperatorOffset::DIV), Keyword::DIV},
+    {static_cast<size_t>(vm::ObjectOperatorOffset::FLOOR_DIV), Keyword::FLOOR_DIV},
+    {static_cast<size_t>(vm::ObjectOperatorOffset::MOD), Keyword::MOD},
+    {static_cast<size_t>(vm::ObjectOperatorOffset::POS), Keyword::ADD},
+    {static_cast<size_t>(vm::ObjectOperatorOffset::NEG), Keyword::SUB},
+};
+
+Object* vm::Object::callUnaryOperator(vm::ObjectOperatorOffset offset)
+{
+    auto op = GET_UNARY_OPERATOR_BY_OFFSET(this, static_cast<size_t>(offset));
+    if (op == nullptr)
+    {
+        std::string errorMsg;
+        if (offsetToOperatorKeyword.contains(static_cast<size_t>(offset)))
+        {
+            errorMsg = std::format(UNARY_OPERATOR_ERROR_MSG, objectType->name,
+                offsetToOperatorKeyword.at(static_cast<size_t>(offset)));
+        }
+        else
+        {
+            errorMsg = std::vformat(offsetToUnaryOperatorErrorMsg.at(static_cast<size_t>(offset)),
+                std::make_format_args(objectType->name));
+        }
+        getCurrentState()->setException(&TypeErrorObjectType, errorMsg);
+        return nullptr;
+    }
+    return op(this);
+}
+
+Object* vm::Object::callBinaryOperator(Object* other, vm::ObjectOperatorOffset offset)
+{
+    plog::passert(offsetToOperatorKeyword.contains(static_cast<size_t>(offset))) << "Для оператора невизначено Keyword";
+    auto result = _callBinaryOperator(this, other, static_cast<size_t>(offset));
+    if (result == &P_NotImplemented)
+    {
+        getCurrentState()->setException(&TypeErrorObjectType,
+            std::format(BINARY_OPERATOR_ERROR_MSG,
+                objectType->name, other->objectType->name, offsetToOperatorKeyword.at(static_cast<size_t>(offset))));
+        return nullptr;
+    }
+    return result;
+}
 
 Object* vm::Object::getAttr(const std::string& name)
 {

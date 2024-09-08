@@ -48,6 +48,8 @@ int compiler::Disassembler::opCodeLenArguments(OpCode code)
     case FOR_EACH:
     case TRY:
     case CATCH:
+    case UNARY_OP:
+    case BINARY_OP:
         return 1;
     case CALL_NA:
     case CALL_METHOD_NA:
@@ -179,6 +181,23 @@ std::string compiler::Disassembler::disassemble(vm::CodeObject* codeObject)
                     name = codeObject->freevars[argument - codeObject->cells.size()];
                 }
                 out << "(" << name << ")";
+            }
+            else if (op == BINARY_OP || op == UNARY_OP)
+            {
+                out << "(";
+                switch (static_cast<vm::ObjectOperatorOffset>(argument))
+                {
+                case vm::ObjectOperatorOffset::ADD: out << "+"; break;
+                case vm::ObjectOperatorOffset::SUB: out << "-"; break;
+                case vm::ObjectOperatorOffset::DIV: out << "/"; break;
+                case vm::ObjectOperatorOffset::MUL: out << "*"; break;
+                case vm::ObjectOperatorOffset::MOD: out << "%"; break;
+                case vm::ObjectOperatorOffset::FLOOR_DIV: out << "//"; break;
+                case vm::ObjectOperatorOffset::POS: out << "+"; break;
+                case vm::ObjectOperatorOffset::NEG: out << "-"; break;
+                case vm::ObjectOperatorOffset::GET_ITER: out << "getIter"; break;
+                }
+                out << ")";
             }
             break;
         }
