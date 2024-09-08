@@ -327,24 +327,111 @@ METHOD_TEMPLATE(listSublist, ListObject)
     return subList;
 }
 
+static DefaultParameters listSortDefaults = {{
+    {"заКлючем", &P_null},
+    {"порівняння", &P_null},
+    {"обернути", &P_false},
+}};
+
 METHOD_TEMPLATE(listSort, ListObject)
 {
-    try
+    Object *keyFunction, *cmpFunction;
+    BoolObject* reverse;
+    ArgParser argParser{
+        {&keyFunction, objectObjectType, "заКлючем"},
+        {&cmpFunction, objectObjectType, "порівняння"},
+        {&reverse, boolObjectType, "обернути"}
+    };
+    if (!argParser.parse(args, &listSortDefaults, na)) return nullptr;
+
+    if (keyFunction != &P_null)
     {
-        std::sort(o->items.begin(), o->items.end(),
-            [](Object* a, Object* b) {
-                Object* result = a->compare(b, ObjectCompOperator::LT);
-                // Якщо результат порівняння nullptr, значить стався виняток,
-                // і щоб перервати сортування, викидається C++ виняток, який одразу і обробляється
-                if (result == nullptr) throw std::runtime_error("Великоднє яйце");
-                return result == &P_true;
+        using Pair = std::pair<Object*, Object*>;
+        std::vector<Pair> transformedItems;
+        transformedItems.reserve(o->items.size());
+        for (auto it = o->items.begin(); it != o->items.end(); ++it)
+        {
+            auto key = keyFunction->call({it, 1});
+            if (key == nullptr) return nullptr;
+            transformedItems.emplace_back(key, *it);
+        }
+
+        try
+        {
+            if (cmpFunction == &P_null)
+            {
+                std::sort(transformedItems.begin(), transformedItems.end(),
+                    [](const Pair& a, const Pair& b)
+                    {
+                        Object* result = a.first->compare(b.first, ObjectCompOperator::LT);
+                        // Якщо результат порівняння nullptr, значить стався виняток,
+                        // і щоб перервати сортування, викидається C++ виняток, який одразу і обробляється
+                        if (result == nullptr) throw std::runtime_error("");
+                        return result == &P_true;
+                    }
+                );
             }
-        );
+            else
+            {
+                std::sort(transformedItems.begin(), transformedItems.end(),
+                    [&](const Pair& a, const Pair& b)
+                    {
+                        Object* argv[] = { a.first, b.first };
+                        Object* result = cmpFunction->call({argv, 2});
+                        if (result == nullptr) throw std::runtime_error("");
+                        return result == &P_true;
+                    }
+                );
+            }
+        }
+        catch (const std::runtime_error& e)
+        {
+            return nullptr;
+        }
+
+        for (size_t i = 0; i < transformedItems.size(); ++i)
+        {
+            o->items[i] = transformedItems[i].second;
+        }
     }
-    catch (const std::runtime_error& e)
+    else
     {
-        return nullptr;
+        try
+        {
+            if (cmpFunction == &P_null)
+            {
+                std::sort(o->items.begin(), o->items.end(),
+                    [](Object* a, Object* b) {
+                        Object* result = a->compare(b, ObjectCompOperator::LT);
+
+                        if (result == nullptr) throw std::runtime_error("");
+                        return result == &P_true;
+                    }
+                );
+            }
+            else
+            {
+                std::sort(o->items.begin(), o->items.end(),
+                    [&](Object* a, Object* b)
+                    {
+                        Object* argv[] = { a, b };
+                        Object* result = cmpFunction->call({argv, 2});
+                        if (result == nullptr) throw std::runtime_error("");
+                        return result == &P_true;
+                    });
+            }
+        }
+        catch (const std::runtime_error& e)
+        {
+            return nullptr;
+        }
     }
+
+    if (reverse == &P_true)
+    {
+        std::reverse(o->items.begin(), o->items.end());
+    }
+
     return &P_null;
 }
 
@@ -407,7 +494,7 @@ namespace vm
             OBJECT_METHOD("отримати",     1, false, listGetItem,   listObjectType, nullptr),
             OBJECT_METHOD("очистити",     0, false, listClear,     listObjectType, nullptr),
             OBJECT_METHOD("підсписок",    2, false, listSublist,   listObjectType, nullptr),
-            OBJECT_METHOD("відсортувати", 0, false, listSort,      listObjectType, nullptr),
+            OBJECT_METHOD("впорядкувати", 0, false, listSort,      listObjectType, &listSortDefaults),
         },
     };
 
