@@ -78,8 +78,7 @@ vm::Frame* compiler::Compiler::compile()
     SCOPE_POP();
     if (!isRootBlockHasReturn)
     {
-        emitOpCode(LOAD_CONST);
-        emitOperand(nullConstIdx());
+        emitOpCode(LOAD_CONST, nullConstIdx());
         emitOpCode(RETURN);
     }
     auto frame = new vm::Frame;
@@ -167,12 +166,10 @@ void compiler::Compiler::compileWhileStatement(WhileStatement* statement)
 {
     auto startWhileAddress = getOffset();
     compileExpression(statement->condition);
-    emitOpCode(JMP_IF_FALSE);
-    auto endWhileBlock = emitOperand(0);
+    auto endWhileBlock = emitOpCode(JMP_IF_FALSE, 0);
     PUSH_LOOP_STATE(startWhileAddress);
     compileBlock(statement->block);
-    emitOpCode(JMP);
-    emitOperand(startWhileAddress);
+    emitOpCode(JMP, startWhileAddress);
     patchJumpAddress(endWhileBlock, getOffset());
     for (auto address : STATE_BACK(LoopState)->addressesForPatchWithEndBlock)
     {
@@ -187,8 +184,7 @@ void compiler::Compiler::compileBreakStatement(BreakStatement* statement)
     if (state)
     {
         setLineno(statement->break_);
-        emitOpCode(JMP);
-        auto endBlock = emitOperand(0);
+        auto endBlock = emitOpCode(JMP, 0);
         state->addressesForPatchWithEndBlock.push_back(endBlock);
     }
     else
@@ -203,8 +199,7 @@ void compiler::Compiler::compileContinueStatement(ContinueStatement* statement)
     if (state)
     {
         setLineno(statement->continue_);
-        emitOpCode(JMP);
-        emitOperand(state->startIp);
+        emitOpCode(JMP, state->startIp);
     }
     else
     {
@@ -215,8 +210,7 @@ void compiler::Compiler::compileContinueStatement(ContinueStatement* statement)
 void compiler::Compiler::compileIfStatement(IfStatement* statement)
 {
     compileExpression(statement->condition);
-    emitOpCode(JMP_IF_FALSE);
-    auto endIfBlock = emitOperand(0);
+    auto endIfBlock = emitOpCode(JMP_IF_FALSE, 0);
     compileBlock(statement->block);
     if (!statement->elseOrIf)
     {
@@ -224,8 +218,7 @@ void compiler::Compiler::compileIfStatement(IfStatement* statement)
     }
     else
     {
-        emitOpCode(JMP);
-        auto endIfElseBlock = emitOperand(0);
+        auto endIfElseBlock = emitOpCode(JMP, 0);
         patchJumpAddress(endIfBlock, getOffset());
 
         auto elseOrIf = statement->elseOrIf.value();
@@ -307,8 +300,7 @@ void compiler::Compiler::compileFunctionDeclaration(ast::FunctionDeclaration* st
     if (statement->variadicParameter)
         codeObject->isVariadic = true;
     compileBlock(statement->block);
-    emitOpCode(LOAD_CONST);
-    emitOperand(nullConstIdx());
+    emitOpCode(LOAD_CONST, nullConstIdx());
     emitOpCode(RETURN);
 
     SCOPE_POP();
@@ -330,15 +322,13 @@ void compiler::Compiler::compileFunctionDeclaration(ast::FunctionDeclaration* st
 
         for (auto& name : state->codeObject->cells)
         {
-            emitOpCode(GET_CELL);
             auto cellIdx = std::find(cells.begin(), cells.end(), name);
-            emitOperand(cellIdx - cells.begin());
+            emitOpCode(GET_CELL, cellIdx - cells.begin());
         }
     }
 
     codeObject->constants.push_back(fnCodeObject);
-    emitOpCode(LOAD_CONST);
-    emitOperand(codeObject->constants.size() - 1);
+    emitOpCode(LOAD_CONST, codeObject->constants.size() - 1);
     emitOpCode(MAKE_FUNCTION);
     compileNameSet(name);
 }
@@ -355,8 +345,7 @@ void compiler::Compiler::compileReturnStatement(ast::ReturnStatement* statement)
         }
         else
         {
-            emitOpCode(LOAD_CONST);
-            emitOperand(nullConstIdx());
+            emitOpCode(LOAD_CONST, nullConstIdx());
         }
         emitOpCode(RETURN);
     }
@@ -372,14 +361,12 @@ void compiler::Compiler::compileForEachStatement(ForEachStatement* statement)
     setLineno(statement->forEach);
     emitOpCode(GET_ITER);
     auto startForEachAddress = getOffset();
-    emitOpCode(FOR_EACH);
-    auto endForEachBlock = emitOperand(0);
+    auto endForEachBlock = emitOpCode(FOR_EACH, 0);
     setLineno(statement->variable);
     compileNameSet(statement->variable.text);
     PUSH_LOOP_STATE(startForEachAddress);
     compileBlock(statement->block);
-    emitOpCode(JMP);
-    emitOperand(startForEachAddress);
+    emitOpCode(JMP, startForEachAddress);
     patchJumpAddress(endForEachBlock, getOffset());
     for (auto address : STATE_BACK(LoopState)->addressesForPatchWithEndBlock)
     {
@@ -395,13 +382,12 @@ void compiler::Compiler::compileTryCatchStatement(TryCatchStatement* statement)
     setLineno(statement->try_);
     emitOpCode(TRY);
     compileBlock(statement->block);
-    emitOpCode(JMP);
     std::vector<vm::WORD> ends;
     ends.reserve(statement->catchBlocks.size()
         + 1 // Для JMP в блоці TRY
         - 1 // Останньому обробнику не потрібен JMP
     );
-    ends.push_back(emitOperand(0));
+    ends.push_back(emitOpCode(JMP, 0));
     excHandler.firstHandlerAddress = getOffset();
     for (auto i = statement->catchBlocks.cbegin(); i != statement->catchBlocks.cend(); ++i)
     {
@@ -409,8 +395,7 @@ void compiler::Compiler::compileTryCatchStatement(TryCatchStatement* statement)
         setLineno(catchBlock->exceptionName);
         compileNameGet(catchBlock->exceptionName.text);
         setLineno(catchBlock->catch_);
-        emitOpCode(CATCH);
-        auto endCatchBlock = emitOperand(0);
+        auto endCatchBlock = emitOpCode(CATCH, 0);
         if (catchBlock->variableName.has_value())
         {
             setLineno(catchBlock->as.value());
@@ -428,9 +413,8 @@ void compiler::Compiler::compileTryCatchStatement(TryCatchStatement* statement)
         patchJumpAddress(endCatchBlock, getOffset());
         if (i != statement->catchBlocks.cend())
         {
-            emitOpCode(JMP);
+            ends.push_back(emitOpCode(JMP, 0));
         }
-        ends.push_back(emitOperand(0));
     }
     for (auto a : ends)
     {
@@ -617,8 +601,7 @@ void compiler::Compiler::compileLiteralExpression(LiteralExpression* expression)
     default:
         break;
     }
-    emitOpCode(LOAD_CONST);
-    emitOperand(index);
+    emitOpCode(LOAD_CONST, index);
 }
 
 void compiler::Compiler::compileVariableExpression(VariableExpression* expression)
@@ -678,13 +661,12 @@ void compiler::Compiler::compileCallExpression(CallExpression* expression)
     // то викликати його треба за допомогою CALL_METHOD
     if (expression->callable->kind == NodeKind::ATTRIBUTE_EXPRESSION)
     {
-        emitOpCode(withNamedArgs ? CALL_METHOD_NA : CALL_METHOD);
+        emitOpCode(withNamedArgs ? CALL_METHOD_NA : CALL_METHOD, argc);
     }
     else
     {
-        emitOpCode(withNamedArgs ? CALL_NA : CALL);
+        emitOpCode(withNamedArgs ? CALL_NA : CALL, argc);
     }
-    emitOperand(argc);
 
     if (withNamedArgs)
     {
@@ -701,8 +683,7 @@ void compiler::Compiler::compileBinaryExpression(BinaryExpression* expression)
     {
         compileExpression(expression->left);
         setLineno(expression->op);
-        emitOpCode(op == Keyword::AND ? JMP_IF_FALSE_OR_POP : JMP_IF_TRUE_OR_POP);
-        auto end = emitOperand(0);
+        auto end = emitOpCode(op == Keyword::AND ? JMP_IF_FALSE_OR_POP : JMP_IF_TRUE_OR_POP, 0);
         compileExpression(expression->right);
         patchJumpAddress(end, getOffset());
         return;
@@ -718,12 +699,12 @@ void compiler::Compiler::compileBinaryExpression(BinaryExpression* expression)
     else if (op == Keyword::MOD) emitOpCode(MOD);
     else if (op == Keyword::FLOOR_DIV) emitOpCode(FLOOR_DIV);
     else if (op == Keyword::IS) emitOpCode(IS);
-    else if (op == Keyword::EQUAL_EQUAL) { emitOpCode(COMPARE); emitOperand((vm::WORD)EQ); }
-    else if (op == Keyword::NOT_EQUAL) { emitOpCode(COMPARE); emitOperand((vm::WORD)NE); }
-    else if (op == Keyword::GREATER) { emitOpCode(COMPARE); emitOperand((vm::WORD)GT); }
-    else if (op == Keyword::GREATER_EQUAL) { emitOpCode(COMPARE); emitOperand((vm::WORD)GE); }
-    else if (op == Keyword::LESS) { emitOpCode(COMPARE); emitOperand((vm::WORD)LT); }
-    else if (op == Keyword::LESS_EQUAL) { emitOpCode(COMPARE); emitOperand((vm::WORD)LE); }
+    else if (op == Keyword::EQUAL_EQUAL) emitOpCode(COMPARE, (vm::WORD)EQ);
+    else if (op == Keyword::NOT_EQUAL) emitOpCode(COMPARE, (vm::WORD)NE);
+    else if (op == Keyword::GREATER) emitOpCode(COMPARE, (vm::WORD)GT);
+    else if (op == Keyword::GREATER_EQUAL) emitOpCode(COMPARE, (vm::WORD)GE);
+    else if (op == Keyword::LESS) emitOpCode(COMPARE, (vm::WORD)LT);
+    else if (op == Keyword::LESS_EQUAL) emitOpCode(COMPARE, (vm::WORD)LE);
     else plog::fatal << "Неправильний токен оператора: \"" << op << "\"";
 }
 
@@ -749,8 +730,7 @@ void compiler::Compiler::compileAttributeExpression(
 {
     compileExpression(expression->expression);
     setLineno(expression->attribute);
-    emitOpCode(isMethod ? LOAD_METHOD : GET_ATTR);
-    emitOperand(nameIdx(expression->attribute.text));
+    emitOpCode(isMethod ? LOAD_METHOD : GET_ATTR, nameIdx(expression->attribute.text));
 }
 
 void compiler::Compiler::compileNameGet(const std::string& name)
@@ -758,19 +738,20 @@ void compiler::Compiler::compileNameGet(const std::string& name)
     auto scope = SCOPE_BACK();
     auto varGetter = scope->getVarGetter(name);
 
-    emitOpCode(varGetter);
+    vm::WORD index;
     if (varGetter == LOAD_LOCAL)
     {
-        emitOperand(localIdx(name));
+        index = localIdx(name);
     }
     else if (varGetter == LOAD_CELL)
     {
-        emitOperand(freeIdx(name));
+        index = freeIdx(name);
     }
     else if (varGetter == LOAD_GLOBAL)
     {
-        emitOperand(nameIdx(name));
+        index = nameIdx(name);
     }
+    emitOpCode(varGetter, index);
 }
 
 void compiler::Compiler::compileNameSet(const std::string& name)
@@ -778,19 +759,20 @@ void compiler::Compiler::compileNameSet(const std::string& name)
     auto scope = SCOPE_BACK();
     auto varSetter = scope->getVarSetter(name);
 
-    emitOpCode(varSetter);
+    vm::WORD index;
     if (varSetter == STORE_LOCAL)
     {
-        emitOperand(localIdx(name));
+        index = localIdx(name);
     }
     else if (varSetter == STORE_CELL)
     {
-        emitOperand(freeIdx(name));
+        index = freeIdx(name);
     }
     else if (varSetter == STORE_GLOBAL)
     {
-        emitOperand(nameIdx(name));
+        index = nameIdx(name);
     }
+    emitOpCode(varSetter, index);
 }
 
 void compiler::Compiler::compileNameDelete(const std::string& name)
@@ -798,15 +780,16 @@ void compiler::Compiler::compileNameDelete(const std::string& name)
     auto scope = SCOPE_BACK();
     auto varDeleter = scope->getVarDeleter(name);
 
-    emitOpCode(varDeleter);
+    vm::WORD index;
     if (varDeleter == DELETE_LOCAL)
     {
-        emitOperand(localIdx(name));
+        index = localIdx(name);
     }
     else if (varDeleter == DELETE_GLOBAL)
     {
-        emitOperand(nameIdx(name));
+        index = nameIdx(name);
     }
+    emitOpCode(varDeleter, index);
 }
 
 CompilerState* compiler::Compiler::unwindStateStack(CompilerStateType type)
@@ -947,9 +930,9 @@ void compiler::Compiler::setLineno(Token token)
     currentLineno = (vm::WORD)token.lineno;
 }
 
-vm::WORD compiler::Compiler::emitOpCode(vm::OpCode op)
+vm::WORD compiler::Compiler::emitOpCode(vm::OpCode op, vm::WORD operand)
 {
-    codeObject->code.push_back((vm::WORD)op);
+    codeObject->code.push_back(static_cast<vm::WORD>(op) + (operand << 8));
     auto ip = vm::WORD(codeObject->code.size() - 1);
     codeObject->ipToLineno[ip] = currentLineno;
     return ip;
@@ -966,9 +949,12 @@ vm::WORD compiler::Compiler::getOffset()
     return (vm::WORD)codeObject->code.size();
 }
 
-void compiler::Compiler::patchJumpAddress(int offset, vm::WORD newAddress)
+void compiler::Compiler::patchJumpAddress(int offset, vm::WORD newAddress, bool isOp)
 {
-    codeObject->code[offset] = newAddress;
+    if (isOp)
+        codeObject->code[offset] |= newAddress << 8;
+    else
+        codeObject->code[offset] = newAddress;
 }
 
 compiler::Compiler::Compiler(BlockStatement* root, periwinkle::ProgramSource* source)

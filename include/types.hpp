@@ -14,7 +14,7 @@ using u8 = std::uint8_t;
 
 namespace vm
 {
-    using WORD = u64;
+    using WORD = u32;
 }
 
 #endif

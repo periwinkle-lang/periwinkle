@@ -21,13 +21,17 @@
 using namespace vm;
 
 #define READ() *ip++
-#define GET_CONST() code->constants[READ()]
+#define GET_CONST() code->constants[operand]
 #define PUSH(object) *(++sp) = object
 #define PEEK() *sp
 #define POP() *sp--
-#define JUMP() ip = &code->code[*ip]
+#define JUMP() ip = &code->code[operand]
 #define IP_OFFSET() (ip - &code->code[0] - 1)
 #define SET_IP(new_ip) ip = &code->code[(new_ip)]
+#define NEXT_OPCODE()         \
+    opcode = READ();          \
+    a = opcode & OPCODE_MASK; \
+    operand = opcode >> 8;
 
 #define BINARY_OP(name, op_name)                        \
 case OpCode::name:                                      \
@@ -68,12 +72,12 @@ Object* VirtualMachine::execute()
     const auto& names = code->names;
     auto builtin = getBuiltin();
     auto gc = getCurrentState()->getGC();
-    WORD a;
+    WORD opcode, a, operand;
 
     for (;;)
     {
     loop:
-        a = READ();
+        NEXT_OPCODE();
         switch ((OpCode)a)
         {
         case POP:
@@ -107,7 +111,7 @@ Object* VirtualMachine::execute()
         {
             auto arg1 = POP();
             auto arg2 = POP();
-            auto result = arg1->compare(arg2, (ObjectCompOperator)READ());
+            auto result = arg1->compare(arg2, (ObjectCompOperator)operand);
             if (!result) goto error;
             PUSH(result);
             break;
@@ -177,7 +181,7 @@ Object* VirtualMachine::execute()
         }
         case CALL:
         {
-            auto argc = READ();
+            auto argc = operand;
             auto callable = *(sp - argc);
 
             auto result = callable->stackCall(sp, argc);
@@ -187,8 +191,8 @@ Object* VirtualMachine::execute()
         }
         case CALL_NA:
         {
-            auto argc = READ();
-            auto namedArgNames = (StringVectorObject*)GET_CONST();
+            auto argc = operand;
+            auto namedArgNames = (StringVectorObject*)code->constants[READ()];
             auto callable = *(sp - argc);
             auto namedArgs = new NamedArgs;
             auto namedArgCount = namedArgNames->value.size();
@@ -247,7 +251,7 @@ Object* VirtualMachine::execute()
         }
         case LOAD_GLOBAL:
         {
-            auto& name = names[READ()];
+            auto& name = names[operand];
             if (frame->globals->contains(name))
             {
                 if (Object* v; (v = (*frame->globals)[name]) != nullptr)
@@ -271,13 +275,13 @@ Object* VirtualMachine::execute()
         }
         case STORE_GLOBAL:
         {
-            auto& name = names[READ()];
+            auto& name = names[operand];
             (*frame->globals)[name] = POP();
             break;
         }
         case DELETE_GLOBAL:
         {
-            auto& name = names[READ()];
+            auto& name = names[operand];
             if ((*frame->globals)[name] != nullptr)
             {
                 (*frame->globals)[name] = nullptr;
@@ -292,7 +296,7 @@ Object* VirtualMachine::execute()
         }
         case LOAD_LOCAL:
         {
-            auto localIdx = READ();
+            auto localIdx = operand;
             if (Object* v; (v = bp[localIdx]) != nullptr)
             {
                 PUSH(v);
@@ -307,12 +311,12 @@ Object* VirtualMachine::execute()
         }
         case STORE_LOCAL:
         {
-            bp[READ()] = POP();
+            bp[operand] = POP();
             break;
         }
         case DELETE_LOCAL:
         {
-            auto localIdx = READ();
+            auto localIdx = operand;
             if (bp[localIdx] != nullptr)
             {
                 bp[localIdx] = nullptr;
@@ -327,26 +331,26 @@ Object* VirtualMachine::execute()
         }
         case GET_CELL:
         {
-            PUSH(freevars[READ()]);
+            PUSH(freevars[operand]);
             break;
         }
         case LOAD_CELL:
         {
-            auto cell = (CellObject*)freevars[READ()];
+            auto cell = (CellObject*)freevars[operand];
             PUSH(cell->value);
             break;
         }
         case STORE_CELL:
         {
             auto value = POP();
-            auto cell = (CellObject*)freevars[READ()];
+            auto cell = (CellObject*)freevars[operand];
             cell->value = value;
             break;
         }
         case GET_ATTR:
         {
             auto object = POP();
-            auto& name = names[READ()];
+            auto& name = names[operand];
             auto value = object->getAttr(name);
             if (value == nullptr)
             {
@@ -361,7 +365,7 @@ Object* VirtualMachine::execute()
         case LOAD_METHOD:
         {
             auto object = POP();
-            auto& name = names[READ()];
+            auto& name = names[operand];
             auto function = object->getAttr(name);
             if (function == nullptr)
             {
@@ -384,7 +388,7 @@ Object* VirtualMachine::execute()
         }
         case CALL_METHOD:
         {
-            auto argc = READ();
+            auto argc = operand;
             auto callable = *(sp - argc);
 
             Object* result;
@@ -409,8 +413,8 @@ Object* VirtualMachine::execute()
         }
         case CALL_METHOD_NA:
         {
-            auto argc = READ();
-            auto namedArgNames = (StringVectorObject*)GET_CONST();
+            auto argc = operand;
+            auto namedArgNames = (StringVectorObject*)code->constants[READ()];
             auto callable = *(sp - argc);
             auto namedArgs = new NamedArgs;
             auto namedArgCount = namedArgNames->value.size();
@@ -475,7 +479,7 @@ Object* VirtualMachine::execute()
         case CATCH:
         {
             auto exceptionType = static_cast<TypeObject*>(*sp);
-            auto endIp = READ();
+            auto endIp = operand;
             auto currentException = getCurrentState()->exceptionOccurred();
             if (isInstance(currentException, *exceptionType))
             {
@@ -535,7 +539,7 @@ Object* VirtualMachine::execute()
             if (handler->finallyAddress && offset >= handler->finallyAddress)
             {
                 SET_IP(handler->endAddress);
-                a = READ();
+                NEXT_OPCODE();
                 goto OP_END_TRY;
             }
             else // В блоках обробників
@@ -546,7 +550,7 @@ Object* VirtualMachine::execute()
                     goto loop;
                 }
                 SET_IP(handler->endAddress);
-                a = READ();
+                NEXT_OPCODE();
                 goto OP_END_TRY;
             }
         }

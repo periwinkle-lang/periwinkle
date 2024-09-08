@@ -42,6 +42,8 @@ namespace vm
         COUNT // Кількість операцій
     )
 
+    constexpr const WORD OPCODE_MASK = 0xff;
+
     struct CodeObject;
 
     struct Frame

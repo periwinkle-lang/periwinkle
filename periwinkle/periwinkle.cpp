@@ -9,6 +9,7 @@
 #include "utils.hpp"
 #include "pconfig.hpp"
 #include "string_object.hpp"
+#include "plogger.hpp"
 
 using namespace periwinkle;
 
@@ -26,6 +27,7 @@ int periwinkle::Periwinkle::patchVersion() { return PERIWINKLE_VERSION_PATCH; }
 
 vm::Object* periwinkle::Periwinkle::execute()
 {
+    plog::passert(static_cast<int>(vm::OpCode::COUNT) <= 256) << "Перевищена максимальна кількість опкодів";
     using namespace std::placeholders;
     PParser::Parser parser(source->getText());
     parser.setErrorHandler(std::bind(

@@ -76,10 +76,10 @@ namespace compiler
         // Встановлює номер рядка в коді, який зараз компілюється.
         // !!!Викликати перед компіляцією рядка!!!
         inline void setLineno(ast::Token token);
-        inline vm::WORD emitOpCode(vm::OpCode op);
+        inline vm::WORD emitOpCode(vm::OpCode op, vm::WORD operand=0);
         inline vm::WORD emitOperand(vm::WORD operand);
         inline vm::WORD getOffset();
-        inline void patchJumpAddress(int offset, vm::WORD newAddress);
+        inline void patchJumpAddress(int offset, vm::WORD newAddress, bool isOp=true);
     public:
         vm::Frame* compile();
         Compiler(ast::BlockStatement* root, periwinkle::ProgramSource* source);

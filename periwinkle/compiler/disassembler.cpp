@@ -112,7 +112,7 @@ std::string compiler::Disassembler::disassemble(vm::CodeObject* codeObject)
 
     for (vm::WORD ip = 0; ip < codeObject->code.size(); ++ip)
     {
-        OpCode op = (OpCode)codeObject->code[ip];
+        OpCode op = (OpCode)(codeObject->code[ip] & vm::OPCODE_MASK);
         if (codeObject->ipToLineno.contains(ip))
         {
             if (auto newLineno = codeObject->ipToLineno.at(ip); newLineno != lineno)
@@ -130,7 +130,7 @@ std::string compiler::Disassembler::disassemble(vm::CodeObject* codeObject)
         {
         case 1:
         {
-            vm::WORD argument = codeObject->code[++ip];
+            vm::WORD argument = codeObject->code[ip] >> 8;
             out << argument;
             if (op == LOAD_CONST)
             {
@@ -184,7 +184,7 @@ std::string compiler::Disassembler::disassemble(vm::CodeObject* codeObject)
         }
         case 2:
         {
-            vm::WORD argument1 = codeObject->code[++ip];
+            vm::WORD argument1 = codeObject->code[ip] >> 8;
             vm::WORD argument2 = codeObject->code[++ip];
             out << argument1;
 

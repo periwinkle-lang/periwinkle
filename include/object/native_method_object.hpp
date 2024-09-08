@@ -9,8 +9,9 @@
 
 #define NATIVE_METHOD(name, arity, variadic, method, classType, defaults)         \
     vm::NativeMethodObject{&vm::nativeMethodObjectType, false,                    \
-                           [](size_t a, DefaultParameters* d) constexpr {         \
-                               return a + 1 + (d ? d->parameters.size() : 0);     \
+                           [](WORD a, DefaultParameters* d) constexpr {           \
+                               return a + 1 +                                     \
+                               (d ? static_cast<WORD>(d->parameters.size()) : 0); \
                            }(arity, defaults),                                    \
                            name, defaults,                                        \
                            [](bool isVariadic, DefaultParameters* d) constexpr {  \
