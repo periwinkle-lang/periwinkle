@@ -16,6 +16,7 @@
 #include "utils.hpp"
 #include "keyword.hpp"
 #include "periwinkle.hpp"
+#include "unicode.hpp"
 
 using namespace compiler;
 using namespace ast;
@@ -540,8 +541,72 @@ void compiler::Compiler::compileLiteralExpression(LiteralExpression* expression)
     }
     case STRING:
     {
-        auto& value = std::get<std::string>(expression->value);
-        index = stringConstIdx(value);
+        auto parsedString = unicode::toUtf32(std::get<std::string>(expression->value));
+        size_t j = 0; // Індекс для запису в результат
+        for (size_t i = 0; i < parsedString.length(); ++i) {
+            if (parsedString[i] == U'\\' && i + 1 < parsedString.length()) {
+                char32_t nextChar = parsedString[i + 1];
+                switch (nextChar) {
+                    case U'"':
+                        parsedString[j++] = U'"';
+                        ++i;
+                        break;
+                    case U'\\':
+                        parsedString[j++] = U'\\';
+                        ++i;
+                        break;
+                    case U'a': // англійська версія
+                    case U'а': // українська
+                        parsedString[j++] = U'\a';
+                        ++i;
+                        break;
+                    case U'b':
+                    case U'б':
+                        parsedString[j++] = U'\b';
+                        ++i;
+                        break;
+                    case U'f':
+                    case U'ф':
+                        parsedString[j++] = U'\f';
+                        ++i;
+                        break;
+                    case U'n':
+                    case U'н':
+                        parsedString[j++] = U'\n';
+                        ++i;
+                        break;
+                    case U'r':
+                    case U'р':
+                        parsedString[j++] = U'\r';
+                        ++i;
+                        break;
+                    case U't':
+                    case U'т':
+                        parsedString[j++] = U'\t';
+                        ++i;
+                        break;
+                    case U'v':
+                    case U'в':
+                        parsedString[j++] = U'\v';
+                        ++i;
+                        break;
+                    case U'0':
+                        parsedString[j++] = U'\0';
+                        ++i;
+                        break;
+                    default:
+                        throwCompileError(
+                            std::format("\\{} не є керувальною послідовністю",
+                                unicode::toUtf8(std::u32string_view(&parsedString[i + 1], 1))),
+                            expression->literalToken
+                        );
+                }
+            } else {
+                parsedString[j++] = parsedString[i];
+            }
+        }
+        parsedString.shrink_to_fit();
+        index = stringConstIdx(parsedString);
         break;
     }
     case NULL_:
@@ -788,7 +853,7 @@ vm::WORD compiler::Compiler::stringVectorIdx(const std::vector<std::string>& val
     FIND_CONST_IDX(StringVectorObject, stringVectorObjectType)
 }
 
-vm::WORD compiler::Compiler::stringConstIdx(const std::string& value)
+vm::WORD compiler::Compiler::stringConstIdx(const std::u32string& value)
 {
     for (vm::WORD i = 0; i < (vm::WORD)codeObject->constants.size(); ++i)
     {
@@ -797,7 +862,7 @@ vm::WORD compiler::Compiler::stringConstIdx(const std::string& value)
         {
             continue;
         }
-        else if (((vm::StringObject*)constant)->asUtf8() == value)
+        else if (static_cast<vm::StringObject*>(constant)->value == value)
         {
             return i;
         }

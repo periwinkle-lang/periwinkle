@@ -67,7 +67,7 @@ namespace compiler
         vm::WORD realConstIdx(double value);
         vm::WORD integerConstIdx(i64 value);
         vm::WORD stringVectorIdx(const std::vector<std::string>& value);
-        vm::WORD stringConstIdx(const std::string& value);
+        vm::WORD stringConstIdx(const std::u32string& value);
         vm::WORD nullConstIdx();
         vm::WORD freeIdx(const std::string& name); // Повертає індекс для Frame->freevars
         vm::WORD localIdx(const std::string& name); // Повертає індекс з CodeObject->locals
