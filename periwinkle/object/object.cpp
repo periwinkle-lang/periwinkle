@@ -459,6 +459,10 @@ Object* vm::Object::stackCall(Object**& sp, u64 argc, NamedArgs* na)
             }
         }
         result = stackCallOp(this, sp);
+        // Очищення стека
+        sp -= argc // аргументи
+            + (callableInfo->flags & CallableInfo::IS_VARIADIC) // варіативний параметр
+            + 1; // викликаний об'єкт
     }
     else
     {
@@ -473,11 +477,10 @@ Object* vm::Object::stackCall(Object**& sp, u64 argc, NamedArgs* na)
             );
             return nullptr;
         }
+        // Очищення стека
+        sp -= argc
+            + 1; // викликаний об'єкт
     }
-    // Очищення стека
-    sp -= callableInfo->arity // аргументи
-        + (callableInfo->flags & CallableInfo::IS_VARIADIC) // варіативний параметр
-        + 1; // викликаний об'єкт
     return result;
 }
 
