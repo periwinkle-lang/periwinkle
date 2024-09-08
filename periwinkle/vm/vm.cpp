@@ -417,10 +417,10 @@ Object* VirtualMachine::execute()
 
             namedArgs->names = namedArgNames->value;
             namedArgs->count = namedArgCount;
-            namedArgs->values.reserve(namedArgCount);
+            namedArgs->values.resize(namedArgCount);
             for (size_t i = 0; i < namedArgCount; ++i)
             {
-                namedArgs->values.push_back(*(sp--));
+                namedArgs->values[namedArgCount - 1 - i ] = (*(sp--));
             }
 
             Object* result;
@@ -431,8 +431,8 @@ Object* VirtualMachine::execute()
                 std::vector<Object*> argv;
                 argv.reserve(argc + 1);
                 argv.push_back(methodWithInstance->instance);
-                argv.insert(argv.begin(), sp - argc + 1, sp);
-                result = methodWithInstance->callable->call(argv);
+                argv.insert(argv.end(), sp - argc, sp);
+                result = methodWithInstance->callable->call(argv, namedArgs);
                 if (!result) goto error;
                 sp -= argc + 1; // Метод
             }

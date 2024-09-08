@@ -234,7 +234,7 @@ bool vm::validateCall(Object* callable, WORD argc, vm::NamedArgs* namedArgs)
 
 // Повертає посилання на binaryFunction з структури ObjectOperators за зсувом
 #define GET_BINARY_OPERATOR_BY_OFFSET(object, operatorOffset) \
-    reinterpret_cast<binaryFunction>((reinterpret_cast<char*>(&(object->objectType->operators))[operatorOffset]));
+    (*reinterpret_cast<binaryFunction*>(reinterpret_cast<char*>(&(object)->objectType->operators) + operatorOffset))
 
 #define OPERATOR_OFFSET(op) offsetof(ObjectOperators, op)
 

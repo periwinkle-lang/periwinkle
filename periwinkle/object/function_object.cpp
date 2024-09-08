@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstring>
 
 #include "function_object.hpp"
 #include "string_object.hpp"
@@ -43,9 +44,8 @@ static Frame* frameFromFunctionObject(FunctionObject* fn)
     return newFrame;
 }
 
-static Object* fnStackCall(Object* callable, Object**& sp)
+static inline Object* _call(FunctionObject* fn)
 {
-    auto fn = static_cast<FunctionObject*>(callable);
     auto frame = frameFromFunctionObject(fn);
     auto prevVm = VirtualMachine::currentVm;
     auto newVM = VirtualMachine(frame);
@@ -53,6 +53,60 @@ static Object* fnStackCall(Object* callable, Object**& sp)
     delete frame;
     VirtualMachine::currentVm = prevVm;
     return result;
+}
+
+static Object* fnCall(FunctionObject* fn, std::span<Object*> args, ListObject* va, NamedArgs* na)
+{
+    auto vm = VirtualMachine::currentVm;
+    auto& sp = vm->getFrame()->sp;
+    if (args.size() > 0)
+    {
+        std::memcpy(++sp, args.data(), args.size() * sizeof(Object*));
+        sp += args.size() - 1;
+    }
+    if (fn->callableInfo.flags & CallableInfo::IS_VARIADIC)
+    {
+        *(++sp) = va;
+    }
+
+    auto defaultCount = fn->callableInfo.flags & CallableInfo::HAS_DEFAULTS ?
+        fn->callableInfo.defaults->parameters.size() : 0;
+    if (defaultCount)
+    {
+        if (na != nullptr)
+        {
+            for (size_t i = 0, j = na->count; i < defaultCount; ++i)
+            {
+                if (j)
+                {
+                    auto it = std::find(na->indexes.begin(), na->indexes.end(), i);
+                    if (it != na->indexes.end())
+                    {
+                        auto index = it - na->indexes.begin();
+                        *(++sp) = na->values[na->count - index - 1];
+                        j--;
+                        continue;
+                    }
+                }
+                *(++sp) = fn->callableInfo.defaults->parameters[defaultCount - i - 1].second;
+            }
+        }
+        else
+        {
+            for (size_t i = 0, argLack = fn->callableInfo.arity - args.size(); i < argLack; ++i)
+                *(++sp) = fn->callableInfo.defaults->parameters[argLack - i - 1].second;
+        }
+    }
+
+    Object* result = _call(fn);
+    sp -= fn->callableInfo.arity
+        + fn->callableInfo.flags & CallableInfo::IS_VARIADIC;
+    return result;
+}
+
+static Object* fnStackCall(FunctionObject* fn, Object**& sp)
+{
+    return _call(fn);
 }
 
 static void traverse(FunctionObject* func)
@@ -80,7 +134,8 @@ namespace vm
         .dealloc = DEFAULT_DEALLOC(FunctionObject),
         .operators =
         {
-            .stackCall = fnStackCall,
+            .call = (callFunction)fnCall,
+            .stackCall = (stackCallFunction)fnStackCall,
         },
         .traverse = (traverseFunction)traverse,
     };
