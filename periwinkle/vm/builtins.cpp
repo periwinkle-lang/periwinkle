@@ -11,6 +11,7 @@
 #include "bool_object.hpp"
 #include "real_object.hpp"
 #include "end_iteration_object.hpp"
+#include "tuple_object.hpp"
 #include "argument_parser.hpp"
 #include "unicode.hpp"
 #include "platform.hpp"
@@ -109,6 +110,7 @@ builtin_t* vm::getBuiltin()
             BUILTIN_TYPE(stringObjectType),
             BUILTIN_TYPE(realObjectType),
             BUILTIN_TYPE(listObjectType),
+            BUILTIN_TYPE(tupleObjectType),
 
             BUILTIN_TYPE(ExceptionObjectType),
             BUILTIN_TYPE(NameErrorObjectType),

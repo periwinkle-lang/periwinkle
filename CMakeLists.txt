@@ -58,6 +58,7 @@ add_library(periwinkle SHARED
     "periwinkle/vm/gc.cpp" "include/vm/gc.hpp"
     "periwinkle/unicode.cpp" "include/unicode.hpp" "unicode_database.hpp"
     "include/platform.hpp"
+    "periwinkle/object/tuple_obect.cpp" "include/object/tuple_object.hpp"
 )
 target_include_directories(periwinkle PUBLIC
     "include"
