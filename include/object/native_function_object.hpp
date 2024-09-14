@@ -7,19 +7,6 @@
 #include "vm.hpp"
 #include "list_object.hpp"
 
-#define NATIVE_FUNCTION(name, arity, variadic, func, defaults)                   \
-    vm::NativeFunctionObject{&vm::nativeFunctionObjectType, false,               \
-                           arity, name, defaults,                                \
-                           [](bool isVariadic, DefaultParameters* d) constexpr { \
-                               return                                            \
-                               (isVariadic ? vm::CallableInfo::IS_VARIADIC : 0)  \
-                               | (d ? vm::CallableInfo::HAS_DEFAULTS : 0);       \
-                           }(variadic, defaults),                                \
-                           func}
-
-#define OBJECT_STATIC_METHOD(name, arity, variadic, func, defaults) \
-    {name, new NATIVE_FUNCTION(name, arity, variadic, (nativeFunction)func, defaults)}
-
 namespace vm
 {
     extern TypeObject nativeFunctionObjectType;
@@ -30,6 +17,12 @@ namespace vm
     {
         CallableInfo callableInfo;
         nativeFunction function;
+
+        NativeFunctionObject() = default;
+
+        NativeFunctionObject(
+            const std::string_view name, vm::nativeFunction function, WORD arity,
+            bool variadic=false, DefaultParameters* defaults=nullptr) noexcept;
 
         static NativeFunctionObject* create(
             int arity, bool isVariadic, std::string name,

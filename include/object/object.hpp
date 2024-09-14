@@ -21,8 +21,30 @@
         delete (objectStruct*)o;      \
     }
 
-#define METHOD_TEMPLATE(name, object) \
-    static Object* name(object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
+#define OBJECT_STATIC_METHOD(func, name, arity, variadic, defaults) \
+    static const char* func##__methodName = name;                   \
+    static NativeFunctionObject func##__methodImpl {                \
+        func##__methodName, func, arity, variadic, defaults         \
+    };
+
+// Перед використанням потрібно визначити макрос X_OBJECT_TYPE
+#define OBJECT_METHOD(method, name, arity, variadic, defaults) \
+    static const char* method##__methodName = name;            \
+    static NativeMethodObject method##__methodImpl {           \
+        method##__methodName, method, &X_OBJECT_TYPE,          \
+        arity, variadic, defaults                              \
+    };
+
+#define METHOD_TEMPLATE(name) \
+    static Object* name(Object* _o, std::span<Object*> args, ListObject* va, NamedArgs* na)
+
+// Потрібно використовувати в парі з METHOD_TEMPLATE, в початку функції
+// Перед використанням потрібно визначити макрос X_OBJECT_STRUCT
+#define OBJECT_CAST() \
+    X_OBJECT_STRUCT* o = static_cast<X_OBJECT_STRUCT*>(_o);
+
+#define METHOD_ATTRIBUTE(method) { method##__methodName, &method##__methodImpl }
+#define STATIC_METHOD_ATTRIBUTE(method) METHOD_ATTRIBUTE(method)
 
 // Порівнює тип об'єкта з переданим типом
 #define OBJECT_IS(object, type) ((object)->objectType == type)

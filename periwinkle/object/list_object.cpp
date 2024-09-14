@@ -18,7 +18,6 @@
 
 using namespace vm;
 
-
 #define CHECK_LIST(object)                     \
     if (OBJECT_IS(object, &listObjectType) == false) \
         return &P_NotImplemented;
@@ -146,8 +145,12 @@ static Object* listGetIter(ListObject* o)
     return iterator;
 }
 
-METHOD_TEMPLATE(listRemove, ListObject)
+#define X_OBJECT_STRUCT ListObject
+#define X_OBJECT_TYPE vm::listObjectType
+
+METHOD_TEMPLATE(listRemove)
 {
+    OBJECT_CAST();
     auto it = std::find_if(
         o->items.begin(),
         o->items.end(),
@@ -162,9 +165,12 @@ METHOD_TEMPLATE(listRemove, ListObject)
     }
     return &P_false;
 }
+OBJECT_METHOD(listRemove, "видалити", 1, false, nullptr)
 
-METHOD_TEMPLATE(listRemoveAll, ListObject)
+
+METHOD_TEMPLATE(listRemoveAll)
 {
+    OBJECT_CAST();
     auto erased = std::erase_if(
         o->items,
         [&args](Object* o) { return ((BoolObject*)o->compare(
@@ -173,9 +179,12 @@ METHOD_TEMPLATE(listRemoveAll, ListObject)
 
     return P_BOOL(erased);
 }
+OBJECT_METHOD(listRemoveAll, "видалитиВсі", 1, false, nullptr)
 
-METHOD_TEMPLATE(listInsert, ListObject)
+
+METHOD_TEMPLATE(listInsert)
 {
+    OBJECT_CAST();
     IntObject* index;
     Object* element;
     ArgParser argParser{
@@ -184,14 +193,16 @@ METHOD_TEMPLATE(listInsert, ListObject)
     };
     if (!argParser.parse(args)) return nullptr;
 
-    auto listObject = (ListObject*)o;
-    CHECK_INDEX(index->value, listObject);
-    listObject->items.insert(listObject->items.begin() + index->value, element);
+    CHECK_INDEX(index->value, o);
+    o->items.insert(o->items.begin() + index->value, element);
     return &P_null;
 }
+OBJECT_METHOD(listInsert, "вставити", 2, false, nullptr);
 
-METHOD_TEMPLATE(listSetItem, ListObject)
+
+METHOD_TEMPLATE(listSetItem)
 {
+    OBJECT_CAST();
     IntObject* index;
     Object* element;
     ArgParser argParser{
@@ -200,25 +211,33 @@ METHOD_TEMPLATE(listSetItem, ListObject)
     };
     if (!argParser.parse(args)) return nullptr;
 
-    auto listObject = (ListObject*)o;
-    CHECK_INDEX(index->value, listObject);
-    listObject->items[index->value] = element;
+    CHECK_INDEX(index->value, o);
+    o->items[index->value] = element;
     return &P_null;
 }
+OBJECT_METHOD(listSetItem, "встановити", 2, false, nullptr);
 
-METHOD_TEMPLATE(listSize, ListObject)
+
+METHOD_TEMPLATE(listSize)
 {
+    OBJECT_CAST();
     return IntObject::create(o->items.size());
 }
+OBJECT_METHOD(listSize, "розмір", 0, false, nullptr);
 
-METHOD_TEMPLATE(listPush, ListObject)
+
+METHOD_TEMPLATE(listPush)
 {
+    OBJECT_CAST();
     o->items.push_back(args[0]);
     return &P_null;
 }
+OBJECT_METHOD(listPush, "додати", 1, false, nullptr);
 
-METHOD_TEMPLATE(listReplace, ListObject)
+
+METHOD_TEMPLATE(listReplace)
 {
+    OBJECT_CAST();
     size_t replaceCount = 0;
 
     for (auto it = o->items.begin(); it != o->items.end(); ++it)
@@ -232,9 +251,12 @@ METHOD_TEMPLATE(listReplace, ListObject)
 
     return P_BOOL(replaceCount);
 }
+OBJECT_METHOD(listReplace, "замінити", 2, false, nullptr);
 
-METHOD_TEMPLATE(listFindItem, ListObject)
+
+METHOD_TEMPLATE(listFindItem)
 {
+    OBJECT_CAST();
     auto it = std::find_if(
         o->items.begin(),
         o->items.end(),
@@ -249,16 +271,22 @@ METHOD_TEMPLATE(listFindItem, ListObject)
     }
     return IntObject::create(index);
 }
+OBJECT_METHOD(listFindItem, "знайти", 1, false, nullptr);
 
-METHOD_TEMPLATE(listCopy, ListObject)
+
+METHOD_TEMPLATE(listCopy)
 {
+    OBJECT_CAST();
     auto newListObject = ListObject::create();
     newListObject->items = o->items;
     return newListObject;
 }
+OBJECT_METHOD(listCopy, "копія", 0, false, nullptr);
 
-METHOD_TEMPLATE(listCount, ListObject)
+
+METHOD_TEMPLATE(listCount)
 {
+    OBJECT_CAST();
     auto count = std::count_if(
         o->items.begin(),
         o->items.end(),
@@ -267,9 +295,12 @@ METHOD_TEMPLATE(listCount, ListObject)
     );
     return IntObject::create(count);
 }
+OBJECT_METHOD(listCount, "кількість", 1, false, nullptr);
 
-METHOD_TEMPLATE(listContains, ListObject)
+
+METHOD_TEMPLATE(listContains)
 {
+    OBJECT_CAST();
     auto it = std::find_if(
         o->items.begin(),
         o->items.end(),
@@ -285,15 +316,21 @@ METHOD_TEMPLATE(listContains, ListObject)
 
     return P_BOOL(index != -1);
 }
+OBJECT_METHOD(listContains, "містить", 1, false, nullptr);
 
-METHOD_TEMPLATE(listReverse, ListObject)
+
+METHOD_TEMPLATE(listReverse)
 {
+    OBJECT_CAST();
     std::reverse(o->items.begin(), o->items.end());
     return &P_null;
 }
+OBJECT_METHOD(listReverse, "обернути", 0, false, nullptr);
 
-METHOD_TEMPLATE(listGetItem, ListObject)
+
+METHOD_TEMPLATE(listGetItem)
 {
+    OBJECT_CAST();
     IntObject* index;
     ArgParser argParser{
         {&index, intObjectType, "індекс"},
@@ -303,15 +340,21 @@ METHOD_TEMPLATE(listGetItem, ListObject)
     CHECK_INDEX(index->value, o);
     return o->items[index->value];
 }
+OBJECT_METHOD(listGetItem, "отримати", 1, false, nullptr);
 
-METHOD_TEMPLATE(listClear, ListObject)
+
+METHOD_TEMPLATE(listClear)
 {
+    OBJECT_CAST();
     o->items.clear();
     return &P_null;
 }
+OBJECT_METHOD(listClear, "очистити", 0, false, nullptr);
 
-METHOD_TEMPLATE(listSublist, ListObject)
+
+METHOD_TEMPLATE(listSublist)
 {
+    OBJECT_CAST();
     IntObject *start, *count;
     ArgParser argParser{
         {&start, intObjectType, "початок"},
@@ -326,6 +369,8 @@ METHOD_TEMPLATE(listSublist, ListObject)
         o->items.begin() + start->value, o->items.begin() + count->value };
     return subList;
 }
+OBJECT_METHOD(listSublist, "підсписок", 2, false, nullptr);
+
 
 static DefaultParameters listSortDefaults = {{
     {"заКлючем", &P_null},
@@ -333,8 +378,9 @@ static DefaultParameters listSortDefaults = {{
     {"обернути", &P_false},
 }};
 
-METHOD_TEMPLATE(listSort, ListObject)
+METHOD_TEMPLATE(listSort)
 {
+    OBJECT_CAST();
     Object *keyFunction, *cmpFunction;
     BoolObject* reverse;
     ArgParser argParser{
@@ -434,6 +480,8 @@ METHOD_TEMPLATE(listSort, ListObject)
 
     return &P_null;
 }
+OBJECT_METHOD(listSort, "впорядкувати", 0, false, &listSortDefaults);
+
 
 static void listIterTraverse(ListIterObject* o)
 {
@@ -443,14 +491,22 @@ static void listIterTraverse(ListIterObject* o)
     }
 }
 
-METHOD_TEMPLATE(listIterNext, ListIterObject)
+#undef X_OBJECT_STRUCT
+#undef X_OBJECT_TYPE
+#define X_OBJECT_STRUCT ListIterObject
+#define X_OBJECT_TYPE vm::listIterObjectType
+
+METHOD_TEMPLATE(listIterNext)
 {
+    OBJECT_CAST();
     if (o->position < o->length)
     {
         return o->iterable[o->position++];
     }
     return &P_endIter;
 }
+OBJECT_METHOD(listIterNext, "наступний", 0, false, nullptr)
+
 
 namespace vm
 {
@@ -479,22 +535,22 @@ namespace vm
         .traverse = (traverseFunction)listTraverse,
         .attributes =
         {
-            OBJECT_METHOD("видалити",     1, false, listRemove,    listObjectType, nullptr),
-            OBJECT_METHOD("видалитиВсі",  1, false, listRemoveAll, listObjectType, nullptr),
-            OBJECT_METHOD("вставити",     2, false, listInsert,    listObjectType, nullptr),
-            OBJECT_METHOD("встановити",   2, false, listSetItem,   listObjectType, nullptr),
-            OBJECT_METHOD("розмір",       0, false, listSize,      listObjectType, nullptr),
-            OBJECT_METHOD("додати",       1, false, listPush,      listObjectType, nullptr),
-            OBJECT_METHOD("замінити",     2, false, listReplace,   listObjectType, nullptr),
-            OBJECT_METHOD("знайти",       1, false, listFindItem,  listObjectType, nullptr),
-            OBJECT_METHOD("копія",        0, false, listCopy,      listObjectType, nullptr),
-            OBJECT_METHOD("кількість",    1, false, listCount,     listObjectType, nullptr),
-            OBJECT_METHOD("містить",      1, false, listContains,  listObjectType, nullptr),
-            OBJECT_METHOD("обернути",     0, false, listReverse,   listObjectType, nullptr),
-            OBJECT_METHOD("отримати",     1, false, listGetItem,   listObjectType, nullptr),
-            OBJECT_METHOD("очистити",     0, false, listClear,     listObjectType, nullptr),
-            OBJECT_METHOD("підсписок",    2, false, listSublist,   listObjectType, nullptr),
-            OBJECT_METHOD("впорядкувати", 0, false, listSort,      listObjectType, &listSortDefaults),
+            METHOD_ATTRIBUTE(listRemove),
+            METHOD_ATTRIBUTE(listRemoveAll),
+            METHOD_ATTRIBUTE(listInsert),
+            METHOD_ATTRIBUTE(listSetItem),
+            METHOD_ATTRIBUTE(listSize),
+            METHOD_ATTRIBUTE(listPush),
+            METHOD_ATTRIBUTE(listReplace),
+            METHOD_ATTRIBUTE(listFindItem),
+            METHOD_ATTRIBUTE(listCopy),
+            METHOD_ATTRIBUTE(listCount),
+            METHOD_ATTRIBUTE(listContains),
+            METHOD_ATTRIBUTE(listReverse),
+            METHOD_ATTRIBUTE(listGetItem),
+            METHOD_ATTRIBUTE(listClear),
+            METHOD_ATTRIBUTE(listSublist),
+            METHOD_ATTRIBUTE(listSort),
         },
     };
 
@@ -507,7 +563,7 @@ namespace vm
         .traverse = (traverseFunction)listIterTraverse,
         .attributes =
         {
-            OBJECT_METHOD("наступний", 0, false, listIterNext, listIterObjectType, nullptr),
+            METHOD_ATTRIBUTE(listIterNext),
         },
     };
 }

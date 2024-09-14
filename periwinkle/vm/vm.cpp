@@ -374,7 +374,7 @@ Object* VirtualMachine::execute()
                 std::vector<Object*> argv;
                 argv.reserve(argc + 1);
                 argv.push_back(methodWithInstance->instance);
-                argv.insert(argv.begin(), sp - argc + 1, sp);
+                argv.insert(argv.begin(), sp - argc, sp);
                 result = methodWithInstance->callable->call(argv);
                 if (!result) goto error;
                 sp -= argc + 1; // Метод

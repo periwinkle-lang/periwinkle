@@ -140,8 +140,12 @@ static Object* strGetIter(StringObject* o)
     return iterator;
 }
 
-METHOD_TEMPLATE(removeEnd, StringObject)
+#define X_OBJECT_STRUCT StringObject
+#define X_OBJECT_TYPE vm::stringObjectType
+
+METHOD_TEMPLATE(removeEnd)
 {
+    OBJECT_CAST();
     StringObject* end;
     ArgParser argParser{
         {&end, stringObjectType, "закінчення"}
@@ -156,9 +160,12 @@ METHOD_TEMPLATE(removeEnd, StringObject)
 
     return StringObject::create(o->value);
 }
+OBJECT_METHOD(removeEnd, "видалитиЗакінчення", 1, false, nullptr)
 
-METHOD_TEMPLATE(removePrefix, StringObject)
+
+METHOD_TEMPLATE(removePrefix)
 {
+    OBJECT_CAST();
     StringObject* prefix;
     ArgParser argParser{
         {&prefix, stringObjectType, "префікс"},
@@ -173,9 +180,12 @@ METHOD_TEMPLATE(removePrefix, StringObject)
 
     return StringObject::create(o->value);
 }
+OBJECT_METHOD(removePrefix, "видалитиПрефікс", 1, false, nullptr)
 
-METHOD_TEMPLATE(strInsert, StringObject)
+
+METHOD_TEMPLATE(strInsert)
 {
+    OBJECT_CAST();
     IntObject* index;
     StringObject* str;
     ArgParser argParser{
@@ -188,9 +198,12 @@ METHOD_TEMPLATE(strInsert, StringObject)
     auto newStr = o->value;
     return StringObject::create(newStr.insert(index->value, str->value));
 }
+OBJECT_METHOD(strInsert, "вставити", 2, false, nullptr)
 
-METHOD_TEMPLATE(strSet, StringObject)
+
+METHOD_TEMPLATE(strSet)
 {
+    OBJECT_CAST();
     IntObject* index;
     StringObject* str;
     ArgParser argParser{
@@ -204,14 +217,20 @@ METHOD_TEMPLATE(strSet, StringObject)
     return StringObject::create(newStr.replace(
         index->value, 1, str->value));
 }
+OBJECT_METHOD(strSet, "встановити", 2, false, nullptr)
 
-METHOD_TEMPLATE(strSize, StringObject)
+
+METHOD_TEMPLATE(strSize)
 {
+    OBJECT_CAST();
     return IntObject::create(o->value.size());
 }
+OBJECT_METHOD(strSize, "розмір", 0, false, nullptr)
 
-METHOD_TEMPLATE(strEndsWith, StringObject)
+
+METHOD_TEMPLATE(strEndsWith)
 {
+    OBJECT_CAST();
     StringObject* value;
     ArgParser argParser{
         {&value, stringObjectType, "значення"},
@@ -220,9 +239,12 @@ METHOD_TEMPLATE(strEndsWith, StringObject)
 
     return P_BOOL(value->value.size() && o->value.ends_with(value->value));
 }
+OBJECT_METHOD(strEndsWith, "закінчуєтьсяНа", 1, false, nullptr)
 
-METHOD_TEMPLATE(strReplace, StringObject)
+
+METHOD_TEMPLATE(strReplace)
 {
+    OBJECT_CAST();
     StringObject *what, *with;
     ArgParser argParser{
         {&what, stringObjectType, "що"},
@@ -242,8 +264,10 @@ METHOD_TEMPLATE(strReplace, StringObject)
 
     return StringObject::create(newStr);
 }
+OBJECT_METHOD(strReplace, "замінити", 2, false, nullptr)
 
-Object* strJoin(std::span<Object*> args, ListObject* va)
+
+Object* strJoin(std::span<Object*> args, ListObject* va, NamedArgs* na)
 {
     StringObject* separator;
     ListObject* objects;
@@ -270,9 +294,12 @@ Object* strJoin(std::span<Object*> args, ListObject* va)
 
     return StringObject::create(U"");
 }
+OBJECT_STATIC_METHOD(strJoin, "зліпити", 2, false, nullptr)
 
-METHOD_TEMPLATE(strFind, StringObject)
+
+METHOD_TEMPLATE(strFind)
 {
+    OBJECT_CAST();
     StringObject* value;
     ArgParser argParser{
         {&value, stringObjectType, "значення"},
@@ -282,9 +309,12 @@ METHOD_TEMPLATE(strFind, StringObject)
     auto pos = o->value.find(value->value);
     return IntObject::create(pos == std::string::npos ? -1 : pos);
 }
+OBJECT_METHOD(strFind, "знайти", 1, false, nullptr)
 
-METHOD_TEMPLATE(strCount, StringObject)
+
+METHOD_TEMPLATE(strCount)
 {
+    OBJECT_CAST();
     StringObject* value;
     ArgParser argParser{
         {&value, stringObjectType, "значення"},
@@ -301,9 +331,12 @@ METHOD_TEMPLATE(strCount, StringObject)
 
     return IntObject::create(count);
 }
+OBJECT_METHOD(strCount, "кількість", 1, false, nullptr)
 
-METHOD_TEMPLATE(strContains, StringObject)
+
+METHOD_TEMPLATE(strContains)
 {
+    OBJECT_CAST();
     StringObject* value;
     ArgParser argParser{
         {&value, stringObjectType, "значення"},
@@ -313,9 +346,12 @@ METHOD_TEMPLATE(strContains, StringObject)
     auto pos = o->value.find(value->value);
     return P_BOOL(pos != std::string::npos);
 }
+OBJECT_METHOD(strContains, "містить", 1, false, nullptr)
 
-METHOD_TEMPLATE(strGet, StringObject)
+
+METHOD_TEMPLATE(strGet)
 {
+    OBJECT_CAST();
     IntObject* index;
     ArgParser argParser{
         {&index, intObjectType, "індекс"},
@@ -325,9 +361,12 @@ METHOD_TEMPLATE(strGet, StringObject)
     CHECK_INDEX(index->value, o);
     return StringObject::create(std::u32string{ o->value[index->value] });
 }
+OBJECT_METHOD(strGet, "отримати", 1, false, nullptr)
 
-METHOD_TEMPLATE(strStartsWith, StringObject)
+
+METHOD_TEMPLATE(strStartsWith)
 {
+    OBJECT_CAST();
     StringObject* value;
     ArgParser argParser{
         {&value, stringObjectType, "значення"},
@@ -336,9 +375,12 @@ METHOD_TEMPLATE(strStartsWith, StringObject)
 
     return P_BOOL(o->value.size() && o->value.starts_with(value->value));
 }
+OBJECT_METHOD(strStartsWith, "починаєтьсяНа", 1, false, nullptr)
 
-METHOD_TEMPLATE(strTrim, StringObject)
+
+METHOD_TEMPLATE(strTrim)
 {
+    OBJECT_CAST();
     auto start = o->value.begin();
     auto end = o->value.end();
 
@@ -354,9 +396,12 @@ METHOD_TEMPLATE(strTrim, StringObject)
 
     return StringObject::create(std::u32string{ start, end });
 }
+OBJECT_METHOD(strTrim, "причепурити", 0, false, nullptr)
 
-METHOD_TEMPLATE(strLeftTrim, StringObject)
+
+METHOD_TEMPLATE(strLeftTrim)
 {
+    OBJECT_CAST();
     auto start = o->value.begin();
     auto end = o->value.end();
 
@@ -367,9 +412,12 @@ METHOD_TEMPLATE(strLeftTrim, StringObject)
 
     return StringObject::create(std::u32string{ start, end });
 }
+OBJECT_METHOD(strLeftTrim, "причепуритиЗліва", 0, false, nullptr)
 
-METHOD_TEMPLATE(strRightTrim, StringObject)
+
+METHOD_TEMPLATE(strRightTrim)
 {
+    OBJECT_CAST();
     auto start = o->value.begin();
     auto end = o->value.end();
 
@@ -380,9 +428,12 @@ METHOD_TEMPLATE(strRightTrim, StringObject)
 
     return StringObject::create(std::u32string{ start, end });
 }
+OBJECT_METHOD(strRightTrim, "причепуритиСправа", 0, false, nullptr)
 
-METHOD_TEMPLATE(strSubstr, StringObject)
+
+METHOD_TEMPLATE(strSubstr)
 {
+    OBJECT_CAST();
     IntObject *start, *count;
     ArgParser argParser{
         {&start, intObjectType, "початок"},
@@ -394,9 +445,12 @@ METHOD_TEMPLATE(strSubstr, StringObject)
     CHECK_INDEX(start->value + count->value - (count->value == 0 ? 0 : 1), o);
     return StringObject::create(o->value.substr(start->value, count->value));
 }
+OBJECT_METHOD(strSubstr, "підрядок", 2, false, nullptr)
 
-METHOD_TEMPLATE(strSplit, StringObject)
+
+METHOD_TEMPLATE(strSplit)
 {
+    OBJECT_CAST();
     StringObject* delimiter;
     ArgParser argParser{
         {&delimiter, stringObjectType, "роздільник"},
@@ -417,13 +471,16 @@ METHOD_TEMPLATE(strSplit, StringObject)
 
     return strs;
 }
+OBJECT_METHOD(strSplit, "розділити", 1, false, nullptr)
+
 
 static IntObject int10 = IntObject{ {.objectType = &intObjectType}, 10 };
 static DefaultParameters toIntDefaults = {{
     {"основа", &int10}} };
 
-METHOD_TEMPLATE(toIntMethod, StringObject)
+METHOD_TEMPLATE(toIntMethod)
 {
+    OBJECT_CAST();
     IntObject* base;
     ArgParser argParser{
         {&base, intObjectType, "основа"}
@@ -437,13 +494,16 @@ METHOD_TEMPLATE(toIntMethod, StringObject)
         return nullptr;
     }
 
-    auto value = stringObjectToInt(o, base->value);
+    auto value = stringObjectToInt(o, static_cast<int>(base->value));
     if (!value) return nullptr;
     return IntObject::create(value.value());
 }
+OBJECT_METHOD(toIntMethod, "доЧисла", 0, false, &toIntDefaults)
 
-METHOD_TEMPLATE(strIsAlpha, StringObject)
+
+METHOD_TEMPLATE(strIsAlpha)
 {
+    OBJECT_CAST();
     if (o->value.size() == 0)
     {
         return &P_false;
@@ -458,9 +518,12 @@ METHOD_TEMPLATE(strIsAlpha, StringObject)
     }
     return &P_true;
 }
+OBJECT_METHOD(strIsAlpha, "цеБуквенне", 0, false, nullptr)
 
-METHOD_TEMPLATE(strIsAlnum, StringObject)
+
+METHOD_TEMPLATE(strIsAlnum)
 {
+    OBJECT_CAST();
     if (o->value.size() == 0)
     {
         return &P_false;
@@ -475,9 +538,12 @@ METHOD_TEMPLATE(strIsAlnum, StringObject)
     }
     return &P_true;
 }
+OBJECT_METHOD(strIsAlnum, "цеБуквенноЦифрове", 0, false, nullptr)
 
-METHOD_TEMPLATE(strIsDecimal, StringObject)
+
+METHOD_TEMPLATE(strIsDecimal)
 {
+    OBJECT_CAST();
     if (o->value.size() == 0)
     {
         return &P_false;
@@ -492,9 +558,12 @@ METHOD_TEMPLATE(strIsDecimal, StringObject)
     }
     return &P_true;
 }
+OBJECT_METHOD(strIsDecimal, "цеДесятковоЦифрове", 0, false, nullptr)
 
-METHOD_TEMPLATE(strIsDigit, StringObject)
+
+METHOD_TEMPLATE(strIsDigit)
 {
+    OBJECT_CAST();
     if (o->value.size() == 0)
     {
         return &P_false;
@@ -509,9 +578,12 @@ METHOD_TEMPLATE(strIsDigit, StringObject)
     }
     return &P_true;
 }
+OBJECT_METHOD(strIsDigit, "цеЦифрове", 0, false, nullptr)
 
-METHOD_TEMPLATE(strIsNumeric, StringObject)
+
+METHOD_TEMPLATE(strIsNumeric)
 {
+    OBJECT_CAST();
     if (o->value.size() == 0)
     {
         return &P_false;
@@ -526,9 +598,12 @@ METHOD_TEMPLATE(strIsNumeric, StringObject)
     }
     return &P_true;
 }
+OBJECT_METHOD(strIsNumeric, "цеЧислове", 0, false, nullptr)
 
-METHOD_TEMPLATE(strIsSpace, StringObject)
+
+METHOD_TEMPLATE(strIsSpace)
 {
+    OBJECT_CAST();
     if (o->value.size() == 0)
     {
         return &P_false;
@@ -543,9 +618,12 @@ METHOD_TEMPLATE(strIsSpace, StringObject)
     }
     return &P_true;
 }
+OBJECT_METHOD(strIsSpace, "цеПробіл", 0, false, nullptr)
 
-METHOD_TEMPLATE(strToLowercase, StringObject)
+
+METHOD_TEMPLATE(strToLowercase)
 {
+    OBJECT_CAST();
     if (o->value.size() == 0)
     {
         return &P_emptyStr;
@@ -560,9 +638,12 @@ METHOD_TEMPLATE(strToLowercase, StringObject)
 
     return newStr;
 }
+OBJECT_METHOD(strToLowercase, "доНижнього", 0, false, nullptr)
 
-METHOD_TEMPLATE(strToUppercase, StringObject)
+
+METHOD_TEMPLATE(strToUppercase)
 {
+    OBJECT_CAST();
     if (o->value.size() == 0)
     {
         return &P_emptyStr;
@@ -577,9 +658,12 @@ METHOD_TEMPLATE(strToUppercase, StringObject)
 
     return newStr;
 }
+OBJECT_METHOD(strToUppercase, "доВерхнього", 0, false, nullptr)
 
-METHOD_TEMPLATE(strTitle, StringObject)
+
+METHOD_TEMPLATE(strTitle)
 {
+    OBJECT_CAST();
     if (o->value.size() == 0)
     {
         return &P_emptyStr;
@@ -611,9 +695,12 @@ METHOD_TEMPLATE(strTitle, StringObject)
 
     return newStr;
 }
+OBJECT_METHOD(strTitle, "доЗаголовку", 0, false, nullptr)
 
-METHOD_TEMPLATE(strCapitalize, StringObject)
+
+METHOD_TEMPLATE(strCapitalize)
 {
+    OBJECT_CAST();
     if (o->value.size() == 0)
     {
         return &P_emptyStr;
@@ -633,15 +720,24 @@ METHOD_TEMPLATE(strCapitalize, StringObject)
 
     return newStr;
 }
+OBJECT_METHOD(strCapitalize, "буквиця", 0, false, nullptr)
 
-METHOD_TEMPLATE(strIterNext, StringIterObject)
+#undef X_OBJECT_STRUCT
+#undef X_OBJECT_TYPE
+#define X_OBJECT_STRUCT StringIterObject
+#define X_OBJECT_TYPE vm::stringIterObjectType
+
+METHOD_TEMPLATE(strIterNext)
 {
+    OBJECT_CAST();
     if (o->position < o->length)
     {
         return StringObject::create(std::u32string{ o->iterable[o->position++] });
     }
     return &P_endIter;
 }
+OBJECT_METHOD(strIterNext, "наступний", 0, false, nullptr)
+
 
 namespace vm
 {
@@ -671,35 +767,35 @@ namespace vm
         .comparison = strComparison,
         .attributes =
         {
-            OBJECT_METHOD("видалитиЗакінчення", 1, false, removeEnd,     stringObjectType, nullptr),
-            OBJECT_METHOD("видалитиПрефікс",    1, false, removePrefix,  stringObjectType, nullptr),
-            OBJECT_METHOD("вставити",           2, false, strInsert,     stringObjectType, nullptr),
-            OBJECT_METHOD("встановити",         2, false, strSet,        stringObjectType, nullptr),
-            OBJECT_METHOD("розмір",             0, false, strSize,       stringObjectType, nullptr),
-            OBJECT_METHOD("закінчуєтьсяНа",     1, false, strEndsWith,   stringObjectType, nullptr),
-            OBJECT_METHOD("замінити",           2, false, strReplace,    stringObjectType, nullptr),
-            OBJECT_METHOD("знайти",             1, false, strFind,       stringObjectType, nullptr),
-            OBJECT_METHOD("кількість",          1, false, strCount,      stringObjectType, nullptr),
-            OBJECT_METHOD("містить",            1, false, strContains,   stringObjectType, nullptr),
-            OBJECT_METHOD("отримати",           1, false, strGet,        stringObjectType, nullptr),
-            OBJECT_METHOD("починаєтьсяНа",      1, false, strStartsWith, stringObjectType, nullptr),
-            OBJECT_METHOD("причепурити",        0, false, strTrim,       stringObjectType, nullptr),
-            OBJECT_METHOD("причепуритиЗліва",   0, false, strLeftTrim,   stringObjectType, nullptr),
-            OBJECT_METHOD("причепуритиСправа",  0, false, strRightTrim,  stringObjectType, nullptr),
-            OBJECT_METHOD("підрядок",           2, false, strSubstr,     stringObjectType, nullptr),
-            OBJECT_METHOD("розділити",          1, false, strSplit,      stringObjectType, nullptr),
-            OBJECT_METHOD("доЧисла",            0, false, toIntMethod,   stringObjectType, &toIntDefaults),
-            OBJECT_METHOD("цеБуквенне",         0, false, strIsAlpha,    stringObjectType, nullptr),
-            OBJECT_METHOD("цеБуквенноЦифрове",  0, false, strIsAlnum,    stringObjectType, nullptr),
-            OBJECT_METHOD("цеДесятковоЦифрове", 0, false, strIsDecimal,  stringObjectType, nullptr),
-            OBJECT_METHOD("цеЦифрове",          0, false, strIsDigit,    stringObjectType, nullptr),
-            OBJECT_METHOD("цеЧислове",          0, false, strIsNumeric,  stringObjectType, nullptr),
-            OBJECT_METHOD("цеПробіл",           0, false, strIsSpace,    stringObjectType, nullptr),
-            OBJECT_METHOD("доНижнього",         0, false, strToLowercase,stringObjectType, nullptr),
-            OBJECT_METHOD("доВерхнього",        0, false, strToUppercase,stringObjectType, nullptr),
-            OBJECT_METHOD("доЗаголовку",        0, false, strTitle,      stringObjectType, nullptr),
-            OBJECT_METHOD("буквиця",            0, false, strCapitalize, stringObjectType, nullptr),
-            OBJECT_STATIC_METHOD("зліпити",     2, false, strJoin, nullptr),
+            METHOD_ATTRIBUTE(removeEnd),
+            METHOD_ATTRIBUTE(removePrefix),
+            METHOD_ATTRIBUTE(strInsert),
+            METHOD_ATTRIBUTE(strSet),
+            METHOD_ATTRIBUTE(strSize),
+            METHOD_ATTRIBUTE(strEndsWith),
+            METHOD_ATTRIBUTE(strReplace),
+            METHOD_ATTRIBUTE(strFind),
+            METHOD_ATTRIBUTE(strCount),
+            METHOD_ATTRIBUTE(strContains),
+            METHOD_ATTRIBUTE(strGet),
+            METHOD_ATTRIBUTE(strStartsWith),
+            METHOD_ATTRIBUTE(strTrim),
+            METHOD_ATTRIBUTE(strLeftTrim),
+            METHOD_ATTRIBUTE(strRightTrim),
+            METHOD_ATTRIBUTE(strSubstr),
+            METHOD_ATTRIBUTE(strSplit),
+            METHOD_ATTRIBUTE(toIntMethod),
+            METHOD_ATTRIBUTE(strIsAlpha),
+            METHOD_ATTRIBUTE(strIsAlnum),
+            METHOD_ATTRIBUTE(strIsDecimal),
+            METHOD_ATTRIBUTE(strIsDigit),
+            METHOD_ATTRIBUTE(strIsNumeric),
+            METHOD_ATTRIBUTE(strIsSpace),
+            METHOD_ATTRIBUTE(strToLowercase),
+            METHOD_ATTRIBUTE(strToUppercase),
+            METHOD_ATTRIBUTE(strTitle),
+            METHOD_ATTRIBUTE(strCapitalize),
+            STATIC_METHOD_ATTRIBUTE(strJoin),
         },
     };
 
@@ -711,7 +807,7 @@ namespace vm
         .alloc = DEFAULT_ALLOC(StringIterObject),
         .attributes =
         {
-            OBJECT_METHOD("наступний", 0, false, strIterNext, stringIterObjectType, nullptr),
+            METHOD_ATTRIBUTE(strIterNext),
         },
     };
 

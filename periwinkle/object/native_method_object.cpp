@@ -13,8 +13,9 @@ static Object* nativeMethodCall(
     {
         getCurrentState()->setException(
             &TypeErrorObjectType,
-            "Першим аргументом має бути переданий екземпляр класу,"
-            " до якого відноситься метод");
+            std::format("Метод \"{}\" виконує операції тільки над об'єктами типу \"{}\"",
+                callable->callableInfo.name, callable->classType->objectType->name)
+            );
         return nullptr;
     }
     return callable->method(instance, argv.subspan(1), va, na);
@@ -51,6 +52,20 @@ namespace vm
         },
         .traverse = (traverseFunction)traverse,
     };
+}
+
+vm::NativeMethodObject::NativeMethodObject(
+    const std::string_view name, vm::nativeMethod method, TypeObject* classType, WORD arity,
+    bool variadic, DefaultParameters* defaults) noexcept
+{
+    this->objectType = &vm::nativeMethodObjectType;
+    this->callableInfo.arity = arity + 1 + (defaults ? defaults->parameters.size() : 0);
+    this->callableInfo.flags |= variadic ? CallableInfo::IS_VARIADIC : 0;
+    this->callableInfo.flags |= defaults ? CallableInfo::HAS_DEFAULTS : 0;
+    this->callableInfo.name = name;
+    this->method = method;
+    this->classType = classType;
+    this->callableInfo.defaults = defaults;
 }
 
 NativeMethodObject* vm::NativeMethodObject::create(

@@ -17,20 +17,20 @@ using namespace vm;
         .size = sizeof(ExceptionObject),                       \
         .alloc = exceptionAlloc,                               \
         .dealloc = exceptionDealloc,                           \
-        .constructor = (callFunction)exceptionInit,            \
+        .constructor = exceptionInit,                          \
         .operators = excOperators,                             \
     };
 
 static DefaultParameters exceptionInitDefaults = {{ {"повідомлення", &P_emptyStr} }};
 
-METHOD_TEMPLATE(exceptionInit, TypeObject)
+static Object* exceptionInit(Object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
 {
     StringObject* message;
     ArgParser argParser{
         {&message, stringObjectType, "повідомлення"},
     };
     if (!argParser.parse(args, &exceptionInitDefaults, na)) return nullptr;
-    return ExceptionObject::create(o, message->asUtf8());
+    return ExceptionObject::create(static_cast<TypeObject*>(o), message->asUtf8());
 }
 
 static Object* exceptionAlloc()
@@ -66,7 +66,7 @@ namespace vm
             .defaults = &exceptionInitDefaults,
             .flags = CallableInfo::HAS_DEFAULTS | CallableInfo::IS_METHOD,
         },
-        .constructor = (vm::callFunction)exceptionInit,
+        .constructor = exceptionInit,
         .operators =
         {
             .toString = exceptionToString,

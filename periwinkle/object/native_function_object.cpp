@@ -41,6 +41,19 @@ namespace vm
     };
 }
 
+vm::NativeFunctionObject::NativeFunctionObject(
+    const std::string_view name, vm::nativeFunction functions, WORD arity,
+    bool variadic, DefaultParameters* defaults) noexcept
+{
+    this->objectType = &vm::nativeFunctionObjectType;
+    this->callableInfo.arity = arity + (defaults ? defaults->parameters.size() : 0);
+    this->callableInfo.flags |= variadic ? CallableInfo::IS_VARIADIC : 0;
+    this->callableInfo.flags |= defaults ? CallableInfo::HAS_DEFAULTS : 0;
+    this->callableInfo.name = name;
+    this->callableInfo.defaults = defaults;
+    this->function = function;
+}
+
 NativeFunctionObject* vm::NativeFunctionObject::create(
     int arity, bool isVariadic, std::string name,
     nativeFunction function, DefaultParameters* defaults)
