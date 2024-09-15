@@ -108,6 +108,29 @@ static Object* tupleToBool(Object* o)
     return P_BOOL(static_cast<TupleObject*>(o)->items.size());
 }
 
+static Object* tupleAdd(Object* o1, Object* o2)
+{
+    CHECK_TUPLE(o1);
+    CHECK_TUPLE(o2);
+    auto a = static_cast<TupleObject*>(o1);
+    auto b = static_cast<TupleObject*>(o2);
+
+    auto newTupleObject = TupleObject::create();
+
+    newTupleObject->items.insert(
+        newTupleObject->items.end(),
+        a->items.begin(),
+        a->items.end());
+
+    newTupleObject->items.insert(
+        newTupleObject->items.end(),
+        b->items.begin(),
+        b->items.end());
+
+    newTupleObject->items.shrink_to_fit();
+    return newTupleObject;
+}
+
 static Object* tupleGetIter(TupleObject* o)
 {
     return TupleIterObject::create(o);
@@ -254,6 +277,7 @@ namespace vm
         {
             .toString = tupleToString,
             .toBool = tupleToBool,
+            .add = tupleAdd,
             .getIter = (unaryFunction)tupleGetIter,
         },
         .comparison = tupleComparison,
