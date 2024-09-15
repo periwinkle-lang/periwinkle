@@ -11,7 +11,7 @@ namespace vm
 {
     extern TypeObject nativeFunctionObjectType;
     // Функція приймає масив об'єктів та повертає посилання на результат
-    using nativeFunction = Object*(*)(std::span<Object*>, ListObject*, NamedArgs*);
+    using nativeFunction = Object*(*)(std::span<Object*>, TupleObject*, NamedArgs*);
 
     struct NativeFunctionObject : Object
     {

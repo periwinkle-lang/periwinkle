@@ -10,7 +10,7 @@
 namespace vm
 {
     extern TypeObject nativeMethodObjectType;
-    using nativeMethod = Object*(*)(Object*, std::span<Object*>, ListObject*, NamedArgs*);
+    using nativeMethod = Object*(*)(Object*, std::span<Object*>, TupleObject*, NamedArgs*);
 
     struct NativeMethodObject : Object
     {

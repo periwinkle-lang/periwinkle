@@ -14,13 +14,14 @@
 #include "string_vector_object.hpp"
 #include "int_object.hpp"
 #include "real_object.hpp"
+#include "tuple_object.hpp"
 #include "periwinkle.hpp"
 #include "keyword.hpp"
 #include "plogger.hpp"
 
 using namespace vm;
 
-static Object* typeCall(TypeObject* type, std::span<Object*> argv, ListObject* va, NamedArgs* na)
+static Object* typeCall(TypeObject* type, std::span<Object*> argv, TupleObject* va, NamedArgs* na)
 {
     if (type->constructor == nullptr)
     {
@@ -115,6 +116,7 @@ bool vm::objectToBool(Object* o)
     if (OBJECT_IS(o, &realObjectType)) return static_cast<RealObject*>(o)->value;
     if (OBJECT_IS(o, &stringObjectType)) return !static_cast<StringObject*>(o)->value.empty();
     if (OBJECT_IS(o, &listObjectType)) return !static_cast<ListObject*>(o)->items.empty();
+    if (OBJECT_IS(o, &tupleObjectType)) return !static_cast<TupleObject*>(o)->items.empty();
     return static_cast<BoolObject*>(o->toBool())->value;
 }
 
@@ -385,7 +387,7 @@ static inline Object* _callObject(Object* callable, std::span<Object*> argv, Nam
         return nullptr;
 
     auto argc = argv.size();
-    auto va = ListObject::create();
+    auto va = &P_emptyTuple;
     if (callableInfo->flags & CallableInfo::IS_VARIADIC)
     {
         auto arityWithoutDefaults = callableInfo->arity;
@@ -393,8 +395,10 @@ static inline Object* _callObject(Object* callable, std::span<Object*> argv, Nam
             arityWithoutDefaults -= callableInfo->defaults->parameters.size();
         if (auto variadicCount = argc - arityWithoutDefaults; variadicCount > 0)
         {
+            va = TupleObject::create();
             va->items.reserve(variadicCount);
             va->items.insert(va->items.end(), argv.end() - variadicCount, argv.end());
+            va->items.shrink_to_fit();
             argc -= variadicCount;
         }
     }
@@ -432,11 +436,13 @@ Object* vm::Object::stackCall(Object**& sp, u64 argc, NamedArgs* na)
         // Варіативний аргумент
         if (callableInfo->flags & CallableInfo::IS_VARIADIC)
         {
-            auto va = ListObject::create();
+            auto va = &P_emptyTuple;
             if (auto variadicCount = argc - (callableInfo->arity - defaultCount); variadicCount > 0)
             {
+                va = TupleObject::create();
                 va->items.reserve(variadicCount);
                 va->items.insert(va->items.end(), sp - variadicCount, sp);
+                va->items.shrink_to_fit();
                 argc -= variadicCount;
             }
             *(++sp) = va;

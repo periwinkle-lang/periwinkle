@@ -12,6 +12,7 @@
 #include "null_object.hpp"
 #include "native_method_object.hpp"
 #include "end_iteration_object.hpp"
+#include "tuple_object.hpp"
 #include "argument_parser.hpp"
 #include "utils.hpp"
 #include "periwinkle.hpp"
@@ -31,7 +32,7 @@ using namespace vm;
     }
 
 
-static Object* listInit(Object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
+static Object* listInit(Object* o, std::span<Object*> args, TupleObject* va, NamedArgs* na)
 {
     auto listObject = ListObject::create();
     listObject->items = va->items;

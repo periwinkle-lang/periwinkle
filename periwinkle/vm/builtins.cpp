@@ -50,7 +50,7 @@ static std::u32string joinObjectString(
     return U"";
 }
 
-static Object* printNative(std::span<Object*> args, ListObject* va, NamedArgs* na)
+static Object* printNative(std::span<Object*> args, TupleObject* va, NamedArgs* na)
 {
     StringObject* separator;
     ArgParser argParser{
@@ -62,7 +62,7 @@ static Object* printNative(std::span<Object*> args, ListObject* va, NamedArgs* n
     return &P_null;
 }
 
-static Object* printLnNative(std::span<Object*> args, ListObject* va, NamedArgs* na)
+static Object* printLnNative(std::span<Object*> args, TupleObject* va, NamedArgs* na)
 {
     StringObject* separator;
     ArgParser argParser{
@@ -74,7 +74,7 @@ static Object* printLnNative(std::span<Object*> args, ListObject* va, NamedArgs*
     return &P_null;
 }
 
-static Object* readLineNative(std::span<Object*> args, ListObject* va, NamedArgs* na)
+static Object* readLineNative(std::span<Object*> args, TupleObject* va, NamedArgs* na)
 {
     StringObject* prompt;
     ArgParser argParser{
@@ -86,7 +86,7 @@ static Object* readLineNative(std::span<Object*> args, ListObject* va, NamedArgs
     return StringObject::create(line);
 }
 
-static Object* getIterator(std::span<Object*> args, ListObject* va, NamedArgs* na)
+static Object* getIterator(std::span<Object*> args, TupleObject* va, NamedArgs* na)
 {
     return args[0]->getIter();
 }

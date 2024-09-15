@@ -36,7 +36,7 @@
     };
 
 #define METHOD_TEMPLATE(name) \
-    static Object* name(Object* _o, std::span<Object*> args, ListObject* va, NamedArgs* na)
+    static Object* name(Object* _o, std::span<Object*> args, TupleObject* va, NamedArgs* na)
 
 // Потрібно використовувати в парі з METHOD_TEMPLATE, в початку функції
 // Перед використанням потрібно визначити макрос X_OBJECT_STRUCT
@@ -54,7 +54,7 @@ namespace vm
     struct Object;
     struct TypeObject;
     struct NativeMethodObject;
-    struct ListObject;
+    struct TupleObject;
 
     struct NamedArgs
     {
@@ -81,7 +81,7 @@ namespace vm
     using unaryFunction      = vm::Object*(*)(Object*);
     using binaryFunction     = vm::Object*(*)(Object*, Object*);
     using ternaryFunction    = vm::Object*(*)(Object*, Object*, Object*);
-    using callFunction       = vm::Object*(*)(Object*, std::span<Object*>, ListObject*, NamedArgs*);
+    using callFunction       = vm::Object*(*)(Object*, std::span<Object*>, TupleObject*, NamedArgs*);
     using stackCallFunction  = vm::Object*(*)(Object*, Object**&);
     using allocFunction      = vm::Object*(*)(void);
     using deallocFunction    = void (*)(Object*);

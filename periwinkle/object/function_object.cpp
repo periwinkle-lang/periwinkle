@@ -4,7 +4,7 @@
 #include "function_object.hpp"
 #include "string_object.hpp"
 #include "int_object.hpp"
-#include "list_object.hpp"
+#include "tuple_object.hpp"
 #include "native_method_object.hpp"
 #include "string_vector_object.hpp"
 #include "vm.hpp"
@@ -55,7 +55,7 @@ static inline Object* _call(FunctionObject* fn)
     return result;
 }
 
-static Object* fnCall(FunctionObject* fn, std::span<Object*> args, ListObject* va, NamedArgs* na)
+static Object* fnCall(FunctionObject* fn, std::span<Object*> args, TupleObject* va, NamedArgs* na)
 {
     auto vm = VirtualMachine::currentVm;
     auto& sp = vm->getFrame()->sp;

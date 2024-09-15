@@ -23,7 +23,7 @@ using namespace vm;
 
 static DefaultParameters exceptionInitDefaults = {{ {"повідомлення", &P_emptyStr} }};
 
-static Object* exceptionInit(Object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
+static Object* exceptionInit(Object* o, std::span<Object*> args, TupleObject* va, NamedArgs* na)
 {
     StringObject* message;
     ArgParser argParser{

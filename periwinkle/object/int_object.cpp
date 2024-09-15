@@ -30,7 +30,7 @@ static Object* name(Object* o1, Object* o2) \
     return IntObject::create(result);       \
 }
 
-static Object* intInit(Object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
+static Object* intInit(Object* o, std::span<Object*> args, TupleObject* va, NamedArgs* na)
 {
     return args[0]->toInteger();
 }

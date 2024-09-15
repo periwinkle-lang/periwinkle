@@ -53,7 +53,7 @@ static bool tryConvertToString(Object* o, std::u32string& str)
         return nullptr;                                                \
     }
 
-static Object* strInit(Object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
+static Object* strInit(Object* o, std::span<Object*> args, TupleObject* va, NamedArgs* na)
 {
     return args[0]->toString();
 }
@@ -267,7 +267,7 @@ METHOD_TEMPLATE(strReplace)
 OBJECT_METHOD(strReplace, "замінити", 2, false, nullptr)
 
 
-Object* strJoin(std::span<Object*> args, ListObject* va, NamedArgs* na)
+Object* strJoin(std::span<Object*> args, TupleObject* va, NamedArgs* na)
 {
     StringObject* separator;
     ListObject* objects;
@@ -457,7 +457,7 @@ METHOD_TEMPLATE(strSplit)
     };
     if (!argParser.parse(args)) return nullptr;
 
-   auto strs = ListObject::create();
+    auto strs = ListObject::create();
     size_t start = 0, end = o->value.find(delimiter->value);
 
     while (end != std::string::npos) {

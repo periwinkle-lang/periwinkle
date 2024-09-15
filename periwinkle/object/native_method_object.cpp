@@ -6,7 +6,7 @@
 using namespace vm;
 
 static Object* nativeMethodCall(
-    NativeMethodObject* callable, std::span<Object*> argv, ListObject* va, NamedArgs* na)
+    NativeMethodObject* callable, std::span<Object*> argv, TupleObject* va, NamedArgs* na)
 {
     auto instance = argv[0];
     if (instance->objectType != callable->classType)

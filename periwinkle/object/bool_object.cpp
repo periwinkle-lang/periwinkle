@@ -32,7 +32,7 @@ static Object* boolComparison(Object* o1, Object* o2, ObjectCompOperator op)
     return P_BOOL(result);
 }
 
-static Object* boolInit(Object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
+static Object* boolInit(Object* o, std::span<Object*> args, TupleObject* va, NamedArgs* na)
 {
     return args[0]->toBool();
 }

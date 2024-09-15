@@ -1,7 +1,6 @@
 #include <utility>
 
 #include "tuple_object.hpp"
-#include "list_object.hpp"
 #include "bool_object.hpp"
 #include "exception_object.hpp"
 #include "string_object.hpp"
@@ -26,12 +25,9 @@ using namespace vm;
         return nullptr;                                                \
     }
 
-static Object* tupleInit(Object* o, std::span<Object*> args, ListObject* va, NamedArgs* na)
+static Object* tupleInit(Object* o, std::span<Object*> args, TupleObject* va, NamedArgs* na)
 {
-    auto tupleObject = TupleObject::create();
-    tupleObject->items = va->items;
-    tupleObject->items.shrink_to_fit();
-    return tupleObject;
+    return va;
 }
 
 static inline bool tupleObjectEqual(TupleObject* a, TupleObject* b, bool notEqual=false)
@@ -272,6 +268,8 @@ namespace vm
             METHOD_ATTRIBUTE(tupleSlice),
         },
     };
+
+    TupleObject P_emptyTuple = { {.objectType = &tupleObjectType}, {} };
 
     TypeObject tupleIterObjectType =
     {

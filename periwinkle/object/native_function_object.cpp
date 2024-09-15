@@ -7,7 +7,7 @@
 using namespace vm;
 
 static Object* nativeCall(
-    NativeFunctionObject* nativeFunction, std::span<Object*> argv, ListObject* va, NamedArgs* na)
+    NativeFunctionObject* nativeFunction, std::span<Object*> argv, TupleObject* va, NamedArgs* na)
 {
     return nativeFunction->function(argv, va, na);
 }

@@ -27,7 +27,6 @@ namespace vm
         {
         }
     };
-
 }
 
 #endif

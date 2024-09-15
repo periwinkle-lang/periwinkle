@@ -16,6 +16,8 @@ namespace vm
         static TupleObject* create();
     };
 
+    extern TupleObject P_emptyTuple;
+
     struct TupleIterObject : Object
     {
         size_t position = 0;
