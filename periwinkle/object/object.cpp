@@ -441,9 +441,10 @@ Object* vm::Object::stackCall(Object**& sp, u64 argc, NamedArgs* na)
             {
                 va = TupleObject::create();
                 va->items.reserve(variadicCount);
-                va->items.insert(va->items.end(), sp - variadicCount, sp);
+                va->items.insert(va->items.end(), sp - variadicCount + 1, sp + 1);
                 va->items.shrink_to_fit();
                 argc -= variadicCount;
+                sp -= variadicCount;
             }
             *(++sp) = va;
         }
