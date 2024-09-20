@@ -184,7 +184,7 @@ primary<ast::Expression*> =
         }
     / v:("істина" / "хиба") { $$ = new LiteralExpression(newToken(v, $1), LiteralExpression::Type::BOOLEAN, v == "істина"); }
     / num:number { $$ = num; }
-    / s:("\"" body:("\\\""? !"\"" .)* "\"") { $$ = new LiteralExpression(newToken(s, $1), LiteralExpression::Type::STRING, body); }
+    / s:("\"" body:("\\\"" / !"\"" .)* "\"") { $$ = new LiteralExpression(newToken(s, $1), LiteralExpression::Type::STRING, body); }
     / "ніц" { $$ = new LiteralExpression(newToken("ніц", $1), LiteralExpression::Type::NULL_, {}); }
     / id:identifier { $$ = new VariableExpression(newToken(id, $1)); }
     / "(" e:rhs ")" { $$ = new ParenthesizedExpression(e); }

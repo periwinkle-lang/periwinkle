@@ -591,7 +591,7 @@ void compiler::Compiler::compileLiteralExpression(LiteralExpression* expression)
                 parsedString[j++] = parsedString[i];
             }
         }
-        parsedString.shrink_to_fit();
+        parsedString.resize(j);
         index = stringConstIdx(parsedString);
         break;
     }
