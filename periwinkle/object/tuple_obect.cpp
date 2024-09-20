@@ -25,6 +25,15 @@ using namespace vm;
         return nullptr;                                                \
     }
 
+#define CHECK_NEGATIVE_INDEX(index, variableName)                       \
+    if (index < 0LL)                                                    \
+    {                                                                   \
+        getCurrentState()->setException(                                \
+            &IndexErrorObjectType,                                      \
+            "\"" variableName "\" не може приймати від'ємних значень"); \
+        return nullptr;                                                 \
+    }
+
 static Object* tupleInit(Object* o, std::span<Object*> args, TupleObject* va, NamedArgs* na)
 {
     return va;
@@ -217,6 +226,10 @@ METHOD_TEMPLATE(tupleGetItem)
 OBJECT_METHOD(tupleGetItem, "отримати", 1, false, nullptr);
 
 
+static DefaultParameters tupleSliceDefaults = {{
+    {"кількість", &P_maxInt},
+}};
+
 METHOD_TEMPLATE(tupleSlice)
 {
     OBJECT_CAST();
@@ -225,16 +238,22 @@ METHOD_TEMPLATE(tupleSlice)
         {&start, intObjectType, "початок"},
         {&count, intObjectType, "кількість"},
     };
-    if (!argParser.parse(args)) return nullptr;
+    if (!argParser.parse(args, &tupleSliceDefaults, na)) return nullptr;
+    if (count->value == 0) return &vm::P_emptyTuple;
 
+    CHECK_NEGATIVE_INDEX(start->value, "початок")
+    CHECK_NEGATIVE_INDEX(count->value, "кількість")
     CHECK_INDEX(start->value, o);
-    CHECK_INDEX(start->value + count->value - (count->value == 0 ? 0 : 1), o);
+
+    i64 maxCount = std::min(count->value, static_cast<i64>(o->items.size() - start->value));
     auto slice = TupleObject::create();
     slice->items = std::vector<Object*>{
-        o->items.begin() + start->value, o->items.begin() + count->value };
+        o->items.begin() + start->value,
+        o->items.begin() + start->value + maxCount
+    };
     return slice;
 }
-OBJECT_METHOD(tupleSlice, "зріз", 2, false, nullptr);
+OBJECT_METHOD(tupleSlice, "зріз", 1, false, &tupleSliceDefaults);
 
 #undef X_OBJECT_STRUCT
 #undef X_OBJECT_TYPE

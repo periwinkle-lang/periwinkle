@@ -53,6 +53,15 @@ static bool tryConvertToString(Object* o, std::u32string& str)
         return nullptr;                                                \
     }
 
+#define CHECK_NEGATIVE_INDEX(index, variableName)                       \
+    if (index < 0LL)                                                    \
+    {                                                                   \
+        getCurrentState()->setException(                                \
+            &IndexErrorObjectType,                                      \
+            "\"" variableName "\" не може приймати від'ємних значень"); \
+        return nullptr;                                                 \
+    }
+
 static Object* strInit(Object* o, std::span<Object*> args, TupleObject* va, NamedArgs* na)
 {
     return args[0]->toString();
@@ -431,7 +440,11 @@ METHOD_TEMPLATE(strRightTrim)
 OBJECT_METHOD(strRightTrim, "причепуритиСправа", 0, false, nullptr)
 
 
-METHOD_TEMPLATE(strSubstr)
+static DefaultParameters strSliceDefaults = {{
+    {"кількість", &P_maxInt},
+}};
+
+METHOD_TEMPLATE(strSlice)
 {
     OBJECT_CAST();
     IntObject *start, *count;
@@ -439,13 +452,16 @@ METHOD_TEMPLATE(strSubstr)
         {&start, intObjectType, "початок"},
         {&count, intObjectType, "кількість"},
     };
-    if (!argParser.parse(args)) return nullptr;
+    if (!argParser.parse(args, &strSliceDefaults, na)) return nullptr;
+    if (count->value == 0) return &P_emptyStr;
 
+    CHECK_NEGATIVE_INDEX(start->value, "початок")
+    CHECK_NEGATIVE_INDEX(count->value, "кількість")
     CHECK_INDEX(start->value, o);
-    CHECK_INDEX(start->value + count->value - (count->value == 0 ? 0 : 1), o);
+
     return StringObject::create(o->value.substr(start->value, count->value));
 }
-OBJECT_METHOD(strSubstr, "підрядок", 2, false, nullptr)
+OBJECT_METHOD(strSlice, "зріз", 1, false, &strSliceDefaults)
 
 
 METHOD_TEMPLATE(strSplit)
@@ -782,7 +798,7 @@ namespace vm
             METHOD_ATTRIBUTE(strTrim),
             METHOD_ATTRIBUTE(strLeftTrim),
             METHOD_ATTRIBUTE(strRightTrim),
-            METHOD_ATTRIBUTE(strSubstr),
+            METHOD_ATTRIBUTE(strSlice),
             METHOD_ATTRIBUTE(strSplit),
             METHOD_ATTRIBUTE(toIntMethod),
             METHOD_ATTRIBUTE(strIsAlpha),

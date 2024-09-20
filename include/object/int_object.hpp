@@ -14,6 +14,8 @@ namespace vm
 
         static IntObject* create(i64 value);
     };
+
+    extern IntObject P_maxInt;
 }
 
 #endif

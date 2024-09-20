@@ -1,4 +1,5 @@
 #include <string>
+#include <limits>
 
 #include "object.hpp"
 #include "int_object.hpp"
@@ -159,6 +160,9 @@ namespace vm
         },
         .comparison = intComparison,
     };
+
+    IntObject P_maxInt = { {.objectType = &intObjectType},
+        std::numeric_limits<decltype(IntObject::value)>::max() };
 }
 
 IntObject* vm::IntObject::create(i64 value)

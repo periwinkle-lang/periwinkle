@@ -31,6 +31,14 @@ using namespace vm;
         return nullptr;                                               \
     }
 
+#define CHECK_NEGATIVE_INDEX(index, variableName)                       \
+    if (index < 0LL)                                                    \
+    {                                                                   \
+        getCurrentState()->setException(                                \
+            &IndexErrorObjectType,                                      \
+            "\"" variableName "\" не може приймати від'ємних значень"); \
+        return nullptr;                                                 \
+    }
 
 static Object* listInit(Object* o, std::span<Object*> args, TupleObject* va, NamedArgs* na)
 {
@@ -353,7 +361,11 @@ METHOD_TEMPLATE(listClear)
 OBJECT_METHOD(listClear, "очистити", 0, false, nullptr);
 
 
-METHOD_TEMPLATE(listSublist)
+static DefaultParameters listSliceDefaults = {{
+    {"кількість", &P_maxInt},
+}};
+
+METHOD_TEMPLATE(listSlice)
 {
     OBJECT_CAST();
     IntObject *start, *count;
@@ -361,16 +373,22 @@ METHOD_TEMPLATE(listSublist)
         {&start, intObjectType, "початок"},
         {&count, intObjectType, "кількість"},
     };
-    if (!argParser.parse(args)) return nullptr;
+    if (!argParser.parse(args, &listSliceDefaults, na)) return nullptr;
+    auto slice = ListObject::create();
+    if (count->value == 0) return slice;
 
+    CHECK_NEGATIVE_INDEX(start->value, "початок")
+    CHECK_NEGATIVE_INDEX(count->value, "кількість")
     CHECK_INDEX(start->value, o);
-    CHECK_INDEX(start->value + count->value - (count->value == 0 ? 0 : 1), o);
-    auto subList = ListObject::create();
-    subList->items = std::vector<Object*>{
-        o->items.begin() + start->value, o->items.begin() + count->value };
-    return subList;
+
+    i64 maxCount = std::min(count->value, static_cast<i64>(o->items.size() - start->value));
+    slice->items = std::vector<Object*>{
+        o->items.begin() + start->value,
+        o->items.begin() + start->value + maxCount
+    };
+    return slice;
 }
-OBJECT_METHOD(listSublist, "підсписок", 2, false, nullptr);
+OBJECT_METHOD(listSlice, "зріз", 1, false, &listSliceDefaults);
 
 
 static DefaultParameters listSortDefaults = {{
@@ -550,7 +568,7 @@ namespace vm
             METHOD_ATTRIBUTE(listReverse),
             METHOD_ATTRIBUTE(listGetItem),
             METHOD_ATTRIBUTE(listClear),
-            METHOD_ATTRIBUTE(listSublist),
+            METHOD_ATTRIBUTE(listSlice),
             METHOD_ATTRIBUTE(listSort),
         },
     };
