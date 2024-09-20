@@ -14,7 +14,7 @@ static Object* nativeMethodCall(
         getCurrentState()->setException(
             &TypeErrorObjectType,
             std::format("Метод \"{}\" виконує операції тільки над об'єктами типу \"{}\"",
-                callable->callableInfo.name, callable->classType->objectType->name)
+                callable->callableInfo.name, callable->classType->name)
             );
         return nullptr;
     }
