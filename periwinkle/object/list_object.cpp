@@ -502,6 +502,48 @@ METHOD_TEMPLATE(listSort)
 OBJECT_METHOD(listSort, "впорядкувати", 0, false, &listSortDefaults);
 
 
+METHOD_TEMPLATE(listExtend)
+{
+    OBJECT_CAST();
+    auto iterable = args[0];
+
+    // Оптимізація для вбудованих об'єктів
+    if (OBJECT_IS(iterable, &listObjectType))
+    {
+        auto listObject = static_cast<ListObject*>(iterable);
+        o->items.insert(o->items.end(), listObject->items.begin(), listObject->items.end());
+        return &P_null;
+    }
+    else if (OBJECT_IS(iterable, &tupleObjectType))
+    {
+        auto tupleObject = static_cast<TupleObject*>(iterable);
+        o->items.insert(o->items.end(), tupleObject->items.begin(), tupleObject->items.end());
+        return &P_null;
+    }
+
+    auto iterator = iterable->getIter();
+    if (iterator == nullptr) return nullptr;
+    auto nextMethod = iterator->getAttr("наступний");
+    if (nextMethod == nullptr)
+    {
+        getCurrentState()->setException(
+            &TypeErrorObjectType,
+            std::format("Тип \"{}\" не є ітератором", iterator->objectType->name));
+        return nullptr;
+    }
+    Object* iteratorArgs[] { iterator };
+    for (Object* item = nullptr;;)
+    {
+        item = nextMethod->call(iteratorArgs);
+        if (item == nullptr) return nullptr;
+        if (item == &P_endIter) break;
+        o->items.push_back(item);
+    }
+    return &P_null;
+}
+OBJECT_METHOD(listExtend, "розширити", 1, false, nullptr)
+
+
 static void listIterTraverse(ListIterObject* o)
 {
     for (auto o : o->iterable)
@@ -570,6 +612,7 @@ namespace vm
             METHOD_ATTRIBUTE(listClear),
             METHOD_ATTRIBUTE(listSlice),
             METHOD_ATTRIBUTE(listSort),
+            METHOD_ATTRIBUTE(listExtend),
         },
     };
 
