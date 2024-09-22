@@ -30,7 +30,7 @@ namespace Keyword
     KW GREATER = "більше";
     KW GREATER_EQUAL = "більше рівно";
     KW NOT = "не";
-    KW NOT_EQUAL = "не рівно";
+    KW NOT_EQUAL = "нерівно";
     KW POS = "+";
     KW NEG = "-";
     KW K_TRUE = "істина";
