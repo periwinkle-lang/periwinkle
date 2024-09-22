@@ -16,6 +16,7 @@
 #include "code_object.hpp"
 #include "null_object.hpp"
 #include "plogger.hpp"
+#include "keyword.hpp"
 
 using namespace compiler;
 using vm::OpCode;
@@ -50,6 +51,7 @@ int compiler::Disassembler::opCodeLenArguments(OpCode code)
     case CATCH:
     case UNARY_OP:
     case BINARY_OP:
+    case IS:
         return 1;
     case CALL_NA:
     case CALL_METHOD_NA:
@@ -67,7 +69,7 @@ std::string compiler::Disassembler::getValueAsString(vm::Object* object)
     }
     else if (OBJECT_IS(object, &vm::boolObjectType))
     {
-        return ((vm::BoolObject*)object)->value ? "істина" : "хиба";
+        return std::string{ ((vm::BoolObject*)object)->value ? Keyword::K_TRUE : Keyword::K_FALSE };
     }
     else if (OBJECT_IS(object, &vm::stringObjectType))
     {
@@ -81,7 +83,7 @@ std::string compiler::Disassembler::getValueAsString(vm::Object* object)
     }
     else if (OBJECT_IS(object, &vm::nullObjectType))
     {
-        return "ніц";
+        return std::string{ Keyword::K_NULL };
     }
     else if (OBJECT_IS(object, &vm::codeObjectType))
     {
@@ -155,12 +157,12 @@ std::string compiler::Disassembler::disassemble(vm::CodeObject* codeObject)
                 using enum vm::ObjectCompOperator;
                 switch ((vm::ObjectCompOperator)argument)
                 {
-                case EQ: out << "=="; break;
-                case NE: out << "!="; break;
-                case GT: out << "більше"; break;
-                case GE: out << "більше="; break;
-                case LT: out << "менше"; break;
-                case LE: out << "менше="; break;
+                case EQ: out << Keyword::EQUAL_EQUAL; break;
+                case NE: out << Keyword::NOT_EQUAL; break;
+                case GT: out << Keyword::GREATER; break;
+                case GE: out << Keyword::GREATER_EQUAL; break;
+                case LT: out << Keyword::LESS; break;
+                case LE: out << Keyword::LESS_EQUAL; break;
                 }
                 out << ")";
             }
@@ -187,14 +189,14 @@ std::string compiler::Disassembler::disassemble(vm::CodeObject* codeObject)
                 out << "(";
                 switch (static_cast<vm::ObjectOperatorOffset>(argument))
                 {
-                case vm::ObjectOperatorOffset::ADD: out << "+"; break;
-                case vm::ObjectOperatorOffset::SUB: out << "-"; break;
-                case vm::ObjectOperatorOffset::DIV: out << "/"; break;
-                case vm::ObjectOperatorOffset::MUL: out << "*"; break;
-                case vm::ObjectOperatorOffset::MOD: out << "%"; break;
-                case vm::ObjectOperatorOffset::FLOOR_DIV: out << "//"; break;
-                case vm::ObjectOperatorOffset::POS: out << "+"; break;
-                case vm::ObjectOperatorOffset::NEG: out << "-"; break;
+                case vm::ObjectOperatorOffset::ADD: out << Keyword::ADD; break;
+                case vm::ObjectOperatorOffset::SUB: out << Keyword::SUB; break;
+                case vm::ObjectOperatorOffset::DIV: out << Keyword::DIV; break;
+                case vm::ObjectOperatorOffset::MUL: out << Keyword::MUL; break;
+                case vm::ObjectOperatorOffset::MOD: out << Keyword::MOD; break;
+                case vm::ObjectOperatorOffset::FLOOR_DIV: out << Keyword::FLOOR_DIV; break;
+                case vm::ObjectOperatorOffset::POS: out << Keyword::POS; break;
+                case vm::ObjectOperatorOffset::NEG: out << Keyword::NEG; break;
                 case vm::ObjectOperatorOffset::GET_ITER: out << "getIter"; break;
                 }
                 out << ")";

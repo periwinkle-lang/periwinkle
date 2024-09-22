@@ -91,7 +91,7 @@ Object* VirtualMachine::execute()
         {
             auto o1 = POP();
             auto o2 = POP();
-            PUSH(P_BOOL(o1 == o2));
+            PUSH(P_BOOL((o1 == o2) ^ operand));
             break;
         }
         case COMPARE:

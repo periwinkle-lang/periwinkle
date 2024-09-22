@@ -701,6 +701,7 @@ void compiler::Compiler::compileBinaryExpression(BinaryExpression* expression)
     else if (op == Keyword::MOD) emitOpCode(BINARY_OP, static_cast<vm::WORD>(vm::ObjectOperatorOffset::MOD));
     else if (op == Keyword::FLOOR_DIV) emitOpCode(BINARY_OP, static_cast<vm::WORD>(vm::ObjectOperatorOffset::FLOOR_DIV));
     else if (op == Keyword::IS) emitOpCode(IS);
+    else if (op == Keyword::IS_NOT) emitOpCode(IS, 1);
     else if (op == Keyword::EQUAL_EQUAL) emitOpCode(COMPARE, static_cast<vm::WORD>(EQ));
     else if (op == Keyword::NOT_EQUAL) emitOpCode(COMPARE, static_cast<vm::WORD>(NE));
     else if (op == Keyword::GREATER) emitOpCode(COMPARE, static_cast<vm::WORD>(GT));

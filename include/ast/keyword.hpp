@@ -20,16 +20,22 @@ namespace Keyword
     KW MOD = "%";
     KW MOD_EQUAL = "%=";
     KW EQUAL = "=";
-    KW EQUAL_EQUAL = "==";
+    KW EQUAL_EQUAL = "рівно";
     KW AND = "та";
     KW OR = "або";
     KW IS = "є";
+    KW IS_NOT = "не є";
     KW LESS = "менше";
-    KW LESS_EQUAL = "менше=";
+    KW LESS_EQUAL = "менше рівно";
     KW GREATER = "більше";
-    KW GREATER_EQUAL = "більше=";
+    KW GREATER_EQUAL = "більше рівно";
     KW NOT = "не";
-    KW NOT_EQUAL = "!=";
+    KW NOT_EQUAL = "не рівно";
+    KW POS = "+";
+    KW NEG = "-";
+    KW K_TRUE = "істина";
+    KW K_FALSE = "хиба";
+    KW K_NULL = "ніц";
 }
 
 #undef KW

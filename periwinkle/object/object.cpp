@@ -534,8 +534,8 @@ BINARY_OPERATOR(mul, Keyword::MUL)
 BINARY_OPERATOR(div, Keyword::DIV)
 BINARY_OPERATOR(floorDiv, Keyword::FLOOR_DIV)
 BINARY_OPERATOR(mod, Keyword::MOD)
-UNARY_OPERATOR(pos, Keyword::ADD)
-UNARY_OPERATOR(neg, Keyword::SUB)
+UNARY_OPERATOR(pos, Keyword::POS)
+UNARY_OPERATOR(neg, Keyword::NEG)
 UNARY_OPERATOR_WITH_MESSAGE(getIter, GET_ITER_ERROR_MSG)
 
 static const std::unordered_map<size_t, const std::string_view> offsetToUnaryOperatorErrorMsg =
@@ -551,8 +551,8 @@ static const std::unordered_map<size_t, const std::string_view> offsetToOperator
     {static_cast<size_t>(vm::ObjectOperatorOffset::DIV), Keyword::DIV},
     {static_cast<size_t>(vm::ObjectOperatorOffset::FLOOR_DIV), Keyword::FLOOR_DIV},
     {static_cast<size_t>(vm::ObjectOperatorOffset::MOD), Keyword::MOD},
-    {static_cast<size_t>(vm::ObjectOperatorOffset::POS), Keyword::ADD},
-    {static_cast<size_t>(vm::ObjectOperatorOffset::NEG), Keyword::SUB},
+    {static_cast<size_t>(vm::ObjectOperatorOffset::POS), Keyword::POS},
+    {static_cast<size_t>(vm::ObjectOperatorOffset::NEG), Keyword::NEG},
 };
 
 Object* vm::Object::callUnaryOperator(vm::ObjectOperatorOffset offset)
