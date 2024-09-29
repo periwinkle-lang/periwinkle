@@ -47,20 +47,14 @@ static Object* listInit(Object* o, std::span<Object*> args, TupleObject* va, Nam
     return listObject;
 }
 
-static inline bool listObjectEqual(ListObject* a, ListObject* b, bool notEqual=false)
+static inline bool listObjectEqual(ListObject* a, ListObject* b)
 {
-    if (a->items.size() != b->items.size())
-    {
-        return false;
-    }
+    if (a->items.size() != b->items.size()) return false;
 
     for (size_t i = 0; i < a->items.size(); ++i)
     {
-        if (((BoolObject*)a->items[i]->compare(b->items[i],
-            notEqual ? ObjectCompOperator::NE : ObjectCompOperator::EQ))->value == false)
-        {
+        if (objectToBool(a->items[i]->compare(b->items[i], ObjectCompOperator::EQ)) == false)
             return false;
-        }
     }
 
     return true;
@@ -70,18 +64,33 @@ static Object* listComparison(Object* o1, Object* o2, ObjectCompOperator op)
 {
     CHECK_LIST(o1);
     CHECK_LIST(o2);
-    auto a = (ListObject*)o1;
-    auto b = (ListObject*)o2;
-    bool result;
+    auto a = static_cast<ListObject*>(o1);
+    auto b = static_cast<ListObject*>(o2);
 
     using enum ObjectCompOperator;
-    switch (op)
-    {
-    case EQ: result = listObjectEqual(a, b);       break;
-    case NE: result = listObjectEqual(a, b, true); break;
-    default:
-        return &P_NotImplemented;
-    }
+
+    if (op == EQ) return P_BOOL(listObjectEqual(a, b));
+    if (op == NE) return P_BOOL(!listObjectEqual(a, b));
+
+    auto cmpResult = std::lexicographical_compare_three_way(
+        a->items.begin(), a->items.end(),
+        b->items.begin(), b->items.end(),
+        [](Object* obj1, Object* obj2) {
+            if (objectToBool(obj1->compare(obj2, ObjectCompOperator::LT)))
+                return std::strong_ordering::less;
+
+            if (objectToBool(obj1->compare(obj2, ObjectCompOperator::GT)))
+                return std::strong_ordering::greater;
+
+            return std::strong_ordering::equal;
+        }
+    );
+
+    bool result;
+    if (op == LT) result = (cmpResult == std::strong_ordering::less);
+    if (op == LE) result = (cmpResult == std::strong_ordering::less || cmpResult == std::strong_ordering::equal);
+    if (op == GT) result = (cmpResult == std::strong_ordering::greater);
+    if (op == GE) result = (cmpResult == std::strong_ordering::greater || cmpResult == std::strong_ordering::equal);
 
     return P_BOOL(result);
 }

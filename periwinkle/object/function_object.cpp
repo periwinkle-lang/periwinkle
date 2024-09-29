@@ -116,9 +116,12 @@ static void traverse(FunctionObject* func)
     {
         mark(o);
     }
-    for (const auto& o : func->callableInfo.defaults->parameters)
+    if (func->callableInfo.defaults)
     {
-        mark(o.second);
+        for (const auto& o : func->callableInfo.defaults->parameters)
+        {
+            mark(o.second);
+        }
     }
 }
 
