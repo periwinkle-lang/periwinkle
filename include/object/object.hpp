@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 #include <span>
+#include <optional>
 
 #include "types.hpp"
 
@@ -185,6 +186,9 @@ namespace vm
 
         // Отримання атрибута за його іменем, якщо атрибут не знайдений, повертає nullptr
         Object* getAttr(const std::string& name);
+
+        // Перетворює об'єкт в C++ bool, якщо була викинута помилка в ході виконання, то повертається std::nullopt
+        std::optional<bool> asBool();
     };
 
     struct CallableInfo
@@ -230,7 +234,6 @@ namespace vm
     void mark(Object* o);
     Object* allocObject(TypeObject* objectType);
     bool isInstance(const Object* o, const TypeObject& type);
-    bool objectToBool(Object* o);
 
     // Перевіряє чи передана правильна кількість аргументів для виклику функції
     bool validateCall(Object* callable, WORD argc, vm::NamedArgs* namedArgs);

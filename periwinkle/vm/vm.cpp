@@ -106,9 +106,9 @@ Object* VirtualMachine::execute()
         case NOT:
         {
             auto o = POP();
-            auto arg = (BoolObject*)o->toBool();
+            auto arg = o->toBool();
             if (!arg) goto error;
-            PUSH(P_BOOL(!arg->value));
+            PUSH(P_BOOL(!static_cast<BoolObject*>(arg)->value));
             break;
         }
         case JMP:
@@ -119,27 +119,30 @@ Object* VirtualMachine::execute()
         case JMP_IF_TRUE:
         {
             auto o = POP();
-            bool condition = objectToBool(o);
+            auto condition = o->asBool();
+            if (!o) goto error;
             if (getCurrentState()->exceptionOccurred()) goto error;
-            if (condition)
+            if (condition.value())
                 JUMP();
             break;
         }
         case JMP_IF_FALSE:
         {
             auto o = POP();
-            bool condition = objectToBool(o);
+            auto condition = o->asBool();
+            if (!o) goto error;
             if (getCurrentState()->exceptionOccurred()) goto error;
-            if (condition == false)
+            if (condition.value() == false)
                 JUMP();
             break;
         }
         case JMP_IF_TRUE_OR_POP:
         {
             auto o = PEEK();
-            bool condition = objectToBool(o);
+            auto condition = o->asBool();
+            if (!o) goto error;
             if (getCurrentState()->exceptionOccurred()) goto error;
-            if (condition)
+            if (condition.value())
                 JUMP();
             else
                 (void)POP();
@@ -148,9 +151,10 @@ Object* VirtualMachine::execute()
         case JMP_IF_FALSE_OR_POP:
         {
             auto o = PEEK();
-            bool condition = objectToBool(o);
+            auto condition = o->asBool();
+            if (!o) goto error;
             if (getCurrentState()->exceptionOccurred()) goto error;
-            if (condition == false)
+            if (condition.value() == false)
                 JUMP();
             else
                 (void)POP();

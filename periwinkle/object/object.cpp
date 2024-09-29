@@ -108,18 +108,6 @@ bool vm::isInstance(const Object* o, const TypeObject& type)
     }
 }
 
-bool vm::objectToBool(Object* o)
-{
-    if (o == &P_true) return true;
-    if (o == &P_false) return false;
-    if (OBJECT_IS(o, &intObjectType)) return static_cast<IntObject*>(o)->value;
-    if (OBJECT_IS(o, &realObjectType)) return static_cast<RealObject*>(o)->value;
-    if (OBJECT_IS(o, &stringObjectType)) return !static_cast<StringObject*>(o)->value.empty();
-    if (OBJECT_IS(o, &listObjectType)) return !static_cast<ListObject*>(o)->items.empty();
-    if (OBJECT_IS(o, &tupleObjectType)) return !static_cast<TupleObject*>(o)->items.empty();
-    return static_cast<BoolObject*>(o->toBool())->value;
-}
-
 #define GET_CALLABLE_INFO(object) \
     reinterpret_cast<vm::CallableInfo*>(reinterpret_cast<char*>(object) + (object)->objectType->callableInfoOffset)
 
@@ -606,4 +594,15 @@ Object* vm::Object::getAttr(const std::string& name)
         }
     }
     return nullptr;
+}
+
+std::optional<bool> vm::Object::asBool()
+{
+    if (this == &P_true) return true;
+    if (this == &P_false) return false;
+    if (OBJECT_IS(objectType, &intObjectType))
+        return static_cast<bool>(static_cast<IntObject*>(this)->value);
+    auto result = this->toBool();
+    if (result == nullptr) return std::nullopt;
+    return result == &P_true;
 }

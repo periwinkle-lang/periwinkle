@@ -39,13 +39,17 @@ static Object* tupleInit(Object* o, std::span<Object*> args, TupleObject* va, Na
     return va;
 }
 
-static inline bool tupleObjectEqual(TupleObject* a, TupleObject* b)
+static inline std::optional<bool> tupleObjectEqual(TupleObject* a, TupleObject* b)
 {
     if (a->items.size() != b->items.size()) return false;
 
     for (size_t i = 0; i < a->items.size(); ++i)
     {
-        if (objectToBool(a->items[i]->compare(b->items[i], ObjectCompOperator::EQ)) == false)
+        auto cmpResult = a->items[i]->compare(b->items[i], ObjectCompOperator::EQ);
+        if (cmpResult == nullptr) return std::nullopt;
+        auto result = cmpResult->asBool();
+        if (!result) return std::nullopt;
+        if (result.value() == false)
             return false;
     }
 
@@ -64,19 +68,35 @@ static Object* tupleComparison(Object* o1, Object* o2, ObjectCompOperator op)
     if (op == EQ) return P_BOOL(tupleObjectEqual(a, b));
     if (op == NE) return P_BOOL(!tupleObjectEqual(a, b));
 
-    auto cmpResult = std::lexicographical_compare_three_way(
-        a->items.begin(), a->items.end(),
-        b->items.begin(), b->items.end(),
-        [](Object* obj1, Object* obj2) {
-            if (objectToBool(obj1->compare(obj2, ObjectCompOperator::LT)))
-                return std::strong_ordering::less;
+    std::strong_ordering cmpResult;
+    try
+    {
+        cmpResult = std::lexicographical_compare_three_way(
+            a->items.begin(), a->items.end(),
+            b->items.begin(), b->items.end(),
+            [](Object* obj1, Object* obj2) {
+                auto cmpLess = obj1->compare(obj2, ObjectCompOperator::LT);
+                if (cmpLess == nullptr) throw std::runtime_error("");
+                auto less = cmpLess->asBool();
+                if (!less) throw std::runtime_error("");
+                if (less.value())
+                    return std::strong_ordering::less;
 
-            if (objectToBool(obj1->compare(obj2, ObjectCompOperator::GT)))
-                return std::strong_ordering::greater;
+                auto cmpGreater = obj1->compare(obj2, ObjectCompOperator::GT);
+                if (cmpGreater == nullptr) throw std::runtime_error("");
+                auto greater = cmpGreater->asBool();
+                if (!greater) throw std::runtime_error("");
+                if (greater.value())
+                    return std::strong_ordering::greater;
 
-            return std::strong_ordering::equal;
-        }
-    );
+                return std::strong_ordering::equal;
+            }
+        );
+    }
+    catch (const std::runtime_error& e)
+    {
+        return nullptr;
+    }
 
     bool result;
     if (op == LT) result = (cmpResult == std::strong_ordering::less);
@@ -168,12 +188,15 @@ OBJECT_METHOD(tupleSize, "розмір", 0, false, nullptr);
 METHOD_TEMPLATE(tupleFindItem)
 {
     OBJECT_CAST();
-    auto it = std::find_if(
-        o->items.begin(),
-        o->items.end(),
-        [&args](Object* obj) { return ((BoolObject*)obj->compare(
-            args[0], ObjectCompOperator::EQ))->value; }
-    );
+    auto it = o->items.begin();
+    for (; it != o->items.end(); it++)
+    {
+        auto cmp = (*it)->compare(args[0], ObjectCompOperator::EQ);
+        if (cmp == nullptr) return nullptr;
+        auto b = cmp->asBool();
+        if (!b) return nullptr;
+        if (b.value()) break;
+    }
 
     size_t index = -1;
     if (it != o->items.end())
@@ -188,12 +211,17 @@ OBJECT_METHOD(tupleFindItem, "знайти", 1, false, nullptr);
 METHOD_TEMPLATE(tupleCount)
 {
     OBJECT_CAST();
-    auto count = std::count_if(
-        o->items.begin(),
-        o->items.end(),
-        [&args](Object* obj) { return ((BoolObject*)obj->compare(
-            args[0], ObjectCompOperator::EQ))->value; }
-    );
+    int count = 0;
+
+    for (auto& item : o->items)
+    {
+        auto cmp = item->compare(args[0], ObjectCompOperator::EQ);
+        if (cmp == nullptr) return nullptr;
+        auto b = cmp->asBool();
+        if (!b) return nullptr;
+        if (b.value()) count++;
+    }
+
     return IntObject::create(count);
 }
 OBJECT_METHOD(tupleCount, "кількість", 1, false, nullptr);
@@ -202,20 +230,17 @@ OBJECT_METHOD(tupleCount, "кількість", 1, false, nullptr);
 METHOD_TEMPLATE(tupleContains)
 {
     OBJECT_CAST();
-    auto it = std::find_if(
-        o->items.begin(),
-        o->items.end(),
-        [&args](Object* obj) { return ((BoolObject*)obj->compare(
-            args[0], ObjectCompOperator::EQ))->value; }
-    );
-
-    i64 index = -1;
-    if (it != o->items.end())
+    auto it = o->items.begin();
+    for (; it != o->items.end(); ++it)
     {
-        index = it - o->items.begin();
+        auto cmp = (*it)->compare(args[0], ObjectCompOperator::EQ);
+        if (cmp == nullptr) return nullptr;
+        auto b = cmp->asBool();
+        if (!b) return nullptr;
+        if (b.value()) break;
     }
 
-    return P_BOOL(index != -1);
+    return P_BOOL(it != o->items.end());
 }
 OBJECT_METHOD(tupleContains, "містить", 1, false, nullptr);
 

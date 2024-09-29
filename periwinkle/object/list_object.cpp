@@ -47,13 +47,17 @@ static Object* listInit(Object* o, std::span<Object*> args, TupleObject* va, Nam
     return listObject;
 }
 
-static inline bool listObjectEqual(ListObject* a, ListObject* b)
+static inline std::optional<bool> listObjectEqual(ListObject* a, ListObject* b)
 {
     if (a->items.size() != b->items.size()) return false;
 
     for (size_t i = 0; i < a->items.size(); ++i)
     {
-        if (objectToBool(a->items[i]->compare(b->items[i], ObjectCompOperator::EQ)) == false)
+        auto cmpResult = a->items[i]->compare(b->items[i], ObjectCompOperator::EQ);
+        if (cmpResult == nullptr) return std::nullopt;
+        auto result = cmpResult->asBool();
+        if (!result) return std::nullopt;
+        if (result.value() == false)
             return false;
     }
 
@@ -72,19 +76,35 @@ static Object* listComparison(Object* o1, Object* o2, ObjectCompOperator op)
     if (op == EQ) return P_BOOL(listObjectEqual(a, b));
     if (op == NE) return P_BOOL(!listObjectEqual(a, b));
 
-    auto cmpResult = std::lexicographical_compare_three_way(
-        a->items.begin(), a->items.end(),
-        b->items.begin(), b->items.end(),
-        [](Object* obj1, Object* obj2) {
-            if (objectToBool(obj1->compare(obj2, ObjectCompOperator::LT)))
-                return std::strong_ordering::less;
+    std::strong_ordering cmpResult;
+    try
+    {
+        cmpResult = std::lexicographical_compare_three_way(
+            a->items.begin(), a->items.end(),
+            b->items.begin(), b->items.end(),
+            [](Object* obj1, Object* obj2) {
+                auto cmpLess = obj1->compare(obj2, ObjectCompOperator::LT);
+                if (cmpLess == nullptr) throw std::runtime_error("");
+                auto less = cmpLess->asBool();
+                if (!less) throw std::runtime_error("");
+                if (less.value())
+                    return std::strong_ordering::less;
 
-            if (objectToBool(obj1->compare(obj2, ObjectCompOperator::GT)))
-                return std::strong_ordering::greater;
+                auto cmpGreater = obj1->compare(obj2, ObjectCompOperator::GT);
+                if (cmpGreater == nullptr) throw std::runtime_error("");
+                auto greater = cmpGreater->asBool();
+                if (!greater) throw std::runtime_error("");
+                if (greater.value())
+                    return std::strong_ordering::greater;
 
-            return std::strong_ordering::equal;
-        }
-    );
+                return std::strong_ordering::equal;
+            }
+        );
+    }
+    catch (const std::runtime_error& e)
+    {
+        return nullptr;
+    }
 
     bool result;
     if (op == LT) result = (cmpResult == std::strong_ordering::less);
@@ -169,12 +189,15 @@ static Object* listGetIter(ListObject* o)
 METHOD_TEMPLATE(listRemove)
 {
     OBJECT_CAST();
-    auto it = std::find_if(
-        o->items.begin(),
-        o->items.end(),
-        [&args](Object* o) { return ((BoolObject*)o->compare(
-            args[0], ObjectCompOperator::EQ))->value; }
-    );
+    auto it = o->items.begin();
+    for (; it != o->items.end(); it++)
+    {
+        auto cmp = (*it)->compare(args[0], ObjectCompOperator::EQ);
+        if (cmp == nullptr) return nullptr;
+        auto b = cmp->asBool();
+        if (!b) return nullptr;
+        if (b.value()) break;
+    }
 
     if (it != o->items.end())
     {
@@ -189,13 +212,28 @@ OBJECT_METHOD(listRemove, "видалити", 1, false, nullptr)
 METHOD_TEMPLATE(listRemoveAll)
 {
     OBJECT_CAST();
-    auto erased = std::erase_if(
-        o->items,
-        [&args](Object* o) { return ((BoolObject*)o->compare(
-            args[0], ObjectCompOperator::EQ))->value; }
-    );
+    bool anyErased = false;
 
-    return P_BOOL(erased);
+    auto it = o->items.begin();
+    while (it != o->items.end())
+    {
+        auto cmp = (*it)->compare(args[0], ObjectCompOperator::EQ);
+        if (cmp == nullptr) return nullptr;
+        auto b = cmp->asBool();
+        if (!b) return nullptr;
+
+        if (b.value())
+        {
+            it = o->items.erase(it);
+            anyErased = true;
+        }
+        else
+        {
+            ++it;
+        }
+    }
+
+    return P_BOOL(anyErased);
 }
 OBJECT_METHOD(listRemoveAll, "видалитиВсі", 1, false, nullptr)
 
@@ -260,7 +298,11 @@ METHOD_TEMPLATE(listReplace)
 
     for (auto it = o->items.begin(); it != o->items.end(); ++it)
     {
-        if (((BoolObject*)(*it)->compare(args[0], ObjectCompOperator::EQ))->value)
+        auto cmp = (*it)->compare(args[0], ObjectCompOperator::EQ);
+        if (cmp == nullptr) return nullptr;
+        auto b = cmp->asBool();
+        if (!b) return nullptr;
+        if (b.value())
         {
             *it = args[1];
             ++replaceCount;
@@ -275,12 +317,15 @@ OBJECT_METHOD(listReplace, "замінити", 2, false, nullptr);
 METHOD_TEMPLATE(listFindItem)
 {
     OBJECT_CAST();
-    auto it = std::find_if(
-        o->items.begin(),
-        o->items.end(),
-        [&args](Object* obj) { return ((BoolObject*)obj->compare(
-            args[0], ObjectCompOperator::EQ))->value; }
-    );
+    auto it = o->items.begin();
+    for (; it != o->items.end(); it++)
+    {
+        auto cmp = (*it)->compare(args[0], ObjectCompOperator::EQ);
+        if (cmp == nullptr) return nullptr;
+        auto b = cmp->asBool();
+        if (!b) return nullptr;
+        if (b.value()) break;
+    }
 
     size_t index = -1;
     if (it != o->items.end())
@@ -305,12 +350,17 @@ OBJECT_METHOD(listCopy, "копія", 0, false, nullptr);
 METHOD_TEMPLATE(listCount)
 {
     OBJECT_CAST();
-    auto count = std::count_if(
-        o->items.begin(),
-        o->items.end(),
-        [&args](Object* obj) { return ((BoolObject*)obj->compare(
-            args[0], ObjectCompOperator::EQ))->value; }
-    );
+    int count = 0;
+
+    for (auto& item : o->items)
+    {
+        auto cmp = item->compare(args[0], ObjectCompOperator::EQ);
+        if (cmp == nullptr) return nullptr;
+        auto b = cmp->asBool();
+        if (!b) return nullptr;
+        if (b.value()) count++;
+    }
+
     return IntObject::create(count);
 }
 OBJECT_METHOD(listCount, "кількість", 1, false, nullptr);
@@ -319,20 +369,17 @@ OBJECT_METHOD(listCount, "кількість", 1, false, nullptr);
 METHOD_TEMPLATE(listContains)
 {
     OBJECT_CAST();
-    auto it = std::find_if(
-        o->items.begin(),
-        o->items.end(),
-        [&args](Object* obj) { return ((BoolObject*)obj->compare(
-            args[0], ObjectCompOperator::EQ))->value; }
-    );
-
-    i64 index = -1;
-    if (it != o->items.end())
+    auto it = o->items.begin();
+    for (; it != o->items.end(); ++it)
     {
-        index = it - o->items.begin();
+        auto cmp = (*it)->compare(args[0], ObjectCompOperator::EQ);
+        if (cmp == nullptr) return nullptr;
+        auto b = cmp->asBool();
+        if (!b) return nullptr;
+        if (b.value()) break;
     }
 
-    return P_BOOL(index != -1);
+    return P_BOOL(it != o->items.end());
 }
 OBJECT_METHOD(listContains, "містить", 1, false, nullptr);
 
@@ -437,11 +484,13 @@ METHOD_TEMPLATE(listSort)
                 std::sort(transformedItems.begin(), transformedItems.end(),
                     [](const Pair& a, const Pair& b)
                     {
-                        Object* result = a.first->compare(b.first, ObjectCompOperator::LT);
+                        auto result = a.first->compare(b.first, ObjectCompOperator::LT);
                         // Якщо результат порівняння nullptr, значить стався виняток,
                         // і щоб перервати сортування, викидається C++ виняток, який одразу і обробляється
                         if (result == nullptr) throw std::runtime_error("");
-                        return result == &P_true;
+                        auto result_ = result->asBool();
+                        if (!result_) throw std::runtime_error("");
+                        return result_.value();
                     }
                 );
             }
@@ -477,9 +526,10 @@ METHOD_TEMPLATE(listSort)
                 std::sort(o->items.begin(), o->items.end(),
                     [](Object* a, Object* b) {
                         Object* result = a->compare(b, ObjectCompOperator::LT);
-
                         if (result == nullptr) throw std::runtime_error("");
-                        return result == &P_true;
+                        auto result_ = result->asBool();
+                        if (!result_) throw std::runtime_error("");
+                        return result_.value();
                     }
                 );
             }

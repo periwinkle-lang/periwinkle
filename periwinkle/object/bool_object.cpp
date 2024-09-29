@@ -39,7 +39,7 @@ static Object* boolInit(Object* o, std::span<Object*> args, TupleObject* va, Nam
 
 static Object* boolToString(Object* a)
 {
-    auto arg = (BoolObject*)a;
+    auto arg = static_cast<BoolObject*>(a);
     return StringObject::create(arg->value ? U"істина" : U"хиба");
 }
 
