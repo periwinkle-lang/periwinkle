@@ -58,7 +58,7 @@ namespace vm
         .base = &objectObjectType,
         .name = "Тип",
         .size = sizeof(TypeObject),
-        .callableInfoOffset = offsetof(TypeObject, callableInfo),
+        .callableInfoOffset = CALLABLE_INFO_OFFSET(TypeObject, callableInfo),
         .operators =
         {
             .call = (callFunction)typeCall,

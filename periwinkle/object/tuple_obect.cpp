@@ -68,7 +68,7 @@ static Object* tupleComparison(Object* o1, Object* o2, ObjectCompOperator op)
     if (op == EQ) return P_BOOL(tupleObjectEqual(a, b));
     if (op == NE) return P_BOOL(!tupleObjectEqual(a, b));
 
-    std::strong_ordering cmpResult;
+    auto cmpResult = std::strong_ordering::equal;
     try
     {
         cmpResult = std::lexicographical_compare_three_way(

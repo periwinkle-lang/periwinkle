@@ -1,3 +1,5 @@
+#include <format>
+
 #include "native_method_object.hpp"
 #include "string_vector_object.hpp"
 #include "utils.hpp"
@@ -43,7 +45,7 @@ namespace vm
         .base = &objectObjectType,
         .name = "НативнийМетод",
         .size = sizeof(NativeMethodObject),
-        .callableInfoOffset = offsetof(NativeMethodObject, callableInfo),
+        .callableInfoOffset = CALLABLE_INFO_OFFSET(NativeMethodObject, callableInfo),
         .alloc = DEFAULT_ALLOC(NativeMethodObject),
         .dealloc = DEFAULT_DEALLOC(NativeMethodObject),
         .operators =

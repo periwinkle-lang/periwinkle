@@ -97,7 +97,7 @@ namespace vm
     EXCEPTION_EXTEND(ExceptionObjectType, InternalError, "ВнутрішняПомилка",
         { .toString = exceptionToString });
 
-    ExceptionObject P_NotImplemented{ {{&NotImplementedErrorObjectType}} };
+    ExceptionObject P_NotImplemented{ {.objectType = &NotImplementedErrorObjectType} };
 
     std::string vm::ExceptionObject::formatStackTrace() const
     {

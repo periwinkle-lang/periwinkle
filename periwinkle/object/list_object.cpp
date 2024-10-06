@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <utility>
 #include <stdexcept>
+#include <format>
 
 #include "object.hpp"
 #include "list_object.hpp"
@@ -76,7 +77,7 @@ static Object* listComparison(Object* o1, Object* o2, ObjectCompOperator op)
     if (op == EQ) return P_BOOL(listObjectEqual(a, b));
     if (op == NE) return P_BOOL(!listObjectEqual(a, b));
 
-    std::strong_ordering cmpResult;
+    auto cmpResult = std::strong_ordering::equal;
     try
     {
         cmpResult = std::lexicographical_compare_three_way(

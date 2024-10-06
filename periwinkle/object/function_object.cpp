@@ -100,7 +100,7 @@ static Object* fnCall(FunctionObject* fn, std::span<Object*> args, TupleObject* 
 
     Object* result = _call(fn);
     sp -= fn->callableInfo.arity
-        + fn->callableInfo.flags & CallableInfo::IS_VARIADIC;
+        + (fn->callableInfo.flags & CallableInfo::IS_VARIADIC);
     return result;
 }
 
@@ -132,7 +132,7 @@ namespace vm
         .base = &objectObjectType,
         .name = "Функція",
         .size = sizeof(FunctionObject),
-        .callableInfoOffset = offsetof(FunctionObject, callableInfo),
+        .callableInfoOffset = CALLABLE_INFO_OFFSET(FunctionObject, callableInfo),
         .alloc = DEFAULT_ALLOC(FunctionObject),
         .dealloc = DEFAULT_DEALLOC(FunctionObject),
         .operators =

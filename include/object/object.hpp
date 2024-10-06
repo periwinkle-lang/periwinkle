@@ -50,6 +50,8 @@
 // Порівнює тип об'єкта з переданим типом
 #define OBJECT_IS(object, type) ((object)->objectType == type)
 
+#define CALLABLE_INFO_OFFSET(object, field) ((size_t)(&((object*)0)->field))
+
 namespace vm
 {
     struct Object;

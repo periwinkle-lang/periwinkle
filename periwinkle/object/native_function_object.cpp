@@ -30,7 +30,7 @@ namespace vm
         .base = &objectObjectType,
         .name = "НативнаФункція",
         .size = sizeof(NativeFunctionObject),
-        .callableInfoOffset = offsetof(NativeFunctionObject, callableInfo),
+        .callableInfoOffset = CALLABLE_INFO_OFFSET(NativeFunctionObject, callableInfo),
         .alloc = DEFAULT_ALLOC(NativeFunctionObject),
         .dealloc = DEFAULT_DEALLOC(NativeFunctionObject),
         .operators =
@@ -42,7 +42,7 @@ namespace vm
 }
 
 vm::NativeFunctionObject::NativeFunctionObject(
-    const std::string_view name, vm::nativeFunction functions, WORD arity,
+    const std::string_view name, vm::nativeFunction function, WORD arity,
     bool variadic, DefaultParameters* defaults) noexcept
 {
     this->objectType = &vm::nativeFunctionObjectType;

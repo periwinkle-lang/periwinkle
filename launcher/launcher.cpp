@@ -3,7 +3,6 @@
 
 #include "launcher.hpp"
 #include "periwinkle.hpp"
-#include "utils.hpp"
 #include "unicode.hpp"
 
 static std::string usage(std::string_view programName)
