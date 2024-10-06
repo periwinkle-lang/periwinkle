@@ -98,13 +98,17 @@ add_custom_command(
     COMMENT "Генерація парсера..."
 )
 
+file(DOWNLOAD
+    https://www.unicode.org/Public/15.1.0/ucd/UnicodeData.txt
+    ${CMAKE_BINARY_DIR}/UnicodeData.txt
+)
 
 # Генерація бази даних юнікоду
 add_custom_command(
     OUTPUT "unicode_database.hpp"
     PRE_BUILD
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/unicode/generate.py
-    DEPENDS ${CMAKE_SOURCE_DIR}/tools/unicode/generate.py
+    DEPENDS ${CMAKE_SOURCE_DIR}/tools/unicode/generate.py ${CMAKE_BINARY_DIR}/UnicodeData.txt
     COMMENT "Генерація бази даних юнікоду..."
 )
 

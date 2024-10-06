@@ -9,14 +9,6 @@
 
 namespace unicode
 {
-    struct UnicodeRecord
-    {
-        int lowercaseOffset;
-        int uppercaseOffset;
-        int titlecaseOffset;
-        unsigned short flags;
-    };
-
     bool isLowercase(char32_t ch);
     bool isUppercase(char32_t ch);
     bool isTitlecase(char32_t ch);

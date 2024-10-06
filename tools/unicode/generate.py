@@ -1,14 +1,9 @@
 from dataclasses import dataclass, astuple
 from enum import Enum, IntEnum, auto
 from contextlib import redirect_stdout
-from urllib import request
-from io import StringIO
 
 # Вихідні назви файлів
 UNICODE_DATABASE_HPP = "unicode_database.hpp"
-
-UNICODE_REPO = "https://www.unicode.org/Public/"
-UNICODE_VERSION = "15.1.0"
 UNICODE_DATA = "UnicodeData.txt"
 
 
@@ -120,11 +115,6 @@ class UnicodeDatabase:
         self._generate_chars()
         self._generate_records_and_index()
 
-    def _open_ucd_file(self, filename: str):
-        response = request.urlopen(f"{UNICODE_REPO}{UNICODE_VERSION}/ucd/{filename}")
-        data = response.read().decode("utf-8")
-        return StringIO(data)
-
     def _parse_hex_int(self, string) -> int | None:
         if string:
             return int(string, 16)
@@ -154,7 +144,7 @@ class UnicodeDatabase:
         )
 
     def _generate_chars(self):
-        with self._open_ucd_file(UNICODE_DATA) as f:
+        with open(UNICODE_DATA) as f:
             while line := f.readline():
                 record = self._parse_record(line)
                 if record.name.endswith("First>"):
@@ -280,9 +270,15 @@ def generate_database_file():
             print("#ifndef UNICODE_DATABASE_HPP")
             print("#define UNICODE_DATABASE_HPP")
             print("")
-            print("#include <array>")
-            print("#include \"unicode.hpp\"\n")
-            print("using namespace unicode;\n")
+            print("#include <array>\n")
+
+            print("struct UnicodeRecord")
+            print("{")
+            print("    int lowercaseOffset;")
+            print("    int uppercaseOffset;")
+            print("    int titlecaseOffset;")
+            print("    unsigned short flags;")
+            print("};\n")
 
             for mask in RecordMask:
                 print(f"constexpr unsigned short {mask.name} = {hex(mask.value)};")

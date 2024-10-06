@@ -438,25 +438,12 @@ std::wstring unicode::toWstring(std::u32string_view s)
     }
 }
 
-// static inline size_t findUtf8StartOffset(const char* utf8)
-// {
-//     auto start = utf8;
-//     for (;;)
-//     {
-//         auto ch = static_cast<unsigned char>(*utf8);
-//         if (ch < 0x80) break;
-//         else if ((ch & 0xC0) == 0x80) continue;
-//         else break;
-//         utf8--;
-//     }
-//     return start - utf8;
-// }
-
 static inline size_t findUtf8StartOffset(const char* utf8)
 {
-    const unsigned char* u = reinterpret_cast<const unsigned char*>(utf8);
+    auto u = reinterpret_cast<const unsigned char*>(utf8);
     size_t offset = 0;
-    while ((u[-offset] & 0xC0) == 0x80) {
+    while ((u[-offset] & 0xC0) == 0x80)
+    {
         offset++;
     }
     return offset;
