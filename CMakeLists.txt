@@ -146,7 +146,14 @@ endif()
 
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    # Додаткові параметри компілятора
+    # Додаткові параметри компілятора Clang
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -gdwarf-4")
+        target_compile_options(periwinkle PUBLIC -Wall -Wpedantic)
+        target_compile_options(launcher PUBLIC -Wall -Wpedantic)
+    endif()
+
+    # Додаткові параметри компілятора GNU
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(periwinkle PUBLIC -Wall -Wpedantic)
         target_compile_options(launcher PUBLIC -Wall -Wpedantic)

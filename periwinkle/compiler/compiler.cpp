@@ -742,17 +742,13 @@ void compiler::Compiler::compileNameGet(const std::string& name)
     auto varGetter = scope->getVarGetter(name);
 
     vm::WORD index;
-    if (varGetter == LOAD_LOCAL)
+    switch(varGetter)
     {
-        index = localIdx(name);
-    }
-    else if (varGetter == LOAD_CELL)
-    {
-        index = freeIdx(name);
-    }
-    else if (varGetter == LOAD_GLOBAL)
-    {
-        index = nameIdx(name);
+    case LOAD_LOCAL: index = localIdx(name); break;
+    case LOAD_CELL: index = freeIdx(name); break;
+    case LOAD_GLOBAL: index = nameIdx(name); break;
+    default:
+        plog::fatal << "Невідомний varGetter";
     }
     emitOpCode(varGetter, index);
 }
@@ -763,17 +759,13 @@ void compiler::Compiler::compileNameSet(const std::string& name)
     auto varSetter = scope->getVarSetter(name);
 
     vm::WORD index;
-    if (varSetter == STORE_LOCAL)
+    switch(varSetter)
     {
-        index = localIdx(name);
-    }
-    else if (varSetter == STORE_CELL)
-    {
-        index = freeIdx(name);
-    }
-    else if (varSetter == STORE_GLOBAL)
-    {
-        index = nameIdx(name);
+    case STORE_LOCAL: index = localIdx(name); break;
+    case STORE_CELL: index = freeIdx(name); break;
+    case STORE_GLOBAL: index = nameIdx(name); break;
+    default:
+        plog::fatal << "Невідомний varSetter";
     }
     emitOpCode(varSetter, index);
 }
@@ -784,13 +776,12 @@ void compiler::Compiler::compileNameDelete(const std::string& name)
     auto varDeleter = scope->getVarDeleter(name);
 
     vm::WORD index;
-    if (varDeleter == DELETE_LOCAL)
+    switch(varDeleter)
     {
-        index = localIdx(name);
-    }
-    else if (varDeleter == DELETE_GLOBAL)
-    {
-        index = nameIdx(name);
+    case DELETE_LOCAL: index = localIdx(name); break;
+    case DELETE_GLOBAL: index = nameIdx(name); break;
+    default:
+        plog::fatal << "Невідомний varDeleter";
     }
     emitOpCode(varDeleter, index);
 }
