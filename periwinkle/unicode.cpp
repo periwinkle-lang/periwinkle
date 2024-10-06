@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cassert>
 
 #include "unicode.hpp"
 #include "unicode_database.hpp"
@@ -99,7 +100,7 @@ static inline int getUtf16CharLen(char16_t c) {
     return 1;
 }
 
-// Повертає кількість використаних char
+// Повертає кількість використаних char, -1 при невдачі
 static inline int char8to32(char32_t& c32, const char* c8)
 {
     auto length = getUtf8CharLen(*c8);
@@ -435,4 +436,103 @@ std::wstring unicode::toWstring(std::u32string_view s)
     {
         return std::wstring(reinterpret_cast<const wchar_t*>(s.data()), s.size());
     }
+}
+
+// static inline size_t findUtf8StartOffset(const char* utf8)
+// {
+//     auto start = utf8;
+//     for (;;)
+//     {
+//         auto ch = static_cast<unsigned char>(*utf8);
+//         if (ch < 0x80) break;
+//         else if ((ch & 0xC0) == 0x80) continue;
+//         else break;
+//         utf8--;
+//     }
+//     return start - utf8;
+// }
+
+static inline size_t findUtf8StartOffset(const char* utf8)
+{
+    const unsigned char* u = reinterpret_cast<const unsigned char*>(utf8);
+    size_t offset = 0;
+    while ((u[-offset] & 0xC0) == 0x80) {
+        offset++;
+    }
+    return offset;
+}
+
+UTF8Iterator unicode::UTF8Iterator::operator++() noexcept
+{
+    int size = getUtf8CharLen(*ptr);
+    assert(size > 0);
+    ptr += size;
+    return *this;
+}
+
+UTF8Iterator unicode::UTF8Iterator::operator++(int) noexcept
+{
+    auto tmp = *this;
+    ++(*this);
+    return tmp;
+}
+
+UTF8Iterator unicode::UTF8Iterator::operator--() noexcept
+{
+    size_t offset = findUtf8StartOffset(ptr - 1);
+    ptr -= offset + 1;
+    return *this;
+}
+
+UTF8Iterator unicode::UTF8Iterator::operator--(int) noexcept
+{
+    auto tmp = *this;
+    --(*this);
+    return tmp;
+}
+
+char32_t unicode::UTF8Iterator::operator*() const noexcept
+{
+    char32_t c32;
+    int size = char8to32(c32, ptr);
+    assert(size > 0);
+    return c32;
+}
+
+bool unicode::UTF8Iterator::operator==(const UTF8Iterator& other) const noexcept
+{
+    return ptr == other.ptr;
+}
+
+bool unicode::UTF8Iterator::operator!=(const UTF8Iterator& other) const noexcept
+{
+    return !(*this == other);
+}
+
+const char* unicode::UTF8Iterator::base() const noexcept
+{
+    return ptr;
+}
+
+size_t unicode::UTF8Iterator::getPosition() const noexcept
+{
+    return static_cast<size_t>(ptr - begin);
+}
+
+unicode::UTF8Iterator::UTF8Iterator(const char* ptr, const char* begin) noexcept: ptr(ptr), begin(begin)
+{
+}
+
+UTF8Iterator unicode::UTF8Iterable::begin() const noexcept
+{
+    return UTF8Iterator(str.data(), str.data());
+}
+
+UTF8Iterator unicode::UTF8Iterable::end() const noexcept
+{
+    return UTF8Iterator(str.data() + str.size(), str.data());
+}
+
+unicode::UTF8Iterable::UTF8Iterable(std::string_view str) noexcept: str(str)
+{
 }

@@ -2,6 +2,8 @@
 #define UNICODE_HPP
 
 #include <string>
+#include <cstddef>
+#include <iterator>
 
 #include "exports.hpp"
 
@@ -67,6 +69,45 @@ namespace unicode
     std::wstring toWstring(std::string_view s);
     std::wstring toWstring(std::u16string_view s);
     std::wstring toWstring(std::u32string_view s);
+
+    class UTF8Iterator
+    {
+    public:
+        using iterator_category = std::bidirectional_iterator_tag;
+        using value_type = char32_t;
+        using difference_type = std::ptrdiff_t;
+        using pointer = const char32_t*;
+        using reference = const char32_t&;
+    private:
+        const char* ptr;
+        const char* begin;
+    public:
+        UTF8Iterator operator++() noexcept;
+        UTF8Iterator operator++(int) noexcept;
+        UTF8Iterator operator--() noexcept;
+        UTF8Iterator operator--(int) noexcept;
+        char32_t operator*() const noexcept;
+        bool operator==(const UTF8Iterator& other) const noexcept;
+        bool operator!=(const UTF8Iterator& other) const noexcept;
+        // Повертає ітератор рядка з поточної позиції
+        const char* base() const noexcept;
+        // Повертає поточну позицію
+        size_t getPosition() const noexcept;
+
+        UTF8Iterator(const char* ptr, const char* begin) noexcept;
+    };
+
+    // Надає ітератор для рядків utf8, повертає char32_t
+    class UTF8Iterable
+    {
+    private:
+        std::string_view str;
+    public:
+        UTF8Iterator begin() const noexcept;
+        UTF8Iterator end() const noexcept;
+
+        UTF8Iterable(std::string_view str) noexcept;
+    };
 }
 
 #endif

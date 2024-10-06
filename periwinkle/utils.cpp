@@ -121,44 +121,57 @@ std::string utils::wordDeclension(i64 n, const std::string& word)
 
 std::string utils::trim(std::string_view str)
 {
-    auto start = str.begin();
-    auto end = str.end();
+    unicode::UTF8Iterable iterable(str);
+    auto start = iterable.begin();
+    auto end = iterable.end();
 
-    while (start != end && *start >= 0 && *start <= 255 && std::isspace(*start))
+    while (start != end && unicode::isSpace(*start))
     {
         start++;
     }
 
-    while (end != start && *start >= 0 && *start <= 255 && std::isspace(*(end - 1)))
+    while (end != start)
     {
         end--;
+        if (!unicode::isSpace(*end))
+        {
+            end++;
+            break;
+        }
     }
 
-    return std::string{ start, end };
+    return std::string{ start.base(), end.base() };
 }
 
 std::string utils::ltrim(std::string_view str)
 {
-    auto start = str.begin();
-    auto end = str.end();
+    unicode::UTF8Iterable iterable(str);
+    auto start = iterable.begin();
+    auto end = iterable.end();
 
-    while (start != end && *start >= 0 && *start <= 255 && std::isspace(*start))
+    while (start != end && unicode::isSpace(*start))
     {
         start++;
     }
 
-    return std::string{ start, end };
+    return std::string{ start.base(), end.base() };
 }
 
 std::string utils::rtrim(std::string_view str)
 {
-    auto start = str.begin();
-    auto end = str.end();
+    unicode::UTF8Iterable iterable(str);
+    auto start = iterable.begin();
+    auto end = iterable.end();
 
-    while (end != start && *start >= 0 && *start <= 255 && std::isspace(*(end - 1)))
+    while (end != start)
     {
         end--;
+        if (!unicode::isSpace(*end))
+        {
+            end++;
+            break;
+        }
     }
 
-    return std::string{ start, end };
+    return std::string{ start.base(), end.base() };
 }
