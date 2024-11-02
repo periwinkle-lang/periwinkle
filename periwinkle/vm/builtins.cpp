@@ -16,8 +16,16 @@
 #include "unicode.hpp"
 #include "platform.hpp"
 
-#define BUILTIN_FUNCTION(name, arity, isVariadic, func, defaults) \
-    {name, NativeFunctionObject::create(arity, isVariadic, name, func, defaults)}
+#define BUILTIN_FUNCTION_IMPLEMENTATION(func, name, arity, variadic, defaults) \
+    static const char* func##__functionName = name;                            \
+    static NativeFunctionObject func##__functionImpl {                         \
+        func##__functionName, func, arity, variadic, defaults                  \
+    };
+
+#define BUILTIN_FUNCTION_TEMPLATE(name) \
+    static Object* name(std::span<Object*> args, TupleObject* va, NamedArgs* na)
+
+#define BUILTIN_FUNCTION(func) { func##__functionName, &func##__functionImpl }
 
 #define BUILTIN_TYPE(type) \
     {type.name, &type}
@@ -50,7 +58,7 @@ static std::u32string joinObjectString(
     return U"";
 }
 
-static Object* printNative(std::span<Object*> args, TupleObject* va, NamedArgs* na)
+BUILTIN_FUNCTION_TEMPLATE(printNative)
 {
     StringObject* separator;
     ArgParser argParser{
@@ -61,8 +69,10 @@ static Object* printNative(std::span<Object*> args, TupleObject* va, NamedArgs* 
     std::cout << unicode::toUtf8(str) << std::flush;
     return &P_null;
 }
+BUILTIN_FUNCTION_IMPLEMENTATION(printNative, "друк", 0, true, &printDefaults)
 
-static Object* printLnNative(std::span<Object*> args, TupleObject* va, NamedArgs* na)
+
+BUILTIN_FUNCTION_TEMPLATE(printLnNative)
 {
     StringObject* separator;
     ArgParser argParser{
@@ -73,8 +83,10 @@ static Object* printLnNative(std::span<Object*> args, TupleObject* va, NamedArgs
     std::cout << unicode::toUtf8(str) << std::endl;
     return &P_null;
 }
+BUILTIN_FUNCTION_IMPLEMENTATION(printLnNative, "друкр", 0, true, &printDefaults)
 
-static Object* readLineNative(std::span<Object*> args, TupleObject* va, NamedArgs* na)
+
+BUILTIN_FUNCTION_TEMPLATE(readLineNative)
 {
     StringObject* prompt;
     ArgParser argParser{
@@ -85,46 +97,45 @@ static Object* readLineNative(std::span<Object*> args, TupleObject* va, NamedArg
     std::string line = platform::readline();
     return StringObject::create(line);
 }
+BUILTIN_FUNCTION_IMPLEMENTATION(readLineNative, "зчитати", 0, false, &readLineDefaults)
 
-static Object* getIterator(std::span<Object*> args, TupleObject* va, NamedArgs* na)
+
+BUILTIN_FUNCTION_TEMPLATE(getIteratorNative)
 {
     return args[0]->getIter();
 }
+BUILTIN_FUNCTION_IMPLEMENTATION(getIteratorNative, "ітератор", 1, false, nullptr)
+
+
+static builtin_t builtin
+{
+    BUILTIN_FUNCTION(printNative),
+    BUILTIN_FUNCTION(printLnNative),
+    BUILTIN_FUNCTION(readLineNative),
+    BUILTIN_FUNCTION(getIteratorNative),
+
+    BUILTIN_TYPE(objectObjectType),
+    BUILTIN_TYPE(intObjectType),
+    BUILTIN_TYPE(boolObjectType),
+    BUILTIN_TYPE(stringObjectType),
+    BUILTIN_TYPE(realObjectType),
+    BUILTIN_TYPE(listObjectType),
+    BUILTIN_TYPE(tupleObjectType),
+
+    BUILTIN_TYPE(ExceptionObjectType),
+    BUILTIN_TYPE(NameErrorObjectType),
+    BUILTIN_TYPE(TypeErrorObjectType),
+    BUILTIN_TYPE(NotImplementedErrorObjectType),
+    BUILTIN_TYPE(AttributeErrorObjectType),
+    BUILTIN_TYPE(IndexErrorObjectType),
+    BUILTIN_TYPE(DivisionByZeroErrorObjectType),
+    BUILTIN_TYPE(ValueErrorObjectType),
+    BUILTIN_TYPE(InternalErrorObjectType),
+
+    BUILTIN_OBJECT("КінецьІтерації", P_endIter),
+};
 
 builtin_t* vm::getBuiltin()
 {
-    static builtin_t* builtin;
-    if (builtin == nullptr)
-    {
-        builtin = new builtin_t();
-        builtin->insert(
-        {
-            BUILTIN_FUNCTION("друк", 0, true, printNative, &printDefaults),
-            BUILTIN_FUNCTION("друкр", 0, true, printLnNative, &printDefaults),
-            BUILTIN_FUNCTION("зчитати", 0, false, readLineNative, &readLineDefaults),
-            BUILTIN_FUNCTION("ітератор", 1, false, getIterator, nullptr),
-
-            BUILTIN_TYPE(objectObjectType),
-            BUILTIN_TYPE(intObjectType),
-            BUILTIN_TYPE(boolObjectType),
-            BUILTIN_TYPE(stringObjectType),
-            BUILTIN_TYPE(realObjectType),
-            BUILTIN_TYPE(listObjectType),
-            BUILTIN_TYPE(tupleObjectType),
-
-            BUILTIN_TYPE(ExceptionObjectType),
-            BUILTIN_TYPE(NameErrorObjectType),
-            BUILTIN_TYPE(TypeErrorObjectType),
-            BUILTIN_TYPE(NotImplementedErrorObjectType),
-            BUILTIN_TYPE(AttributeErrorObjectType),
-            BUILTIN_TYPE(IndexErrorObjectType),
-            BUILTIN_TYPE(DivisionByZeroErrorObjectType),
-            BUILTIN_TYPE(ValueErrorObjectType),
-            BUILTIN_TYPE(InternalErrorObjectType),
-
-            BUILTIN_OBJECT("КінецьІтерації", P_endIter),
-        }
-        );
-    }
-    return builtin;
+    return &builtin;
 }

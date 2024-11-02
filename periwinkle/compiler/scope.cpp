@@ -149,22 +149,22 @@ void ScopeAnalyzer::_analyze(ast::Node* node, Scope* parent)
     }
     case EXPRESSION_STATEMENT:
     {
-        _analyze(((ast::ExpressionStatement*)node)->expression, parent);
+        _analyze(((ast::ExpressionStatement*)node)->expression.get(), parent);
         break;
     }
     case WHILE_STATEMENT:
     {
-        _analyze(((ast::WhileStatement*)node)->block, parent);
+        _analyze(((ast::WhileStatement*)node)->block.get(), parent);
         break;
     }
     case IF_STATEMENT:
     {
-        _analyze(((ast::IfStatement*)node)->block, parent);
+        _analyze(((ast::IfStatement*)node)->block.get(), parent);
         break;
     }
     case ELSE_STATEMENT:
     {
-        _analyze(((ast::ElseStatement*)node)->block, parent);
+        _analyze(((ast::ElseStatement*)node)->block.get(), parent);
         break;
     }
     case FUNCTION_STATEMENT:
@@ -192,7 +192,7 @@ void ScopeAnalyzer::_analyze(ast::Node* node, Scope* parent)
             fnScope->addLocal(defaultParameter.first.text);
         }
 
-        _analyze(fnDeclaration->block, fnScope);
+        _analyze(fnDeclaration->block.get(), fnScope);
         break;
     }
     case RETURN_STATEMENT:
@@ -200,7 +200,7 @@ void ScopeAnalyzer::_analyze(ast::Node* node, Scope* parent)
         auto returnStatement = (ast::ReturnStatement*)node;
         if (returnStatement->returnValue)
         {
-            _analyze(returnStatement->returnValue.value(), parent);
+            _analyze(returnStatement->returnValue.value().get(), parent);
         }
         break;
     }
@@ -208,20 +208,20 @@ void ScopeAnalyzer::_analyze(ast::Node* node, Scope* parent)
     {
         auto forEach = (ast::ForEachStatement*)node;
         parent->addLocal(forEach->variable.text);
-        _analyze(forEach->block, parent);
+        _analyze(forEach->block.get(), parent);
         break;
     }
     case TRY_CATCH_STATEMENT:
     {
         auto tryStatement = (ast::TryCatchStatement*)node;
-        _analyze(tryStatement->block, parent);
+        _analyze(tryStatement->block.get(), parent);
         for (const auto& catchBlock : tryStatement->catchBlocks)
         {
             parent->maybePromote(catchBlock->exceptionName.text);
             if (catchBlock->variableName.has_value())
             {
                 parent->addLocal(catchBlock->variableName.value().text);
-                _analyze(catchBlock->block, parent);
+                _analyze(catchBlock->block.get(), parent);
             }
         }
         break;
@@ -229,33 +229,33 @@ void ScopeAnalyzer::_analyze(ast::Node* node, Scope* parent)
     case RAISE_STATEMENT:
     {
         auto raiseStatement = (ast::RaiseStatement*)node;
-        _analyze(raiseStatement->exception, parent);
+        _analyze(raiseStatement->exception.get(), parent);
         break;
     }
     case ASSIGNMENT_EXPRESSION:
     {
         auto assignmentExpression = (ast::AssignmentExpression*)node;
         parent->maybePromote(assignmentExpression->id.text);
-        _analyze(assignmentExpression->expression, parent);
+        _analyze(assignmentExpression->expression.get(), parent);
         break;
     }
     case BINARY_EXPRESSION:
     {
         auto binaryExpression = (ast::BinaryExpression*)node;
-        _analyze(binaryExpression->right, parent);
-        _analyze(binaryExpression->left, parent);
+        _analyze(binaryExpression->right.get(), parent);
+        _analyze(binaryExpression->left.get(), parent);
         break;
     }
     case UNARY_EXPRESSION:
     {
         auto unaryExpression = (ast::UnaryExpression*)node;
-        _analyze(unaryExpression->operand, parent);
+        _analyze(unaryExpression->operand.get(), parent);
         break;
     }
     case PARENTHESIZED_EXPRESSION:
     {
         auto parenthesizedExpression = (ast::ParenthesizedExpression*)node;
-        _analyze(parenthesizedExpression->expression, parent);
+        _analyze(parenthesizedExpression->expression.get(), parent);
         break;
     }
     case VARIABLE_EXPRESSION:
@@ -267,13 +267,13 @@ void ScopeAnalyzer::_analyze(ast::Node* node, Scope* parent)
     case ATTRIBUTE_EXPRESSION:
     {
         auto attr = (ast::AttributeExpression*)node;
-        _analyze(attr->expression, parent);
+        _analyze(attr->expression.get(), parent);
         break;
     }
     case CALL_EXPRESSION:
     {
         auto callExpression = (ast::CallExpression*)node;
-        _analyze(callExpression->callable, parent);
+        _analyze(callExpression->callable.get(), parent);
         for (auto argument : callExpression->arguments)
         {
             _analyze(argument, parent);

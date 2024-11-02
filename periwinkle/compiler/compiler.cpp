@@ -42,7 +42,11 @@ using enum ast::NodeKind;
 #define STATE_POP() stateStack.pop_back()
 #define STATE_BACK(stateType) ((stateType*)stateStack.back())
 #define PUSH_SCOPE(node) scopeStack.push_back(scopeInfo[node])
-#define SCOPE_POP() scopeStack.pop_back()
+#define SCOPE_POP()               \
+    {                             \
+        delete scopeStack.back(); \
+        scopeStack.pop_back();    \
+    }
 #define SCOPE_BACK() scopeStack.back()
 
 struct LoopState : CompilerState
@@ -159,16 +163,16 @@ void compiler::Compiler::compileStatement(Statement* statement)
 
 void compiler::Compiler::compileExpressionStatement(ExpressionStatement* statement)
 {
-    compileExpression(statement->expression);
+    compileExpression(statement->expression.get());
 }
 
 void compiler::Compiler::compileWhileStatement(WhileStatement* statement)
 {
     auto startWhileAddress = getOffset();
-    compileExpression(statement->condition);
+    compileExpression(statement->condition.get());
     auto endWhileBlock = emitOpCode(JMP_IF_FALSE, 0);
     PUSH_LOOP_STATE(startWhileAddress);
-    compileBlock(statement->block);
+    compileBlock(statement->block.get());
     emitOpCode(JMP, startWhileAddress);
     patchJumpAddress(endWhileBlock, getOffset());
     for (auto address : STATE_BACK(LoopState)->addressesForPatchWithEndBlock)
@@ -209,9 +213,9 @@ void compiler::Compiler::compileContinueStatement(ContinueStatement* statement)
 
 void compiler::Compiler::compileIfStatement(IfStatement* statement)
 {
-    compileExpression(statement->condition);
+    compileExpression(statement->condition.get());
     auto endIfBlock = emitOpCode(JMP_IF_FALSE, 0);
-    compileBlock(statement->block);
+    compileBlock(statement->block.get());
     if (!statement->elseOrIf)
     {
         patchJumpAddress(endIfBlock, getOffset());
@@ -221,11 +225,11 @@ void compiler::Compiler::compileIfStatement(IfStatement* statement)
         auto endIfElseBlock = emitOpCode(JMP, 0);
         patchJumpAddress(endIfBlock, getOffset());
 
-        auto elseOrIf = statement->elseOrIf.value();
+        auto elseOrIf = statement->elseOrIf.value().get();
         if (elseOrIf->kind == ELSE_STATEMENT)
         {
             auto elseStatement = (ElseStatement*)elseOrIf;
-            compileBlock(elseStatement->block);
+            compileBlock(elseStatement->block.get());
         }
         else if (elseOrIf->kind == IF_STATEMENT)
         {
@@ -299,7 +303,7 @@ void compiler::Compiler::compileFunctionDeclaration(ast::FunctionDeclaration* st
     codeObject->arity = statement->parameters.size() + statement->defaultParameters.size();
     if (statement->variadicParameter)
         codeObject->isVariadic = true;
-    compileBlock(statement->block);
+    compileBlock(statement->block.get());
     emitOpCode(LOAD_CONST, nullConstIdx());
     emitOpCode(RETURN);
 
@@ -341,7 +345,7 @@ void compiler::Compiler::compileReturnStatement(ast::ReturnStatement* statement)
         setLineno(statement->return_);
         if (statement->returnValue)
         {
-            compileExpression(statement->returnValue.value());
+            compileExpression(statement->returnValue.value().get());
         }
         else
         {
@@ -357,7 +361,7 @@ void compiler::Compiler::compileReturnStatement(ast::ReturnStatement* statement)
 
 void compiler::Compiler::compileForEachStatement(ForEachStatement* statement)
 {
-    compileExpression(statement->expression);
+    compileExpression(statement->expression.get());
     setLineno(statement->forEach);
     emitOpCode(UNARY_OP, static_cast<vm::WORD>(vm::ObjectOperatorOffset::GET_ITER));
     auto startForEachAddress = getOffset();
@@ -365,7 +369,7 @@ void compiler::Compiler::compileForEachStatement(ForEachStatement* statement)
     setLineno(statement->variable);
     compileNameSet(statement->variable.text);
     PUSH_LOOP_STATE(startForEachAddress);
-    compileBlock(statement->block);
+    compileBlock(statement->block.get());
     emitOpCode(JMP, startForEachAddress);
     patchJumpAddress(endForEachBlock, getOffset());
     for (auto address : STATE_BACK(LoopState)->addressesForPatchWithEndBlock)
@@ -381,7 +385,7 @@ void compiler::Compiler::compileTryCatchStatement(TryCatchStatement* statement)
     excHandler.startAddress = getOffset();
     setLineno(statement->try_);
     emitOpCode(TRY);
-    compileBlock(statement->block);
+    compileBlock(statement->block.get());
     std::vector<vm::WORD> ends;
     ends.reserve(statement->catchBlocks.size()
         + 1 // Для JMP в блоці TRY
@@ -405,7 +409,7 @@ void compiler::Compiler::compileTryCatchStatement(TryCatchStatement* statement)
         {
             emitOpCode(POP);
         }
-        compileBlock(catchBlock->block);
+        compileBlock(catchBlock->block.get());
         if (catchBlock->variableName.has_value())
         {
             compileNameDelete(catchBlock->variableName.value().text);
@@ -423,9 +427,9 @@ void compiler::Compiler::compileTryCatchStatement(TryCatchStatement* statement)
     if (statement->finallyBlock.has_value())
     {
         excHandler.finallyAddress = getOffset();
-        auto finallyBlock = statement->finallyBlock.value();
+        auto finallyBlock = statement->finallyBlock.value().get();
         setLineno(finallyBlock->finally_);
-        compileBlock(finallyBlock->block);
+        compileBlock(finallyBlock->block.get());
     }
     excHandler.endAddress = getOffset();
     emitOpCode(END_TRY);
@@ -434,7 +438,7 @@ void compiler::Compiler::compileTryCatchStatement(TryCatchStatement* statement)
 
 void compiler::Compiler::compileRaiseStatement(RaiseStatement* statement)
 {
-    compileExpression(statement->exception);
+    compileExpression(statement->exception.get());
     emitOpCode(RAISE);
 }
 
@@ -475,7 +479,7 @@ void compiler::Compiler::compileExpression(Expression* expression)
 void compiler::Compiler::compileAssignmentExpression(AssignmentExpression* expression)
 {
     std::string name = expression->id.text;
-    compileExpression(expression->expression);
+    compileExpression(expression->expression.get());
     auto& op = expression->assignment.text;
     if (op == Keyword::EQUAL)
     {
@@ -623,11 +627,11 @@ void compiler::Compiler::compileCallExpression(CallExpression* expression)
     {
         // Якщо викликним виразом є атрибут,
         // то потрібно отримувати значення за допомогою LOAD_METHOD
-        compileAttributeExpression((AttributeExpression*)expression->callable, true);
+        compileAttributeExpression((AttributeExpression*)expression->callable.get(), true);
     }
     else
     {
-        compileExpression(expression->callable);
+        compileExpression(expression->callable.get());
     }
 
     for (auto argument : expression->arguments)
@@ -683,15 +687,15 @@ void compiler::Compiler::compileBinaryExpression(BinaryExpression* expression)
 
     if (op == Keyword::AND || op == Keyword::OR)
     {
-        compileExpression(expression->left);
+        compileExpression(expression->left.get());
         setLineno(expression->op);
         auto end = emitOpCode(op == Keyword::AND ? JMP_IF_FALSE_OR_POP : JMP_IF_TRUE_OR_POP, 0);
-        compileExpression(expression->right);
+        compileExpression(expression->right.get());
         patchJumpAddress(end, getOffset());
         return;
     }
-    compileExpression(expression->right);
-    compileExpression(expression->left);
+    compileExpression(expression->right.get());
+    compileExpression(expression->left.get());
     setLineno(expression->op);
 
     if      (op == Keyword::ADD) emitOpCode(BINARY_OP, static_cast<vm::WORD>(vm::ObjectOperatorOffset::ADD));
@@ -713,7 +717,7 @@ void compiler::Compiler::compileBinaryExpression(BinaryExpression* expression)
 
 void compiler::Compiler::compileUnaryExpression(UnaryExpression* expression)
 {
-    compileExpression(expression->operand);
+    compileExpression(expression->operand.get());
     setLineno(expression->op);
 
     auto& op = expression->op.text;
@@ -725,13 +729,13 @@ void compiler::Compiler::compileUnaryExpression(UnaryExpression* expression)
 
 void compiler::Compiler::compileParenthesizedExpression(ParenthesizedExpression* expression)
 {
-    compileExpression(expression->expression);
+    compileExpression(expression->expression.get());
 }
 
 void compiler::Compiler::compileAttributeExpression(
     AttributeExpression* expression, bool isMethod)
 {
-    compileExpression(expression->expression);
+    compileExpression(expression->expression.get());
     setLineno(expression->attribute);
     emitOpCode(isMethod ? LOAD_METHOD : GET_ATTR, nameIdx(expression->attribute.text));
 }

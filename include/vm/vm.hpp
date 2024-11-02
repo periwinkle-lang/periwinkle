@@ -60,6 +60,11 @@ namespace vm
         //  bp + кількість_локальних_змінних.
         //  Спочатку йдуть комірки, потім вільні змінні
         Object** freevars;
+
+        ~Frame()
+        {
+            delete globals;
+        };
     };
 
     class VirtualMachine

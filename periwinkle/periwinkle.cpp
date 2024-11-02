@@ -37,9 +37,11 @@ vm::Object* periwinkle::Periwinkle::execute()
     );
     auto ast = parser.parse();
     if (!ast.has_value()) { exit(1); }
-    compiler::Compiler comp(ast.value(), source);
+    auto astValue = ast.value();
+    compiler::Compiler comp(astValue, source);
     std::array<vm::Object*, 512> stack{};
     auto frame = comp.compile();
+    delete astValue;
     frame->sp = &stack[0];
     frame->bp = &stack[0];
     vm::VirtualMachine virtualMachine(frame);

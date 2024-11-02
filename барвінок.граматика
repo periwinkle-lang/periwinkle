@@ -107,13 +107,13 @@ default_parameter<ast::FunctionDeclaration::defaultParameter_t> = id:identifier 
 
 try_catch_statement<ast::TryCatchStatement*> = "спробувати" _ b:try_catch_block+ c:catch+ f:finally? "кінець"
     { $$ = new TryCatchStatement(newToken("спробувати", $1), newBlockStatementExcludeOptional(b), c, f); }
-    / "спробувати" _ !try_catch_block { $$; parseError("Блок \"спробувати\" не може бути пустим."); }
-    / "спробувати" _ try_catch_block+ !catch { $$; parseError("В обробнику помилок повинен бути хоча б один блок \"обробити\""); }
+    / "спробувати" _ !try_catch_block { (void)$$; parseError("Блок \"спробувати\" не може бути пустим."); }
+    / "спробувати" _ try_catch_block+ !catch { (void)$$; parseError("В обробнику помилок повинен бути хоча б один блок \"обробити\""); }
 
 catch<ast::CatchBlock*> = "обробити" _ exceptionName:identifier _ var:catch_var? b:try_catch_block*
     {
         $$ = new CatchBlock{newToken("обробити", $1), newToken(exceptionName, $3)};
-        $$->block = newBlockStatementExcludeOptional(b);
+        $$->block.reset(newBlockStatementExcludeOptional(b));
         if (var.has_value())
         {
             $$->as = var.value().first;
@@ -124,13 +124,13 @@ catch<ast::CatchBlock*> = "обробити" _ exceptionName:identifier _ var:ca
 catch_var<std::pair<ast::Token, ast::Token>> = "як" _ var:identifier { $$ = { newToken("як", $1), newToken(var, $3) }; }
 
 finally<ast::FinallyBlock*> = "наприкінці" _ b:try_catch_block*
-    { $$ = new FinallyBlock{ newToken("наприкінці", $1), newBlockStatementExcludeOptional(b) }; }
+    { $$ = new FinallyBlock{ newToken("наприкінці", $1), std::unique_ptr<BlockStatement>(newBlockStatementExcludeOptional(b)) }; }
 
 try_catch_block<std::optional<ast::Statement*>> = !("кінець" / "обробити" / "наприкінці") s:statement { $$ = s; }
 
 raise_statement<ast::RaiseStatement*> =
     / "жбурнути" _ e:expression { $$ = new RaiseStatement(newToken("жбурнути", $1), e); }
-    / "жбурнути" !(_ expression) { $$; parseError("Після \"жбурнути\" повинний бути вираз"); }
+    / "жбурнути" !(_ expression) { (void)$$; parseError("Після \"жбурнути\" повинний бути вираз"); }
 
 expression<ast::Expression*> =
     / e:assignment_expression { $$ = e; }
@@ -229,7 +229,7 @@ assignment_expression<ast::AssignmentExpression*> = l:lhs _? op:(("//" / [-+*/%]
 
 identifier<std::string> =
     / !keywords id:([а-щА-ЩьюяїієґЬЮЯЇІЄҐ_][а-щА-ЩьюяїієґЬЮЯЇІЄҐ0-9_']*) { $$ = id; }
-    / &"'" { $$; parseError("Ім'я не може починатись апострофом"); }
+    / &"'" { (void)$$; parseError("Ім'я не може починатись апострофом"); }
 
 keywords =
     ("якщо" / "або" / "інакше" / "кінець" / "поки" / "пропустити" / "завершити" / "менше" / "більше"

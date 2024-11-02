@@ -5,6 +5,7 @@
 #include <vector>
 #include <optional>
 #include <variant>
+#include <memory>
 
 #include "string_enum.hpp"
 #include "types.hpp"
@@ -44,6 +45,7 @@ namespace ast
         NodeKind kind;
 
         Node(NodeKind kind) : kind(kind) {};
+        virtual ~Node() {};
     };
 
     struct Statement : Node
@@ -69,13 +71,19 @@ namespace ast
 
         BlockStatement(std::vector<Statement*> statements)
             : Statement(NodeKind::BLOCK_STATEMENT), statements(statements) {};
+
+        virtual ~BlockStatement()
+        {
+            for (auto node: statements)
+                delete node;
+        };
     };
 
     struct WhileStatement : Statement
     {
         Token keyword;
-        Expression* condition;
-        BlockStatement* block;
+        std::unique_ptr<Expression> condition;
+        std::unique_ptr<BlockStatement> block;
 
         WhileStatement(Token keyword, Expression* condition, BlockStatement* block)
             : Statement(NodeKind::WHILE_STATEMENT), keyword(keyword), condition(condition), block(block) {};
@@ -83,7 +91,7 @@ namespace ast
 
     struct ExpressionStatement : Statement
     {
-        Expression* expression;
+        std::unique_ptr<Expression> expression;
 
         ExpressionStatement(Expression* expression)
             : Statement(NodeKind::EXPRESSION_STATEMENT), expression(expression) {};
@@ -108,9 +116,9 @@ namespace ast
     struct IfStatement : Statement
     {
         Token if_;
-        Expression* condition;
-        BlockStatement* block;
-        std::optional<Statement*> elseOrIf;
+        std::unique_ptr<Expression> condition;
+        std::unique_ptr<BlockStatement> block;
+        std::optional<std::unique_ptr<Statement>> elseOrIf;
 
         IfStatement(Token if_, Expression* condition, BlockStatement* block, std::optional<Statement*> elseOrIf)
             : Statement(NodeKind::IF_STATEMENT), if_(if_), condition(condition), block(block), elseOrIf(elseOrIf) {};
@@ -119,7 +127,7 @@ namespace ast
     struct ElseStatement : Statement
     {
         Token else_;
-        BlockStatement* block;
+        std::unique_ptr<BlockStatement> block;
 
         ElseStatement(Token else_, BlockStatement* block)
             : Statement(NodeKind::ELSE_STATEMENT), else_(else_), block(block) {};
@@ -136,12 +144,11 @@ namespace ast
         parameters_t parameters;
         variadicParameter_t variadicParameter;
         defaultParameters_t defaultParameters;
-        BlockStatement* block;
+        std::unique_ptr<BlockStatement> block;
 
         FunctionDeclaration(
-                Token id, parameters_t parameters, variadicParameter_t variadicParameter,
-                defaultParameters_t defaultParameters, BlockStatement* block
-            )
+            Token id, parameters_t parameters, variadicParameter_t variadicParameter,
+            defaultParameters_t defaultParameters, BlockStatement* block)
             :
             Statement(NodeKind::FUNCTION_STATEMENT), id(id), parameters(parameters),
             variadicParameter(variadicParameter), defaultParameters(defaultParameters), block(block) {};
@@ -150,26 +157,18 @@ namespace ast
     struct ReturnStatement : Statement
     {
         Token return_;
-        std::optional<Expression*> returnValue;
+        std::optional<std::unique_ptr<Expression>> returnValue;
 
         ReturnStatement(Token return_, std::optional<Expression*> returnValue)
             : Statement(NodeKind::RETURN_STATEMENT), return_(return_), returnValue(returnValue) {};
-
-        ~ReturnStatement()
-        {
-            if (returnValue)
-            {
-                delete returnValue.value();
-            }
-        }
     };
 
     struct ForEachStatement : Statement
     {
         Token forEach;
         Token variable;
-        Expression* expression;
-        BlockStatement* block;
+        std::unique_ptr<Expression> expression;
+        std::unique_ptr<BlockStatement> block;
 
         ForEachStatement(Token forEach, Token variable, Expression* expression, BlockStatement* block)
             :
@@ -183,33 +182,39 @@ namespace ast
         Token exceptionName;
         std::optional<Token> as;
         std::optional<Token> variableName;
-        BlockStatement* block;
+        std::unique_ptr<BlockStatement> block;
     };
 
     struct FinallyBlock
     {
         Token finally_;
-        BlockStatement* block;
+        std::unique_ptr<BlockStatement> block;
     };
 
     struct TryCatchStatement : Statement
     {
         Token try_;
-        BlockStatement* block;
+        std::unique_ptr<BlockStatement> block;
         std::vector<CatchBlock*> catchBlocks;
-        std::optional<FinallyBlock*> finallyBlock;
+        std::optional<std::unique_ptr<FinallyBlock>> finallyBlock;
 
         TryCatchStatement(Token try_, BlockStatement* block, std::vector<CatchBlock*> catchBlocks,
             std::optional<FinallyBlock*> finallyBlock)
             :
             Statement(NodeKind::TRY_CATCH_STATEMENT), try_(try_), block(block),
             catchBlocks(catchBlocks), finallyBlock(finallyBlock) {};
+
+        virtual ~TryCatchStatement()
+        {
+            for (auto node: catchBlocks)
+                delete node;
+        };
     };
 
     struct RaiseStatement : Statement
     {
         Token raise;
-        Expression* exception;
+        std::unique_ptr<Expression> exception;
 
         RaiseStatement(Token raise, Expression* exception)
             : Statement(NodeKind::RAISE_STATEMENT), raise(raise), exception(exception) {};
@@ -219,7 +224,7 @@ namespace ast
     {
         Token id;
         Token assignment;
-        Expression* expression;
+        std::unique_ptr<Expression> expression;
 
         AssignmentExpression(Token id, Token assignment, Expression* expression)
             : Expression(NodeKind::ASSIGNMENT_EXPRESSION), id(id), assignment(assignment), expression(expression) {};
@@ -227,9 +232,9 @@ namespace ast
 
     struct BinaryExpression : Expression
     {
-        Expression* left;
+        std::unique_ptr<Expression> left;
         Token op;
-        Expression* right;
+        std::unique_ptr<Expression> right;
 
         BinaryExpression(Expression* left, Token op, Expression* right)
             : Expression(NodeKind::BINARY_EXPRESSION), left(left), op(op), right(right) {};
@@ -238,7 +243,7 @@ namespace ast
     struct UnaryExpression : Expression
     {
         Token op;
-        Expression* operand;
+        std::unique_ptr<Expression> operand;
 
         UnaryExpression(Token op, Expression* operand)
             : Expression(NodeKind::UNARY_EXPRESSION), op(op), operand(operand) {};
@@ -246,7 +251,7 @@ namespace ast
 
     struct ParenthesizedExpression : Expression
     {
-        Expression* expression;
+        std::unique_ptr<Expression> expression;
 
         ParenthesizedExpression(Expression* expression)
             : Expression(NodeKind::PARENTHESIZED_EXPRESSION), expression(expression) {};
@@ -262,7 +267,7 @@ namespace ast
 
     struct AttributeExpression : Expression
     {
-        Expression* expression;
+        std::unique_ptr<Expression> expression;
         Token attribute;
 
         AttributeExpression(Expression* expression, Token attribute)
@@ -290,12 +295,20 @@ namespace ast
         using namedArgument_t = std::pair<Token, Expression*>;
         using namedArguments_t = std::vector<namedArgument_t>;
 
-        Expression* callable;
+        std::unique_ptr<Expression> callable;
         arguments_t arguments;
         namedArguments_t namedArguments;
 
         CallExpression(Expression* callable, arguments_t arguments, namedArguments_t namedArguments)
             : Expression(NodeKind::CALL_EXPRESSION), callable(callable), arguments(arguments), namedArguments(namedArguments) {};
+
+        virtual ~CallExpression()
+        {
+            for (auto node: arguments)
+                delete node;
+            for (auto node: namedArguments)
+                delete node.second;
+        };
     };
 }
 

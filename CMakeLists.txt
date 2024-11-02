@@ -85,7 +85,7 @@ set_property(TARGET parser PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 
 file(DOWNLOAD
-    https://github.com/romanfedyniak/pparser/releases/download/0.1.3/pparser.py
+    https://github.com/romanfedyniak/pparser/releases/download/0.1.4/pparser.py
     ${CMAKE_BINARY_DIR}/pparser.py
 )
 
