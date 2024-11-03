@@ -39,9 +39,7 @@ namespace periwinkle
         vm::ExceptionObject* exceptionOccurred() const;
         void exceptionClear();
         void printException() const;
-
         vm::GC* getGC();
-
 
 #ifdef DEV_TOOLS
         void printDisassemble();

@@ -274,6 +274,12 @@ namespace ast
             : Expression(NodeKind::ATTRIBUTE_EXPRESSION), expression(expression), attribute(attribute) {};
     };
 
+    struct LiteralString
+    {
+        Token token;
+        std::string str;
+    };
+
     struct LiteralExpression : Expression
     {
         enum class Type
@@ -283,10 +289,20 @@ namespace ast
 
         Token literalToken;
         Type literalType;
-        std::variant<i64, double, bool, std::string> value;
+        using stringType = std::vector<LiteralString*>;
+        std::variant<i64, double, bool, stringType> value;
 
-        LiteralExpression(Token literalToken, Type literalType, std::variant<i64, double, bool, std::string> value)
+        LiteralExpression(Token literalToken, Type literalType, std::variant<i64, double, bool, stringType> value)
             : Expression(NodeKind::LITERAL_EXPRESSION), literalToken(literalToken), literalType(literalType), value(value) {};
+
+        ~LiteralExpression()
+        {
+            if (literalType == Type::STRING)
+            {
+                for (auto literal : std::get<stringType>(value))
+                    delete literal;
+            }
+        }
     };
 
     struct CallExpression : Expression

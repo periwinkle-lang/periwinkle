@@ -49,6 +49,7 @@ namespace compiler
 
         void compileExpression(ast::Expression* expression);
         void compileAssignmentExpression(ast::AssignmentExpression* expression);
+        std::u32string parseString(ast::LiteralString* str);
         void compileLiteralExpression(ast::LiteralExpression* expression);
         void compileVariableExpression(ast::VariableExpression* expression);
         void compileCallExpression(ast::CallExpression* expression);

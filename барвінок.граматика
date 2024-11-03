@@ -182,10 +182,17 @@ primary<ast::Expression*> =
         }
     / v:("істина" / "хиба") { $$ = new LiteralExpression(newToken(v, $1), LiteralExpression::Type::BOOLEAN, v == "істина"); }
     / num:number { $$ = num; }
-    / s:("\"" body:("\\\"" / !"\"" .)* "\"") { $$ = new LiteralExpression(newToken(s, $1), LiteralExpression::Type::STRING, body); }
+    / text:(str:strings) { $$ = new LiteralExpression(newToken(text, $1), LiteralExpression::Type::STRING, str); }
     / "ніц" { $$ = new LiteralExpression(newToken("ніц", $1), LiteralExpression::Type::NULL_, {}); }
     / id:identifier { $$ = new VariableExpression(newToken(id, $1)); }
     / "(" e:rhs ")" { $$ = new ParenthesizedExpression(e); }
+
+strings<std::vector<ast::LiteralString*>> =
+    / s1:strings _? s2:string { $$ = s1; $$.push_back(s2); }
+    / s:string { $$.push_back(s); }
+
+string<ast::LiteralString*> =
+    / s:("\"" body:("\\\"" / !"\"" .)* "\"") { $$ = new LiteralString{ newToken(s, $1), body }; }
 
 number<ast::LiteralExpression*> =
     / num:([-+]? (("0" / [1-9][0-9]*) "." [0-9]*) / ([1-9]* "." [0-9]+))

@@ -504,6 +504,76 @@ void compiler::Compiler::compileAssignmentExpression(AssignmentExpression* expre
     compileNameSet(name);
 }
 
+std::u32string compiler::Compiler::parseString(ast::LiteralString* str)
+{
+    auto parsedString = unicode::toUtf32(str->str);
+    size_t j = 0; // Індекс для запису в результат
+    for (size_t i = 0; i < parsedString.length(); ++i) {
+        if (parsedString[i] == U'\\' && i + 1 < parsedString.length()) {
+            char32_t nextChar = parsedString[i + 1];
+            switch (nextChar) {
+                case U'"':
+                    parsedString[j++] = U'"';
+                    ++i;
+                    break;
+                case U'\\':
+                    parsedString[j++] = U'\\';
+                    ++i;
+                    break;
+                case U'a': // англійська версія
+                case U'а': // українська
+                    parsedString[j++] = U'\a';
+                    ++i;
+                    break;
+                case U'b':
+                case U'б':
+                    parsedString[j++] = U'\b';
+                    ++i;
+                    break;
+                case U'f':
+                case U'ф':
+                    parsedString[j++] = U'\f';
+                    ++i;
+                    break;
+                case U'n':
+                case U'н':
+                    parsedString[j++] = U'\n';
+                    ++i;
+                    break;
+                case U'r':
+                case U'р':
+                    parsedString[j++] = U'\r';
+                    ++i;
+                    break;
+                case U't':
+                case U'т':
+                    parsedString[j++] = U'\t';
+                    ++i;
+                    break;
+                case U'v':
+                case U'в':
+                    parsedString[j++] = U'\v';
+                    ++i;
+                    break;
+                case U'0':
+                    parsedString[j++] = U'\0';
+                    ++i;
+                    break;
+                default:
+                    throwCompileError(
+                        std::format("\\{} не є керувальною послідовністю",
+                            unicode::toUtf8(std::u32string_view(&parsedString[i + 1], 1))),
+                        str->token
+                    );
+            }
+        } else {
+            parsedString[j++] = parsedString[i];
+        }
+    }
+    parsedString.resize(j);
+    return parsedString;
+}
+
 void compiler::Compiler::compileLiteralExpression(LiteralExpression* expression)
 {
     vm::WORD index;
@@ -531,72 +601,21 @@ void compiler::Compiler::compileLiteralExpression(LiteralExpression* expression)
     }
     case STRING:
     {
-        auto parsedString = unicode::toUtf32(std::get<std::string>(expression->value));
-        size_t j = 0; // Індекс для запису в результат
-        for (size_t i = 0; i < parsedString.length(); ++i) {
-            if (parsedString[i] == U'\\' && i + 1 < parsedString.length()) {
-                char32_t nextChar = parsedString[i + 1];
-                switch (nextChar) {
-                    case U'"':
-                        parsedString[j++] = U'"';
-                        ++i;
-                        break;
-                    case U'\\':
-                        parsedString[j++] = U'\\';
-                        ++i;
-                        break;
-                    case U'a': // англійська версія
-                    case U'а': // українська
-                        parsedString[j++] = U'\a';
-                        ++i;
-                        break;
-                    case U'b':
-                    case U'б':
-                        parsedString[j++] = U'\b';
-                        ++i;
-                        break;
-                    case U'f':
-                    case U'ф':
-                        parsedString[j++] = U'\f';
-                        ++i;
-                        break;
-                    case U'n':
-                    case U'н':
-                        parsedString[j++] = U'\n';
-                        ++i;
-                        break;
-                    case U'r':
-                    case U'р':
-                        parsedString[j++] = U'\r';
-                        ++i;
-                        break;
-                    case U't':
-                    case U'т':
-                        parsedString[j++] = U'\t';
-                        ++i;
-                        break;
-                    case U'v':
-                    case U'в':
-                        parsedString[j++] = U'\v';
-                        ++i;
-                        break;
-                    case U'0':
-                        parsedString[j++] = U'\0';
-                        ++i;
-                        break;
-                    default:
-                        throwCompileError(
-                            std::format("\\{} не є керувальною послідовністю",
-                                unicode::toUtf8(std::u32string_view(&parsedString[i + 1], 1))),
-                            expression->literalToken
-                        );
-                }
-            } else {
-                parsedString[j++] = parsedString[i];
-            }
+        auto literalString = std::get<LiteralExpression::stringType>(expression->value);
+        std::vector<std::u32string> parsedStrings;
+        parsedStrings.reserve(literalString.size());
+        size_t totalSize = 0;
+        for (auto str : literalString)
+        {
+            auto result = parseString(str);
+            totalSize += result.size();
+            parsedStrings.push_back(result);
         }
-        parsedString.resize(j);
-        index = stringConstIdx(parsedString);
+        std::u32string result;
+        result.reserve(totalSize);
+        for (const auto& str : parsedStrings)
+            result += str;
+        index = stringConstIdx(result);
         break;
     }
     case NULL_:
