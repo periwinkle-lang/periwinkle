@@ -36,6 +36,8 @@ namespace Keyword
     KW K_TRUE = "істина";
     KW K_FALSE = "хиба";
     KW K_NULL = "ніц";
+    KW K_NAN = "неЧисло";
+    KW K_INF = "нескінченність";
 }
 
 #undef KW

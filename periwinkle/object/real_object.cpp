@@ -12,6 +12,7 @@
 #include "bool_object.hpp"
 #include "native_method_object.hpp"
 #include "periwinkle.hpp"
+#include "keyword.hpp"
 
 using namespace vm;
 
@@ -73,13 +74,23 @@ static Object* realComparison(Object* o1, Object* o2, ObjectCompOperator op)
 static Object* realToString(Object* a)
 {
     auto real = (RealObject*)a;
-    std::stringstream ss;
-    ss.precision(std::numeric_limits<double>::max_digits10);
-    ss << real->value;
-    auto s = ss.str();
-    if (s.find('.') == std::string::npos)
+    std::string s;
+    if (real == &P_realNan)
     {
-        s.append(".0");
+        s = Keyword::K_NAN;
+    }
+    else if (real = &P_realInf)
+    {
+        s = Keyword::K_INF;
+    }
+    else
+    {
+        std::stringstream ss;
+        ss.precision(std::numeric_limits<double>::max_digits10);
+        ss << real->value;
+        auto s = ss.str();
+        if (s.find('.') == std::string::npos)
+            s.append(".0");
     }
     return StringObject::create(s);
 }
@@ -173,10 +184,17 @@ namespace vm
         },
         .comparison = realComparison,
     };
+
+    RealObject P_realNan = { {.objectType = &realObjectType}, std::numeric_limits<double>::quiet_NaN() };
+    RealObject P_realInf = { {.objectType = &realObjectType}, std::numeric_limits<double>::infinity() };
 }
 
 RealObject* vm::RealObject::create(double value)
 {
+    if (std::isnan(value))
+        return &P_realNan;
+    if (std::isinf(value))
+        return &P_realInf;
     auto realObject = (RealObject*)allocObject(&realObjectType);
     realObject->value = value;
     return realObject;

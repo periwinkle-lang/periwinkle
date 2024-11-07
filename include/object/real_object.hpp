@@ -13,6 +13,8 @@ namespace vm
 
         static RealObject* create(double value);
     };
+
+    extern RealObject P_realNan, P_realInf;
 }
 
 #endif
