@@ -10,6 +10,7 @@
 #include "pconfig.hpp"
 #include "string_object.hpp"
 #include "plogger.hpp"
+#include "builtins.hpp"
 
 using namespace periwinkle;
 
@@ -134,6 +135,16 @@ periwinkle::Periwinkle::~Periwinkle()
     delete source;
     gc->clean();
     delete gc;
+}
+
+void periwinkle::initialize()
+{
+    vm::initBuiltins();
+}
+
+void periwinkle::finalize()
+{
+    vm::deinitBuiltins();
 }
 
 Periwinkle* getCurrentState()

@@ -83,16 +83,19 @@ int launcher(std::span<const std::string_view> args) noexcept
         }
     }
 
+    periwinkle::initialize();
 	periwinkle::Periwinkle interpreter(std::filesystem::path(argsForInterpreter.back()));
 
 #ifdef DEV_TOOLS
 	if (cmdOptionExists(argsForInterpreter, "-а", "--асемблер"))
 	{
 		interpreter.printDisassemble();
+        periwinkle::finalize();
 		return 0;
 	}
 #endif
     auto result = interpreter.execute();
     if (result == nullptr) { interpreter.printException(); };
+    periwinkle::finalize();
 	return 0;
 }

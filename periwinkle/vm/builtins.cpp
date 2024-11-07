@@ -107,33 +107,45 @@ BUILTIN_FUNCTION_TEMPLATE(getIteratorNative)
 BUILTIN_FUNCTION_IMPLEMENTATION(getIteratorNative, "ітератор", 1, false, nullptr)
 
 
-static builtin_t builtin
+static builtin_t builtin;
+
+void vm::initBuiltins()
 {
-    BUILTIN_FUNCTION(printNative),
-    BUILTIN_FUNCTION(printLnNative),
-    BUILTIN_FUNCTION(readLineNative),
-    BUILTIN_FUNCTION(getIteratorNative),
+    if (builtin.empty())
+    {
+        builtin.insert({
+            BUILTIN_FUNCTION(printNative),
+            BUILTIN_FUNCTION(printLnNative),
+            BUILTIN_FUNCTION(readLineNative),
+            BUILTIN_FUNCTION(getIteratorNative),
 
-    BUILTIN_TYPE(objectObjectType),
-    BUILTIN_TYPE(intObjectType),
-    BUILTIN_TYPE(boolObjectType),
-    BUILTIN_TYPE(stringObjectType),
-    BUILTIN_TYPE(realObjectType),
-    BUILTIN_TYPE(listObjectType),
-    BUILTIN_TYPE(tupleObjectType),
+            BUILTIN_TYPE(objectObjectType),
+            BUILTIN_TYPE(intObjectType),
+            BUILTIN_TYPE(boolObjectType),
+            BUILTIN_TYPE(stringObjectType),
+            BUILTIN_TYPE(realObjectType),
+            BUILTIN_TYPE(listObjectType),
+            BUILTIN_TYPE(tupleObjectType),
 
-    BUILTIN_TYPE(ExceptionObjectType),
-    BUILTIN_TYPE(NameErrorObjectType),
-    BUILTIN_TYPE(TypeErrorObjectType),
-    BUILTIN_TYPE(NotImplementedErrorObjectType),
-    BUILTIN_TYPE(AttributeErrorObjectType),
-    BUILTIN_TYPE(IndexErrorObjectType),
-    BUILTIN_TYPE(DivisionByZeroErrorObjectType),
-    BUILTIN_TYPE(ValueErrorObjectType),
-    BUILTIN_TYPE(InternalErrorObjectType),
+            BUILTIN_TYPE(ExceptionObjectType),
+            BUILTIN_TYPE(NameErrorObjectType),
+            BUILTIN_TYPE(TypeErrorObjectType),
+            BUILTIN_TYPE(NotImplementedErrorObjectType),
+            BUILTIN_TYPE(AttributeErrorObjectType),
+            BUILTIN_TYPE(IndexErrorObjectType),
+            BUILTIN_TYPE(DivisionByZeroErrorObjectType),
+            BUILTIN_TYPE(ValueErrorObjectType),
+            BUILTIN_TYPE(InternalErrorObjectType),
 
-    BUILTIN_OBJECT("КінецьІтерації", P_endIter),
-};
+            BUILTIN_OBJECT("КінецьІтерації", P_endIter),
+        });
+    }
+}
+
+void vm::deinitBuiltins()
+{
+    builtin.clear();
+}
 
 builtin_t* vm::getBuiltin()
 {

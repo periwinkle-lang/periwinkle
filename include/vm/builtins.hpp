@@ -8,6 +8,8 @@
 
 namespace vm
 {
+    void initBuiltins();
+    void deinitBuiltins();
     using builtin_t = std::unordered_map<std::string, Object*>;
     builtin_t* getBuiltin();
 }

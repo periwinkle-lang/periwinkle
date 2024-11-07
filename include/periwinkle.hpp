@@ -49,6 +49,9 @@ namespace periwinkle
         Periwinkle(const ProgramSource& source);
         ~Periwinkle();
     };
+
+    API void initialize();
+    API void finalize();
 }
 
 periwinkle::Periwinkle* getCurrentState();
